@@ -24,7 +24,7 @@ try:
 except Exception:
     JSON_LOGGER = False
 
-from .commands import flatten
+from .commands import flatten, generate_validation_book
 
 ###############################################################################
 # global constants
@@ -118,6 +118,7 @@ def define_argument_parser() -> argparse.ArgumentParser:
     # Add subparsers
     subparsers = parser.add_subparsers(title="Subcommands", dest="subcommand", help="Available subcommands")
     flatten.add_subparsers(subparsers)
+    generate_validation_book.add_subparsers(subparsers)
 
     # Return parser
     return parser

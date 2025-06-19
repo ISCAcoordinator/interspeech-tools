@@ -1,0 +1,121 @@
+\documentclass[twoside, abstract]{\VAR{classname}}
+
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+
+\usepackage{multicol}
+\usepackage{ragged2e}
+\usepackage{hyphenat}
+
+% for loading data from CSV, and loops
+\usepackage{datatool}
+\newcommand{\listvolunteer}[3]{ #2 #3\\ }
+
+% NOTE: seems to be totally ignored. Maybe it is contradicting the use of the package hyphenat
+\hyphenation{Socio-phonetics}
+\hyphenation{Para-linguistics}
+\hyphenation{Light-weight}
+
+
+% for sideways tables (not used)
+% \usepackage{rotating}
+
+
+% for custom column types in tabular
+\usepackage{array}
+% \newcolumntype{L}[1]{>{\raggedright\let\newline\\\arraybackslash\hspace{0pt} }m{ #1 } }
+\newcolumntype{C}[1]{>{\centering\let\newline\\\arraybackslash\hspace{0pt} }m{ #1 } }
+% \newcolumntype{R}[1]{>{\raggedleft\let\newline\\\arraybackslash\hspace{0pt} }m{ #1 } }
+
+
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{1pt}
+
+% column width in the graphical tabular depictions
+\def\tablecolwidth{1.8cm}
+\def\tabletimecolwidth{1.1cm}
+% more compact lists
+\usepackage{enumitem}
+
+% custom tables of contents
+\usepackage{etoc}
+
+% Filler
+% \usepackage{lipsum}
+\usepackage[breakall]{truncate}
+
+% Watermark
+% usepackage[colorspec=0.95]{draftwatermark}
+% \usepackage[colormodel=rgb,colorspec={0.96, 0.99, 0.95}]{draftwatermark}
+% \SetWatermarkText{DRAFT}
+% \SetWatermarkScale{1.5}
+
+\hypersetup{
+    colorlinks=true,
+    linkcolor=LinkColour,
+    pdftitle={INTERSPEECH 2025 - Programme Book},
+}
+
+% % https://tex.stackexchange.com/questions/445744/truncating-multi-line-texts
+% \usepackage{trimclip,lipsum,stackengine}
+% \newcommand\trunclines[3]{ %
+%   \setbox0=\hbox{\parbox[t]{ #2 }{\strut#3} }%
+%   \stackengine{0pt}{\clipbox{0pt \dimexpr\dp0-#1\baselineskip%
+%     -\dp\strutbox+\baselineskip\relax%
+%     {} 0in 0pt}{\copy0} }{\strut}{U}{c}{F}{F}{S}%
+% }
+
+% \newcommand{\summarytablecell}[1]{ #1 }
+
+
+\RequirePackage{tipa}
+\usepackage{newunicodechar}
+% NOTE: one paper has this in the title
+\newunicodechar{ɹ}{\textturnr}
+% \newunicodechar{ɤ}{\textipa{7} }
+
+\title{Interspeech 2025 - Validation}
+\author{ }
+% \date{June 2023}
+
+\begin{document}
+
+\maketitle{}
+
+% \rmfamily
+
+\setlist{noitemsep,topsep=2pt,parsep=2pt,partopsep=0pt,leftmargin=1em}
+
+\def\emailtruncatelength{2cm}
+\def\titletruncatelength{4cm}
+
+\pagestyle{fancy}
+
+\section{Paper Index}
+
+\begin{multicols*}{2}
+\BLOCK{ for paper_id, paper in papers.items() }
+  \paper{\VAR{paper_id}}{\VAR{paper.title | latexify}}{\VAR{paper | latexified_authors}}{\VAR{paper | presenters}}{\VAR{ paper.abstract | latexify }}
+\BLOCK{ endfor }
+\end{multicols*}
+
+\clearpage
+
+\section{Author Index}
+
+\begin{multicols*}{2}
+\begin{FlushLeft}
+\BLOCK{ for author in (authors | sort_authors) }
+    \BLOCK{ for paper in (author | list_papers) }
+        \BLOCK{ if loop.index == 1 }
+            {\footnotesize \VAR{author.lastname | latexify}, \VAR{author.firstname | latexify}\dotfill \authorpaperbox{\hyperlink{\VAR{paper.id}}{\VAR{paper.id}} \hfill [\pageref*{\VAR{paper.id}}]}} \newline
+        \BLOCK{ else }
+            {\footnotesize~\hfill\authorpaperbox{\hyperlink{\VAR{paper.id}}{\VAR{paper.id}} \hfill [\pageref*{\VAR{paper.id}}]}} \newline
+        \BLOCK{ endif }
+    \BLOCK{ endfor }
+\BLOCK{ endfor }
+\end{FlushLeft}
+\end{multicols*}
+\restoregeometry{}
+
+\end{document}

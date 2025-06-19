@@ -1,11 +1,9 @@
 import logging
 import argparse
 import pathlib
-import tempfile
 
 # Templating / rendering
 import jinja2
-import pylatex
 from pylatexenc.latexencode import UnicodeToLatexEncoder
 
 # ISCA Lib
@@ -48,6 +46,7 @@ def _process_unknown_char(input_char: str) -> str:
 
 
 u_to_l = UnicodeToLatexEncoder(unknown_char_policy=_process_unknown_char)
+
 
 def latexify(input: str | None) -> str:
 
@@ -131,10 +130,7 @@ def main(args: argparse.Namespace):
     conf = serialiser.load(conf_path)
     conf.resolve_author_paper_association()
 
-    templateLoader = jinja2.FileSystemLoader(
-        searchpath="/home/lemaguer/work/isca/isca-publication-tools/src/isca_publication_tools/resources/validation_book/"
-    )
-    # templateLoader = jinja2.PackageLoader("isca_publication_checker", "resources/templates")
+    templateLoader = jinja2.PackageLoader("isca_publication_tools", "resources/validation_book")
     jenv_latex = jinja2.Environment(
         block_start_string="\\BLOCK{",
         block_end_string="}",
@@ -150,7 +146,6 @@ def main(args: argparse.Namespace):
     )
 
     # Define inner filters
-
     def list_papers(author: Person) -> list[Paper]:
         return conf.list_papers(author)
 
@@ -164,9 +159,3 @@ def main(args: argparse.Namespace):
 
     with open(val_book_file, "w") as f:
         f.write(validation_main_template.render(classname=args.class_name, papers=conf.papers, authors=conf.authors))
-
-    # # Turns out the input directory is
-    # temp_dir = tempfile.TemporaryDirectory()
-    # input_dir = pathlib.Path(temp_dir.name)
-
-    # temp_dir.cleanup()

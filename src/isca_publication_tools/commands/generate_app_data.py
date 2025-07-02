@@ -30,7 +30,7 @@ def main(args: argparse.Namespace):
     conf = None
     serialiser = None
     if args.format == "cmt":
-        serialiser = CMTSerialiser(True, False)
+        serialiser = CMTSerialiser(False, False)
     else:
         raise NotImplementedError(f"The format {args.format} is not supported")
     conf = serialiser.load(conf_path)

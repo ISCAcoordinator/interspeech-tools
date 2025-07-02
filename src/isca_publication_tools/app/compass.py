@@ -2,7 +2,10 @@ import pathlib
 import logging
 import pandas as pd
 
+from isca.model.person import Role
+from isca.model.session import PosterSession, PresentationSession, OralSession, SpecialSession
 from isca.model import Conference
+
 
 class CompassDataGenerator:
     AGENDA_COLUMNS = [
@@ -17,47 +20,51 @@ class CompassDataGenerator:
         "date",
         "startTime",
         "endTime",
-        "classifierId_1"
+        "classifierId_1",
     ]
     PERSON_COLUMNS = [
         "id",
-	"name",
-	"subtitle",
-	"subtitleDetail",
-	"configuratorType",
-	"info",
-	"orderingName",
-	"email",
-	"firstName",
-	"lastName",
-	"classifierId_"
+        "name",
+        "subtitle",
+        "subtitleDetail",
+        "configuratorType",
+        "info",
+        "orderingName",
+        "email",
+        "firstName",
+        "lastName",
+        "classifierId_",
     ]
     PLACE_COLUMNS = [
         "id",
         "name",
-	"subtitle",
-	"subtitleDetail",
-	"configuratorType",
-	"info",
-	"orderingName",
-	"exhibitorId"
+        "subtitle",
+        "subtitleDetail",
+        "configuratorType",
+        "info",
+        "orderingName",
+        "exhibitorId",
+    ]
+    PERSON_WANTED_ROLES = [
+        Role.AUTHOR,
+        Role.PRESENTER
     ]
 
     def __init__(self, conference: Conference):
         self._logger = logging.getLogger(self.__class__.__name__)
         self.conference = conference
 
-
     def generate_data(self, output_root_dir: pathlib.Path):
         output_root_dir.mkdir(exist_ok=True, parents=True)
         self._generate_app_person(output_root_dir / "Persons.xlsx")
         self._generate_app_place(output_root_dir / "Places.xlsx")
-        # self._generate_app_agenda(output_root_dir / "Timeslots.xlsx")
+        self._generate_app_agenda(output_root_dir / "Timeslots.xlsx")
         # self._generate_app_institution(output_root_dir / "Institutions.xlsx")
         # self._generate_app_classifier(output_root_dir / "Classifiers.xlsx")
 
     def _generate_app_classifier(self, output_classifier_file: pathlib.Path) -> None:
         pass
+
     def _generate_app_institution(self, output_institution_file: pathlib.Path) -> None:
         pass
 
@@ -66,11 +73,7 @@ class CompassDataGenerator:
         list_place = []
         for cur_room in self.conference.rooms:
             # Initialise the new session
-            cur_place = {
-                "id": cur_room.name,
-                "name": cur_room.name,
-                "configuratorType": "place:room"
-            }
+            cur_place = {"id": cur_room.id, "name": cur_room.name, "configuratorType": "place:room"}
             list_place.append(cur_place)
 
         df_place = pd.DataFrame(list_place)
@@ -88,19 +91,23 @@ class CompassDataGenerator:
         # List the authors
         authors = self.conference.authors
         for author in authors:
+            firstname = author.firstname
+            if firstname is None:
+                firstname = "PLACE_HOLDER"
+            elif author.middle_initial is not None:
+                firstname += " " + author.middle_initial
+
             cur_person = {
                 "id": author.id,
                 "email": author.email,
-                "firstName": f"{author.firstname}".strip(),
+                "firstName": firstname,
                 "lastName": author.lastname,
-                # "Company": person_obj._organization,
+                "Company": author.main_affiliation,
                 "configuratorType": "person:person",
             }
 
             # Entry is done
             list_persons.append(cur_person)
-
-
 
         # Save the generated dataframe to the excel file
         df_persons = pd.DataFrame(list_persons)
@@ -111,110 +118,94 @@ class CompassDataGenerator:
         df_persons.sort_values(by=["lastName", "firstName"], inplace=True)
         df_persons.to_excel(output_person_file, index=False)
 
-
     def _generate_app_agenda(self, output_agenda_file: pathlib.Path) -> None:
-        raise NotImplementedError("This method is not yet implemented")
-        # list_agenda = []
-        # previous_row = ("", None)
-        # cur_session = None
-        # current_presenter_list = []
+        list_agenda = []
+        cur_session = None
 
-        # list_session_ids = self._programme.sessions.index.unique(level="SessionName")
-        # header_sessions_df = self._programme.sessions[
-        #     self._programme.sessions.index.get_level_values("SessionName").isin(list_session_ids) &
-        #     (self._programme.sessions.index.get_level_values("Sequence") == 1)
-        # ]
-        # for session_id, session_info in header_sessions_df.iterrows():
-        #     session_name, session_seq = session_id
-        #     # Initialise the new session
-        #     cur_session = {
-        #         "id": session_name,  # NOTE: Empty as it will be filled by the APP designer
-        #         "name": self._programme.template.loc[session_name, "SessionNameLong"],
-        #         "placeId": session_info["Room"],
-        #         "date": session_info["Start"].strftime("%d-%m-%y"),
-        #         "startTime": session_info["Start"].strftime("%H:%M"),
-        #         "endTime": session_info["End"].strftime("%H:%M"),
-        #         "configuratorType": "timeslot:session"
-        #     }
+        for session in self.conference.sessions:
+            if not isinstance(session, PresentationSession):
+                self._logger.warning(
+                    f"[{session.id}] The session is not a presentation session",
+                    extra={"session_id": session.id, "session": session},
+                )
+                continue
 
-        #     chair1 = self._programme.template.loc[session_name, "Session Chair 1"]
-        #     if not pd.isna(chair1):
-        #         cur_session["roleId_role:chair_1"] = chair1
+            # Initialise the new session
+            cur_session = {
+                "id": session.id,  # NOTE: Empty as it will be filled by the APP designer
+                "name": session.name,
+                "placeId": session.room.id if session.room is not None else None,
+                "date": session.start.strftime("%d-%m-%y"),
+                "startTime": session.start.strftime("%H:%M"),
+                "endTime": session.end.strftime("%H:%M"),
+                "configuratorType": "timeslot:session",
+            }
 
-        #     chair2 = self._programme.template.loc[session_name, "Session Chair 2"]
-        #     if not pd.isna(chair2):
-        #         cur_session["roleId_role:chair_2"] = chair2
+            # Add session chairs
+            if session.chairs is not None:
+                for chair_idx, chair in enumerate(session.chairs):
+                    cur_session[f"roleId_role:chair_{chair_idx}"] = chair.id
 
-        #     list_agenda.append(cur_session)
+            list_agenda.append(cur_session)
 
-        #     session_type = session_info['SlotPresentationFormat'].lower()
-        #     if (session_type == "oral") or (session_type == "keynote"):
-        #         session_type = "presentation"
+            # TODO: deal with the different session type
+            session_type = "oral"
+            if isinstance(session, PosterSession):
+                session_type = "poster"
+            elif isinstance(session, PosterSession):
+                session_type = "show_and_tell"
+            elif isinstance(session, SpecialSession):
+                session_type = "special"
 
-        #     # Fill description (i.e., list of presentations) (FIXME: there is likely a better way of doing this)
-        #     session_df = self._programme.sessions[
-        #         self._programme.sessions.index.get_level_values("SessionName") == session_name
-        #     ]
-        #     description = ""
-        #     speakers = []
-        #     for presentation_id, presentation_info in session_df.iterrows():
-        #         session_name, seq = presentation_id
-        #         code = self._programme.session_short_name_map[session_name]
-        #         start = presentation_info["Start"].strftime('%H:%M')
-        #         end = presentation_info["End"].strftime('%H:%M')
-        #         paper_id = presentation_info["Paper ID"]
-        #         abstract = ""
-        #         if pd.isna(paper_id) or (paper_id <= 0):
-        #             title = presentation_info["Paper Title"]
-        #             if pd.isna(title):
-        #                 continue
-        #         else:
-        #             title = self._programme.submissions.loc[paper_id, "Paper Title"]
+            # TODO: add color
+            color = None
+            if (self.conference.theme is not None) and ("colors" in self.conference.theme) and ("foreground" in self.conference.theme["colors"]):
+                color = str(self.conference.theme["colors"]["foreground"])
 
-        #             # Add the abstract content
-        #             if self._programme._with_abstract:
-        #                 if (self._programme._abstract_dir / f"{paper_id:d}.txt").exists():
-        #                     with open(self._programme._abstract_dir / f"{paper_id:d}.txt") as f_abstract:
-        #                         abstract = f_abstract.read().strip()
+            if (self.conference.theme is not None) and (session_type in self.conference.theme) and ("colors" in self.conference.theme[session_type]) and ("foreground" in self.conference.theme[session_type]["colors"]):
+                color = str(self.conference.theme[session_type]["colors"]["foreground"])
 
-        #         cur_session = {
-        #             "id": f"{session_name}_{seq}",
-        #             "name": title,
-        #             "placeId": session_info["Room"],
-        #             "date": session_info["Start"].strftime("%d-%m-%y"),
-        #             "parent": session_name,
-        #             "startTime": start,
-        #             "endTime": end,
-        #             "configuratorType": f"timeslot:{session_type}",
-        #             "info": abstract
-        #         }
+            if color is not None:
+                cur_session["color"] = color
 
+            # Add presentations
+            for presentation_idx, presentation in enumerate(session.presentations, 0):
+                cur_presentation = {x:cur_session[x] for x in cur_session.keys()}
+                cur_presentation["id"] = presentation.id
+                cur_presentation["parent"] = cur_session["id"]
+                cur_presentation["configuratorType"] = f"timeslot:{session_type}"
+                cur_presentation["name"] = presentation.title
+                abstract = ""
+                if (presentation.abstract is not None) and (not pd.isna(presentation.abstract)):
+                    abstract = "<p>" + presentation.abstract.replace("\n\n", "</p>\n<p>") + "</p>"
 
-        #         # Deal with speakers
-        #         if not pd.isna(presentation_info["Presenter"]):
-        #             presenter_emails = presentation_info["Presenter"].strip().lower()
-        #             presenter_emails = presenter_emails.replace("(", "").replace(")", "").split(",")
-        #             for i_speaker, speaker_id in enumerate(presenter_emails, 1):
-        #                 cur_session[f"roleId_role:speaker_{i_speaker}"] = speaker_id
+                cur_presentation["info"] = abstract
+                if isinstance(session, OralSession):
+                    cur_presentation["startTime"] = session.start_presentation(presentation_idx).strftime("%H:%M")
+                    cur_presentation["endTime"] = session.end_presentation(presentation_idx).strftime("%H:%M")
 
-        #         # And authors
-        #         if not (pd.isna(paper_id) or (paper_id <= 0)):
-        #             author_emails = self._programme.submissions.loc[paper_id, "Author Emails"].lower().strip().replace("*", "").split("; ")
-        #             for i_author, author_id in enumerate(author_emails, 1):
-        #                 cur_session[f"roleId_role:author_{i_author}"] = author_id
+                # Add presenters
+                if presentation.presenters is not None:
+                    for i_presenter, presenter in enumerate(presentation.presenters, 1):
+                        cur_presentation[f"roleId_role:presenter_{i_presenter}"] = presenter.id
 
-        #         list_agenda.append(cur_session)
+                # And authors
+                if presentation.presented_paper is not None:
+                    for i_author, author in enumerate(presentation.presented_paper.authors, 1):
+                        cur_presentation[f"roleId_role:author_{i_author}"] = author.id
 
-        # # Save the generated dataframe to the excel file
-        # df_agenda = pd.DataFrame(list_agenda)
-        # for col_to_add in CompassDataGenerator.AGENDA_COLUMNS:
-        #     if col_to_add not in df_agenda.columns:
-        #         df_agenda[col_to_add] = ""
+                list_agenda.append(cur_presentation)
 
-        # # Added columns
-        # columns = CompassDataGenerator.AGENDA_COLUMNS.copy()
-        # for col_to_keep in df_agenda.columns:
-        #     if col_to_keep not in columns:
-        #         columns.append(col_to_keep)
-        # df_agenda = df_agenda.reindex(columns=columns)
-        # df_agenda.to_excel(output_agenda_file, index=False)
+        # Save the generated dataframe to the excel file
+        df_agenda = pd.DataFrame(list_agenda)
+        for col_to_add in CompassDataGenerator.AGENDA_COLUMNS:
+            if col_to_add not in df_agenda.columns:
+                df_agenda[col_to_add] = ""
+
+        # Added columns
+        columns = CompassDataGenerator.AGENDA_COLUMNS.copy()
+        for col_to_keep in df_agenda.columns:
+            if col_to_keep not in columns:
+                columns.append(col_to_keep)
+        df_agenda = df_agenda.reindex(columns=columns)
+        df_agenda.to_excel(output_agenda_file, index=False)

@@ -8,7 +8,7 @@ from pylatexenc.latexencode import UnicodeToLatexEncoder
 
 # ISCA Lib
 from isca.io.cmt import CMTSerialiser
-from isca.model.paper import Paper
+from isca.model.item import Paper
 from isca.model.person import Person
 
 
@@ -70,15 +70,15 @@ def latexify(input: str | None) -> str:
 def get_latexified_authors(input_paper: Paper) -> str:
     list_authors = []
     for cur_author in input_paper.authors:
-        list_authors.append(cur_author.str_with_flatten_affiliations())
+        list_authors.append(cur_author.str_with_flatten_affiliations(input_paper.id))
 
     return latexify(", ".join(list_authors))
 
 
 def get_latexified_presenters(input_paper: Paper) -> str:
     list_presenters = []
-    for cur_presenter in input_paper.presenters:
-        list_presenters.append(cur_presenter.str_with_flatten_affiliations())
+    # for cur_presenter in input_paper.presenters:
+    #     list_presenters.append(cur_presenter.str_with_flatten_affiliations(input_paper.id))
 
     return latexify(", ".join(list_presenters))
 
@@ -104,6 +104,7 @@ def add_subparsers(subparsers):
     parser.add_argument(
         "-p", "--pdf-path", type=str, default=None, help="The alternative directory containing the PDF files (flatten!)"
     )
+    parser.add_argument("-P", "--pdf-metadata", action="store_true", help="Extract the metadata from the PDF")
     parser.add_argument("-f", "--format", type=str, default="cmt", help="The format of the input formation")
 
     # Add arguments
@@ -124,7 +125,7 @@ def main(args: argparse.Namespace):
     conf = None
     serialiser = None
     if args.format == "cmt":
-        serialiser = CMTSerialiser(True, True)
+        serialiser = CMTSerialiser(args.pdf_metadata, True)
     else:
         raise NotImplementedError(f"The format {args.format} is not supported")
     conf = serialiser.load(conf_path)

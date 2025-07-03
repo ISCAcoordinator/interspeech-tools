@@ -325,14 +325,35 @@
   \hypertarget{#1}{#2}%
 }
 
+%% Command \paper takes 4 arguments:
+%%    #1 the ID of the presentation in the session
+%%    #2 the title
+%%    #3 the authors
+%%    #5 the abstract
+\newcommand{\paper}[4]{%
+    \begin{spacing}{1.3}
+        \noindent\pagetarget{#1}{\timebox{ \textbf{#1} }\ {\large\textbf{#2} } }
+    \end{spacing}
+    \noindent{\normalfont\textit{#3}}
+    %
+    \bigskip
+    %
+    \if@abstract
+        %
+        \par\noindent \textbf{Abstract:}
+        \par #4
+        %
+        \bigskip
+    \fi
+}
 
-%% Command \paper takes 5 arguments:
+%% Command \presentation takes 5 arguments:
 %%    #1 the ID of the presentation in the session
 %%    #2 the title
 %%    #3 the authors
 %%    #4 the presenters
 %%    #5 the abstract
-\newcommand{\paper}[5]{%
+\newcommand{\presentation}[5]{%
     \begin{spacing}{1.3}
         \noindent\pagetarget{#1}{\timebox{ \textbf{#1} }\ {\large\textbf{#2} } }
     \end{spacing}

@@ -9,11 +9,37 @@ import importlib.resources
 
 # ISCA Lib
 from isca.io.cmt import CMTSerialiser
-from isca.model.item import Paper
+from isca.model.event import Conference
+from isca.model.item import Paper, Presentation
+from isca.model.session import PresentationSession
 from isca.model.person import Person
 
 # Helpers
-from ..books.utils import latexify, get_sorted_authors, get_latexified_authors, get_latexified_presenters, compile
+from ..books.utils import (
+    latexify,
+    get_sorted_authors,
+    get_latexified_authors,
+    get_latexified_presenters,
+    compile,
+    is_presentation,
+    has_paper,
+)
+
+
+def list_elts(conf: Conference, ignore_sessions:bool) -> dict[str, Paper] | dict[str, Presentation]:
+    if ignore_sessions:
+        return conf.papers
+    else:
+        presentations = dict()
+        for cur_session in conf.sessions:
+            if not isinstance(cur_session, PresentationSession):
+                continue
+            if cur_session.presentations is not None:
+                for cur_presentation in cur_session.presentations:
+                    if cur_presentation.presented_paper is not None:
+                        presentations[cur_presentation.presented_paper.id] = cur_presentation
+        return presentations
+
 
 #################################################################################################
 ## Entry points
@@ -27,9 +53,17 @@ def add_subparsers(subparsers):
     )
 
     # Add options
-    parser.add_argument("-b", "--bootstrap", action="store_true", help="Add all elements to generate the validation book")
+    parser.add_argument(
+        "-b", "--bootstrap", action="store_true", help="Add all elements to generate the validation book"
+    )
     parser.add_argument("-c", "--classname", default="interspeech", type=str, help="The LaTeX class name")
-    parser.add_argument("-C", "--compile", action="store_true", help="Compile the book (use latexmk if available, else use lualatex. pdflatex and xelatex are not supported)")
+    parser.add_argument(
+        "-C",
+        "--compile",
+        action="store_true",
+        help="Compile the book (use latexmk if available, else use lualatex. pdflatex and xelatex are not supported)",
+    )
+    parser.add_argument("-n", "--no-sessions", action="store_true", help="Do not use the sessions, use only the papers")
     parser.add_argument(
         "-p", "--pdf-path", type=str, default=None, help="The alternative directory containing the PDF files (flatten!)"
     )
@@ -68,16 +102,20 @@ def main(args: argparse.Namespace):
 
     # Set filters
     jenv_latex.filters["latexify"] = latexify
+    jenv_latex.filters["has_paper"] = has_paper
+    jenv_latex.filters["is_presentation"] = is_presentation
     jenv_latex.filters["sort_authors"] = get_sorted_authors
     jenv_latex.filters["latexified_authors"] = get_latexified_authors
     jenv_latex.filters["presenters"] = get_latexified_presenters
 
     if args.bootstrap:
-        cls_file = val_book_file.parent/"interspeech.cls"
+        cls_file = val_book_file.parent / "interspeech.cls"
         if cls_file.exists():
             raise Exception(f"The class file {cls_file} already exists, delete it if you want to bootstrap/reset")
 
-        template_res = importlib.resources.files("isca_publication_tools").joinpath("resources/validation_book/interspeech.cls")
+        template_res = importlib.resources.files("isca_publication_tools").joinpath(
+            "resources/validation_book/interspeech.cls"
+        )
         with importlib.resources.as_file(template_res) as template_file:
             print(template_file)
             shutil.copy(template_file, cls_file)
@@ -86,21 +124,21 @@ def main(args: argparse.Namespace):
     conf = None
     serialiser = None
     if args.format == "cmt":
-        serialiser = CMTSerialiser(args.pdf_metadata, True)
+        serialiser = CMTSerialiser(args.pdf_metadata, args.no_sessions)
     else:
         raise NotImplementedError(f"The format {args.format} is not supported")
     conf = serialiser.load(conf_path)
     conf.resolve_author_paper_association()
 
-
     # Prepare content template
     def list_papers(author: Person) -> list[Paper]:
         return conf.list_papers(author)
+
     jenv_latex.filters["list_papers"] = list_papers
     validation_main_template = jenv_latex.get_template("main_template.tex")
 
     with open(val_book_file, "w") as f:
-        f.write(validation_main_template.render(classname=args.classname, papers=conf.papers, authors=conf.authors))
+        f.write(validation_main_template.render(classname=args.classname, papers=list_elts(conf, args.no_sessions), authors=conf.authors))
 
     if args.compile:
         compile(val_book_file)

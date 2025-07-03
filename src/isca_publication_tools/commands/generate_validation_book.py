@@ -3,6 +3,7 @@ import argparse
 import pathlib
 
 # Templating / rendering
+from isca_publication_tools.books.theme import generate_theme_file
 import jinja2
 import shutil
 import importlib.resources
@@ -23,6 +24,7 @@ from ..books.utils import (
     compile,
     is_presentation,
     has_paper,
+    get_type
 )
 
 
@@ -107,7 +109,9 @@ def main(args: argparse.Namespace):
     jenv_latex.filters["sort_authors"] = get_sorted_authors
     jenv_latex.filters["latexified_authors"] = get_latexified_authors
     jenv_latex.filters["presenters"] = get_latexified_presenters
+    jenv_latex.filters["type"] = get_type
 
+    colour_file = None
     if args.bootstrap:
         cls_file = val_book_file.parent / "interspeech.cls"
         if cls_file.exists():
@@ -120,6 +124,11 @@ def main(args: argparse.Namespace):
             print(template_file)
             shutil.copy(template_file, cls_file)
 
+        colour_file = cls_file.parent/"theme/colours.tex"
+        if colour_file.exists():
+            raise Exception(f"The colour file {colour_file} already exists, delete it if you want to bootstrap/reset")
+        colour_file.parent.mkdir(exist_ok=True, parents=True)
+
     # Load conference
     conf = None
     serialiser = None
@@ -129,6 +138,10 @@ def main(args: argparse.Namespace):
         raise NotImplementedError(f"The format {args.format} is not supported")
     conf = serialiser.load(conf_path)
     conf.resolve_author_paper_association()
+
+    # Generate the them
+    if colour_file is not None:
+        generate_theme_file(conf, colour_file)
 
     # Prepare content template
     def list_papers(author: Person) -> list[Paper]:

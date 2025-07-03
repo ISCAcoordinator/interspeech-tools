@@ -1,10 +1,14 @@
+import logging
 import pathlib
 import subprocess
 
+from isca.model.session import OralPresentation, PosterPresentation
 from pylatexenc.latexencode import UnicodeToLatexEncoder
 
-from isca.model.item import Paper, Presentation
+from isca.model.item import Paper, Presentation, ShowAndTellPresentation, SpecialPresentation, SurveyTalk
 from isca.model.person import Person
+
+from .theme import SPECIFIC_PRESENTATION_IDS, GENERIC_PRESENTATION_IDS
 
 
 # TODO: this case by case management is idiotic...it should be made more general
@@ -115,3 +119,14 @@ def compile(main_file: pathlib.Path):
             "There is no compatible latex tools (lualatex needs to be available at a minimum; "
             + "pdflatex and xelatex are not supported)"
         )
+
+def get_type(input_presentation: Presentation) -> str:
+    if type(input_presentation) in SPECIFIC_PRESENTATION_IDS:
+        return SPECIFIC_PRESENTATION_IDS[type(input_presentation)]
+
+    if type(input_presentation) in GENERIC_PRESENTATION_IDS:
+        return GENERIC_PRESENTATION_IDS[type(input_presentation)]
+
+    logger = logging.getLogger("get_type")
+    logger.warning(f"{type(input_presentation)} is unknown for the validation book, use the default information")
+    return "default"

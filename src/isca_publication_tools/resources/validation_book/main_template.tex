@@ -96,7 +96,7 @@
 \begin{multicols*}{2}
 \BLOCK{ for paper_id, paper in papers.items() }
   \BLOCK{ if (paper | is_presentation) }
-    \presentation{\VAR{paper_id}}{\VAR{paper.presented_paper.title | latexify}}{\VAR{paper | latexified_authors}}{\VAR{paper | presenters}}{\VAR{ paper.presented_paper.abstract | latexify }}
+    \presentation{\VAR{paper | type}}{\VAR{paper_id}}{\VAR{paper.presented_paper.title | latexify}}{\VAR{paper | latexified_authors}}{\VAR{paper | presenters}}{\VAR{ paper.presented_paper.abstract | latexify }}
   \BLOCK{ else }
     \paper{\VAR{paper_id}}{\VAR{paper.title | latexify}}{\VAR{paper | latexified_authors}}{\VAR{ paper.abstract | latexify }}
   \BLOCK{ endif }

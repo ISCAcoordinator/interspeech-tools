@@ -3,7 +3,7 @@ import subprocess
 
 from pylatexenc.latexencode import UnicodeToLatexEncoder
 
-from isca.model.item import Paper
+from isca.model.item import Paper, Presentation
 from isca.model.person import Person
 
 
@@ -56,19 +56,32 @@ def latexify(input: str | None) -> str:
         print(f'The following input can\'t be converted: "{input}"')
         return "XXXX"  # TODO: that it is ugly
 
+def is_presentation(input: object) -> bool:
+    return isinstance(input, Presentation)
 
-def get_latexified_authors(input_paper: Paper) -> str:
+def has_paper(input: Presentation) -> bool:
+    if not is_presentation(input):
+        return False
+    if input.presented_paper is None:
+        return False
+    return True
+
+def get_latexified_authors(input_paper: Paper | Presentation) -> str:
     list_authors = []
+    if is_presentation(input_paper):
+        input_paper = input_paper.presented_paper
+
     for cur_author in input_paper.authors:
-        list_authors.append(cur_author.str_with_flatten_affiliations(input_paper.id))
+        list_authors.append(cur_author.str_with_flatten_affiliations(input_paper.id, short=True))
 
     return latexify(", ".join(list_authors))
 
 
-def get_latexified_presenters(input_paper: Paper) -> str:
+def get_latexified_presenters(input_presentation: Presentation) -> str:
     list_presenters = []
-    # for cur_presenter in input_paper.presenters:
-    #     list_presenters.append(cur_presenter.str_with_flatten_affiliations(input_paper.id))
+    if input_presentation.presenters is not None:
+        for cur_presenter in input_presentation.presenters:
+            list_presenters.append(cur_presenter.str_with_flatten_affiliations(input_presentation.id))
 
     return latexify(", ".join(list_presenters))
 

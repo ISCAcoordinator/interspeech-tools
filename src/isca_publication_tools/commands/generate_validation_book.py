@@ -4,89 +4,16 @@ import pathlib
 
 # Templating / rendering
 import jinja2
-from pylatexenc.latexencode import UnicodeToLatexEncoder
+import shutil
+import importlib.resources
 
 # ISCA Lib
 from isca.io.cmt import CMTSerialiser
 from isca.model.item import Paper
 from isca.model.person import Person
 
-
-#################################################################################################
-## Helper functions
-#################################################################################################
-
-
-# TODO: this case by case management is idiotic...it should be made more general
-def _process_unknown_char(input_char: str) -> str:
-    if input_char == "ɑ":
-        return "{\\textipa{A}}"
-    if input_char == "ɹ":
-        return "{\\textipa{\\*r}}"
-    if input_char == "ɐ":
-        return "{\\textipa{\\textturna}}"
-    if input_char == "ɔ":
-        return "{\\textipa{\\textopeno}}"
-    if input_char == "ə":
-        return "{\\textipa{@}}"
-    if input_char == "ɛ":
-        return "{\\textipa{E}}"
-    if input_char == "ɤ":
-        return "{\\textipa{\\textramshorns}}"
-    if input_char == "ʂ":
-        return "{\\textipa{\\:s}}"
-    if input_char == "ʃ":
-        return "{\\textipa{S}}"
-    if input_char == "ˈ":
-        return '{\\textipa{"}}'
-    if input_char == "ț":  # TODO: what the heck is that?
-        return "t"
-
-    raise Exception(f"The following character is not known ==> {input_char} <==")
-
-
-u_to_l = UnicodeToLatexEncoder(unknown_char_policy=_process_unknown_char)
-
-
-def latexify(input: str | None) -> str:
-
-    input = "" if input is None else input
-    try:
-        # input = pylatex.utils.escape_latex(input)
-
-        # Get rid of superficial newlines
-        input_elts = [l.strip() for l in input.split("\n")]
-        input = "\n".join(list(filter(None, input_elts)))
-
-        # Convert to latex now
-        input = str(u_to_l.unicode_to_latex(input))
-        input = input.replace("\n", "\n\\par ")
-        return input
-    except Exception:
-        print(f'The following input can\'t be converted: "{input}"')
-        return "XXXX"  # TODO: that it is ugly
-
-
-def get_latexified_authors(input_paper: Paper) -> str:
-    list_authors = []
-    for cur_author in input_paper.authors:
-        list_authors.append(cur_author.str_with_flatten_affiliations(input_paper.id))
-
-    return latexify(", ".join(list_authors))
-
-
-def get_latexified_presenters(input_paper: Paper) -> str:
-    list_presenters = []
-    # for cur_presenter in input_paper.presenters:
-    #     list_presenters.append(cur_presenter.str_with_flatten_affiliations(input_paper.id))
-
-    return latexify(", ".join(list_presenters))
-
-
-def get_sorted_authors(authors: set[Person]) -> list[Person]:
-    list_authors = sorted(authors, key=lambda x: x.lastname + " " + str(x.middle_initial) + " " + str(x.firstname))
-    return list_authors
-
+# Helpers
+from ..books.utils import latexify, get_sorted_authors, get_latexified_authors, get_latexified_presenters, compile
 
 #################################################################################################
 ## Entry points
@@ -100,7 +27,9 @@ def add_subparsers(subparsers):
     )
 
     # Add options
-    parser.add_argument("-c", "--class-name", default="interspeech_validation", type=str, help="The LaTeX class name")
+    parser.add_argument("-b", "--bootstrap", action="store_true", help="Add all elements to generate the validation book")
+    parser.add_argument("-c", "--classname", default="interspeech", type=str, help="The LaTeX class name")
+    parser.add_argument("-C", "--compile", action="store_true", help="Compile the book (use latexmk if available, else use lualatex. pdflatex and xelatex are not supported)")
     parser.add_argument(
         "-p", "--pdf-path", type=str, default=None, help="The alternative directory containing the PDF files (flatten!)"
     )
@@ -120,16 +49,7 @@ def main(args: argparse.Namespace):
     logger = logging.getLogger(__name__)
     conf_path = pathlib.Path(args.conf_input)
     val_book_file = pathlib.Path(args.val_book_file)
-
-    # Load conference
-    conf = None
-    serialiser = None
-    if args.format == "cmt":
-        serialiser = CMTSerialiser(args.pdf_metadata, True)
-    else:
-        raise NotImplementedError(f"The format {args.format} is not supported")
-    conf = serialiser.load(conf_path)
-    conf.resolve_author_paper_association()
+    val_book_file.parent.mkdir(exist_ok=True, parents=True)
 
     templateLoader = jinja2.PackageLoader("isca_publication_tools", "resources/validation_book")
     jenv_latex = jinja2.Environment(
@@ -146,17 +66,41 @@ def main(args: argparse.Namespace):
         loader=templateLoader,
     )
 
-    # Define inner filters
-    def list_papers(author: Person) -> list[Paper]:
-        return conf.list_papers(author)
-
-    # Set filters and instanciate template
+    # Set filters
     jenv_latex.filters["latexify"] = latexify
     jenv_latex.filters["sort_authors"] = get_sorted_authors
     jenv_latex.filters["latexified_authors"] = get_latexified_authors
     jenv_latex.filters["presenters"] = get_latexified_presenters
+
+    if args.bootstrap:
+        cls_file = val_book_file.parent/"interspeech.cls"
+        if cls_file.exists():
+            raise Exception(f"The class file {cls_file} already exists, delete it if you want to bootstrap/reset")
+
+        template_res = importlib.resources.files("isca_publication_tools").joinpath("resources/validation_book/interspeech.cls")
+        with importlib.resources.as_file(template_res) as template_file:
+            print(template_file)
+            shutil.copy(template_file, cls_file)
+
+    # Load conference
+    conf = None
+    serialiser = None
+    if args.format == "cmt":
+        serialiser = CMTSerialiser(args.pdf_metadata, True)
+    else:
+        raise NotImplementedError(f"The format {args.format} is not supported")
+    conf = serialiser.load(conf_path)
+    conf.resolve_author_paper_association()
+
+
+    # Prepare content template
+    def list_papers(author: Person) -> list[Paper]:
+        return conf.list_papers(author)
     jenv_latex.filters["list_papers"] = list_papers
     validation_main_template = jenv_latex.get_template("main_template.tex")
 
     with open(val_book_file, "w") as f:
-        f.write(validation_main_template.render(classname=args.class_name, papers=conf.papers, authors=conf.authors))
+        f.write(validation_main_template.render(classname=args.classname, papers=conf.papers, authors=conf.authors))
+
+    if args.compile:
+        compile(val_book_file)

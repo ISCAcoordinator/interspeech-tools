@@ -1,14 +1,15 @@
+import datetime
 import logging
 import pathlib
 import subprocess
 
-from isca.model.session import OralPresentation, PosterPresentation
+from isca.model.session import PresentationSession, Session
 from pylatexenc.latexencode import UnicodeToLatexEncoder
 
-from isca.model.item import Paper, Presentation, ShowAndTellPresentation, SpecialPresentation, SurveyTalk
+from isca.model.item import Paper, Presentation
 from isca.model.person import Person
 
-from .theme import SPECIFIC_PRESENTATION_IDS, GENERIC_PRESENTATION_IDS
+from .theme import SPECIFIC_PRESENTATION_IDS, GENERIC_PRESENTATION_IDS, SPECIFIC_SESSION_IDS, GENERIC_SESSION_IDS
 
 
 # TODO: this case by case management is idiotic...it should be made more general
@@ -120,7 +121,7 @@ def compile(main_file: pathlib.Path):
             + "pdflatex and xelatex are not supported)"
         )
 
-def get_type(input_presentation: Presentation) -> str:
+def get_presentation_type(input_presentation: Presentation) -> str:
     if type(input_presentation) in SPECIFIC_PRESENTATION_IDS:
         return SPECIFIC_PRESENTATION_IDS[type(input_presentation)]
 
@@ -130,3 +131,28 @@ def get_type(input_presentation: Presentation) -> str:
     logger = logging.getLogger("get_type")
     logger.warning(f"{type(input_presentation)} is unknown for the validation book, use the default information")
     return "default"
+
+def get_session_type(input_session: Session) -> str:
+    if type(input_session) in SPECIFIC_SESSION_IDS:
+        return SPECIFIC_SESSION_IDS[type(input_session)]
+
+    if type(input_session) in GENERIC_SESSION_IDS:
+        return GENERIC_SESSION_IDS[type(input_session)]
+
+    logger = logging.getLogger("get_type")
+    logger.warning(f"{type(input_session)} is unknown for the validation book, use the default information")
+    return "default"
+
+def extract_date(input_time: datetime.datetime) -> str:
+    return input_time.strftime("%Y-%m-%d")
+
+def extract_verbose_date(input_time: datetime.datetime) -> str:
+    return input_time.strftime("%A %-d %B %Y")
+
+def get_session_timeslot(input_session: PresentationSession) -> str:
+    return input_session.start.strftime("%H:%M") + "--" + input_session.end.strftime("%H:%M")
+
+def get_presentation_timeslot(input_session: PresentationSession, presentation_idx: int) -> str:
+    start = input_session.start_presentation(presentation_idx)
+    end = input_session.end_presentation(presentation_idx)
+    return start.strftime("%H:%M") + "--" + end.strftime("%H:%M")

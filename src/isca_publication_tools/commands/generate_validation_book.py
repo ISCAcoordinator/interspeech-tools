@@ -24,7 +24,7 @@ from ..books.utils import (
     compile,
     is_presentation,
     has_paper,
-    get_type
+    get_presentation_type
 )
 
 
@@ -109,7 +109,8 @@ def main(args: argparse.Namespace):
     jenv_latex.filters["sort_authors"] = get_sorted_authors
     jenv_latex.filters["latexified_authors"] = get_latexified_authors
     jenv_latex.filters["presenters"] = get_latexified_presenters
-    jenv_latex.filters["type"] = get_type
+    jenv_latex.filters["get_presentation_type"] = get_presentation_type
+    jenv_latex.filters["get_session_type"] = get_session_type
 
     colour_file = None
     if args.bootstrap:

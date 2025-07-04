@@ -202,6 +202,38 @@
   bottom=2pt,
   #1
 }
+
+\newtcbox{\surveybox}[2][]{
+    enhanced,
+    box align=base,
+    nobeforeafter,
+    colframe=DefaultForegroundColour,
+    colback=DefaultBackgroundColour,
+    size=small,
+    left=2pt,
+    right=2pt,
+    boxsep=2pt,
+    arc=3pt,
+    title={\centering #2 \hspace{0.3cm} \textbf{Survey Talk}},
+    #1
+}
+\newcommand{\surveytalk}[2]{\surveybox{#1}{#2}}
+
+\newtcbox{\blueskybox}[2][]{
+    enhanced,
+    box align=base,
+    nobeforeafter,
+    colframe=DefaultForegroundColour,
+    colback=DefaultBackgroundColour,
+    size=small,
+    left=2pt,
+    right=2pt,
+    boxsep=2pt,
+    arc=3pt,
+    title={\centering #2 \hspace{0.3cm} \textbf{Blue Sky}},
+    #1
+}
+
 \newtcbox{\authorpapercolorbox}[1][]{
     on line,
     colframe=DefaultForegroundColour,
@@ -218,6 +250,7 @@
 \newcommand{\authorpaperbox}[1]{%
     \authorpapercolorbox{\parbox{2.3cm}{#1}} % NOTE: size picked to fit the page in it
 }
+
 \newtcbox{\sectionbox}[1][]{
     enhanced,
     box align=base,
@@ -275,7 +308,7 @@
 \newcommand{\sessionslot}[7]{
 	\vspace{0.5cm}
     \begin{minipage}{\linewidth} % NOTE: the use of minipage prevents the break of the page/col. between the session info.
-        \pagetarget{#1}{}\subsection[\texorpdfstring{{\color{black}[#4]} #2}{#2}]{
+        \pagetarget{#1}{}\subsection[\texorpdfstring{{\color{black}[#4]} #1 - #2}{#2}]{
             \begin{center}
                 #1 \\
                 \vspace{0.2cm}
@@ -310,7 +343,7 @@
 %%    #6 the abstract
 \newcommand{\presentation}[6]{%
     \begin{spacing}{1.3}
-        \noindent\pagetarget{#2}{\timebox[#1]{ \resizebox{!}{3mm}{\faClockO} #5 }\ {\large\textbf{#3} } }
+        \noindent\pagetarget{#2}{\timebox[#1]{\textbf{#2} \resizebox{!}{3mm}{\faClockO} #5 }\ {\large\textbf{#3} } }
     \end{spacing}
     \noindent{\normalfont\textit{#4}}
     %
@@ -322,6 +355,50 @@
         %
         \bigskip
     \fi
+}
+
+%% Command \survey takes 4 arguments:
+%%    #1 the ID of the presentation in the session
+%%    #2 the title
+%%    #3 the presenter
+%%    #4 the time slot allocated to the presentation
+\newcommand{\survey}[4]{
+%    \surveytalk{\textbf{#1} \hspace{1mm} \resizebox{!}{3mm}{\faClockO} #4}{
+    \surveytalk{\resizebox{!}{3mm}{\faClockO} #4}{
+        \begin{minipage}{0.97\linewidth}
+            \noindent\pagetarget{#1}{\large\textbf{#2}}
+            \vspace{1mm}
+
+            \noindent{\textit{#3}}
+        \end{minipage}
+    }
+    \bigskip
+}
+
+%% Command \bluesky takes 4 arguments:
+%%    #1 the ID of the presentation in the session
+%%    #2 the title
+%%    #3 the presenter
+%%    #4 the time slot allocated to the presentation
+%%    #5 the abstract
+\newcommand{\bluesky}[5]{
+%    \blueskybox{\textbf{#1} \hspace{1mm} \resizebox{!}{3mm}{\faClockO} #4}{
+    \blueskybox{\textbf{#1} \resizebox{!}{3mm}{\faClockO} #4}{
+        \begin{minipage}{0.97\linewidth}
+            \noindent\pagetarget{#1}{\large\textbf{#2}}
+            \vspace{1mm}
+
+            \noindent{\textit{#3}}
+
+            \if@abstract
+                %
+                \bigskip
+                %
+                \par\noindent #5
+            \fi
+        \end{minipage}
+    }
+    \bigskip
 }
 
 %% Command \day takes 2 arguments

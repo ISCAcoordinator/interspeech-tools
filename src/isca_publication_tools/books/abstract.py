@@ -12,11 +12,16 @@ from isca.model.event import Conference
 
 from ..books.utils import (
     latexify,
-    get_sorted_authors,
+)
+from ..books.filters import(
+    sort_by_last_name,
+    sort_by_name,
     get_latexified_authors,
     get_latexified_presenters,
     is_presentation,
     has_paper,
+    is_presentation_survey,
+    is_presentation_bluesky,
     get_presentation_type,
     get_session_type,
     extract_date,
@@ -37,8 +42,8 @@ class AbstractBookProcessor:
             variable_end_string="}",
             comment_start_string="\\#{",
             comment_end_string="}",
-            line_statement_prefix="%%",
-            line_comment_prefix="%#",
+            line_statement_prefix="% ;;",
+            line_comment_prefix="% ##",
             trim_blocks=True,
             autoescape=False,
             loader=templateLoader,
@@ -48,8 +53,9 @@ class AbstractBookProcessor:
         jenv_latex.filters["latexify"] = latexify
         jenv_latex.filters["has_paper"] = has_paper
         jenv_latex.filters["is_presentation"] = is_presentation
-        jenv_latex.filters["sort_authors"] = get_sorted_authors
-        jenv_latex.filters["latexified_authors"] = get_latexified_authors
+        jenv_latex.filters["sort_authors"] = sort_by_last_name
+        jenv_latex.filters["sort_reviewers"] = sort_by_name
+        jenv_latex.filters["authors"] = get_latexified_authors
         jenv_latex.filters["presenters"] = get_latexified_presenters
         jenv_latex.filters["type_presentation"] = get_presentation_type
         jenv_latex.filters["type_session"] = get_session_type
@@ -57,6 +63,8 @@ class AbstractBookProcessor:
         jenv_latex.filters["extract_verbose_date"] = extract_verbose_date
         jenv_latex.filters["get_session_timeslot"] = get_session_timeslot
         jenv_latex.filters["get_presentation_timeslot"] = get_presentation_timeslot
+        jenv_latex.filters["is_survey"] = is_presentation_survey
+        jenv_latex.filters["is_bluesky"] = is_presentation_bluesky
 
         # Set conference specific filters
         def list_papers(author: Person) -> list[Paper]:
@@ -100,16 +108,17 @@ class AbstractBookProcessor:
         # with open(outfilename, "w") as outfile:
         #     outfile.write(self._generate_submissions_index())
 
-        # outfilename = root_output_dir / "reviewer_index.tex"
-        # with open(outfilename, "w") as outfile:
-        #     outfile.write(self._generate_reviewer_index())
+        reviewer_template = self._latex_renderer.get_template("reviewers_index_template.tex")
+        outfilename = root_output_dir / "reviewers_index.tex"
+        with open(outfilename, "w") as outfile:
+            outfile.write(reviewer_template.render(reviewers = self._conf.reviewers))
 
         # outfilename = root_output_dir / "presenter_index.tex"
         # with open(outfilename, "w") as outfile:
         #     outfile.write(self._generate_presenter_index())
 
-        author_template = self._latex_renderer.get_template("author_index_template.tex")
-        outfilename = root_output_dir / "author_index.tex"
+        author_template = self._latex_renderer.get_template("authors_index_template.tex")
+        outfilename = root_output_dir / "authors_index.tex"
         with open(outfilename, "w") as outfile:
             outfile.write(author_template.render(authors = self._conf.authors))
 

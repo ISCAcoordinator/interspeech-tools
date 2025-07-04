@@ -8,15 +8,31 @@
             {}
 
   \BLOCK{ for presentation in session.presentations }
-    \BLOCK{ if presentation | has_paper }
+    \BLOCK{ if presentation | is_survey }
+\survey{\VAR{presentation.id}}
+       {\VAR{presentation.title | latexify}}
+       {\VAR{presentation | presenters}}
+       {\VAR{session | get_presentation_timeslot(loop.index-1)}}
+
+    \BLOCK{ elif presentation | is_bluesky }
+
+\bluesky{\VAR{presentation.presented_paper.id}}
+       {\VAR{presentation.title | latexify}}
+       {\VAR{presentation | presenters}}
+       {\VAR{session | get_presentation_timeslot(loop.index-1)}}
+       {\VAR{presentation.presented_paper.abstract | latexify}}
+
+    \BLOCK{ elif presentation | has_paper }
+
 \presentation{\VAR{presentation | type_presentation}}
              {\VAR{presentation.presented_paper.id}}
              {\VAR{presentation.presented_paper.title | latexify}}
-             {\VAR{presentation | latexified_authors}}
+             {\VAR{presentation | authors}}
              {\VAR{session | get_presentation_timeslot(loop.index-1)}}
              {\VAR{presentation.presented_paper.abstract | latexify}}
 
     \BLOCK{ endif }
   \BLOCK{ endfor }
+
 
 \BLOCK{ endfor }

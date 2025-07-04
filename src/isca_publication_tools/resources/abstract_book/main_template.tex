@@ -1,4 +1,4 @@
-\documentclass[twoside, noabstract]{\VAR{classname}}
+\documentclass[twoside, abstract]{\VAR{classname}}
 
 \usepackage[T1]{fontenc}
 \usepackage[utf8]{inputenc}
@@ -112,6 +112,7 @@
 
 
 
+
 \phantomsection
 \addcontentsline{toc}{section}{Program Schedule}%
 \pagestyle{fancy}
@@ -120,7 +121,25 @@
 \BLOCK{ endfor }
 \clearpage
 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%% Scientific Review Committee
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%% {{{
+% \phantomsection
+% \addcontentsline{toc}{section}{Scientific Review Committee}%
+\section{Scientific Review Committee}%
+\pagestyle{fancy}
+\input{auto/reviewers_index.tex}
+% \cleardoublepage
+%% }}}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%% Author index part
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
 \section{Author Index}
-\input{auto/author_index.tex}
+\pagestyle{fancy}
+\input{auto/authors_index.tex}
 
 \end{document}

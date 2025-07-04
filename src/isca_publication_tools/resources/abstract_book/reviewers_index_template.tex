@@ -1,0 +1,11 @@
+\begin{multicols*}{3}
+    \begin{FlushLeft}
+\BLOCK{ for reviewer in (reviewers | sort_reviewers) }
+  \BLOCK{ if loop.index == 1 }
+\noindent \VAR{reviewer.name}\newline
+  \BLOCK{ else }
+\VAR{reviewer.name}\newline
+  \BLOCK{ endif }
+\BLOCK{ endfor }
+    \end{FlushLeft}
+\end{multicols*}

@@ -18,10 +18,12 @@ from isca.model.person import Person
 # Helpers
 from ..books.utils import (
     latexify,
-    get_sorted_authors,
+    compile,
+)
+from ..books.filters import (
+    sort_by_last_name,
     get_latexified_authors,
     get_latexified_presenters,
-    compile,
     is_presentation,
     has_paper,
     get_presentation_type
@@ -106,7 +108,7 @@ def main(args: argparse.Namespace):
     jenv_latex.filters["latexify"] = latexify
     jenv_latex.filters["has_paper"] = has_paper
     jenv_latex.filters["is_presentation"] = is_presentation
-    jenv_latex.filters["sort_authors"] = get_sorted_authors
+    jenv_latex.filters["sort_authors"] = sort_by_last_name
     jenv_latex.filters["latexified_authors"] = get_latexified_authors
     jenv_latex.filters["presenters"] = get_latexified_presenters
     jenv_latex.filters["get_presentation_type"] = get_presentation_type

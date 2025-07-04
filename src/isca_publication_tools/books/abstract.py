@@ -13,7 +13,7 @@ from isca.model.event import Conference
 from ..books.utils import (
     latexify,
 )
-from ..books.filters import(
+from ..books.filters import (
     sort_by_last_name,
     sort_by_name,
     get_latexified_authors,
@@ -28,8 +28,9 @@ from ..books.filters import(
     extract_verbose_date,
     get_session_timeslot,
     get_presentation_timeslot,
-    compact_number
+    compact_number,
 )
+
 
 class AbstractBookProcessor:
     def __init__(self, conf: Conference):
@@ -71,6 +72,7 @@ class AbstractBookProcessor:
         # Set conference specific filters
         def list_papers(author: Person) -> list[Paper]:
             return conf.list_papers(author)
+
         jenv_latex.filters["list_papers"] = list_papers
 
         self._latex_renderer = jenv_latex
@@ -79,7 +81,7 @@ class AbstractBookProcessor:
 
         rooms_sessions = self._conf.associate_sessions_to_rooms()
         root_output_dir.mkdir(exist_ok=True, parents=True)
-        delta = self._conf.end_date - self._conf.start_date   # returns timedelta
+        delta = self._conf.end_date - self._conf.start_date  # returns timedelta
         for i in range(delta.days + 1):
             date = self._conf.start_date + datetime.timedelta(days=i)
             outfilename = root_output_dir / f"{date}_table.tex"
@@ -99,32 +101,25 @@ class AbstractBookProcessor:
             with open(outfilename, "w") as outfile:
                 outfile.write(self._generate_programme_table(date, day_rooms_sessions))
 
-
             day_sessions = sorted(day_sessions, key=lambda x: x.start)
             day_program_template = self._latex_renderer.get_template("day_program_template.tex")
             outfilename = root_output_dir / f"{date}.tex"
             with open(outfilename, "w") as outfile:
                 outfile.write(day_program_template.render(sessions=day_sessions))
 
-        # outfilename = root_output_dir / "paper_index.tex"
-        # with open(outfilename, "w") as outfile:
-        #     outfile.write(self._generate_submissions_index())
-
         reviewer_template = self._latex_renderer.get_template("reviewers_index_template.tex")
         outfilename = root_output_dir / "reviewers_index.tex"
         with open(outfilename, "w") as outfile:
-            outfile.write(reviewer_template.render(reviewers = self._conf.reviewers))
-
-        # outfilename = root_output_dir / "presenter_index.tex"
-        # with open(outfilename, "w") as outfile:
-        #     outfile.write(self._generate_presenter_index())
+            outfile.write(reviewer_template.render(reviewers=self._conf.reviewers))
 
         author_template = self._latex_renderer.get_template("authors_index_template.tex")
         outfilename = root_output_dir / "authors_index.tex"
         with open(outfilename, "w") as outfile:
-            outfile.write(author_template.render(authors = self._conf.authors))
+            outfile.write(author_template.render(authors=self._conf.authors))
 
-    def _generate_programme_table(self, date: datetime.date, rooms_sessions: dict[Room, list[PresentationSession]]) -> str:
+    def _generate_programme_table(
+        self, date: datetime.date, rooms_sessions: dict[Room, list[PresentationSession]]
+    ) -> str:
 
         # retrieve the room names from the plan column names
         rooms = list(rooms_sessions.keys())
@@ -132,26 +127,31 @@ class AbstractBookProcessor:
         maxColsPerPage = 10
         parts = []
         multicolumnRows = {}
-        for firstCol in list(range(0,len(rooms)))[::maxColsPerPage]:
-            part_rooms = rooms[firstCol:firstCol+maxColsPerPage]
+        for firstCol in list(range(0, len(rooms)))[::maxColsPerPage]:
+            part_rooms = rooms[firstCol : firstCol + maxColsPerPage]
             part_rooms_sessions = dict()
             for r in part_rooms:
                 part_rooms_sessions[r] = rooms_sessions[r]
 
             newPart = self._generate_programme_table_part(date, part_rooms_sessions)
             parts.append(newPart)
-            for lineNumber, line in newPart['multicolumnRows'].items():
+            for lineNumber, line in newPart["multicolumnRows"].items():
                 multicolumnRows[lineNumber] = line
 
-        content = ''
+        content = ""
         for part in parts:
             for lineNumber, line in multicolumnRows.items():
-                part['content'][lineNumber] = line['start'] + f"\\multicolumn{{{part['width']}}}{{c|}}{{{line['value']}}}"
-            content += part['start'] + ' \\\\ \\hline \n'.join(part['content']) + ' \\\\ \\hline \n' + part['end'] + '\n\n'
+                part["content"][lineNumber] = (
+                    line["start"] + f"\\multicolumn{{{part['width']}}}{{c|}}{{{line['value']}}}"
+                )
+            content += (
+                part["start"] + " \\\\ \\hline \n".join(part["content"]) + " \\\\ \\hline \n" + part["end"] + "\n\n"
+            )
         return content
 
-
-    def _generate_programme_table_part(self, date: datetime.date, rooms_sessions: dict[Room, list[PresentationSession]]):
+    def _generate_programme_table_part(
+        self, date: datetime.date, rooms_sessions: dict[Room, list[PresentationSession]]
+    ):
         content = []
         multicolumnRows = {}
         rooms = list(rooms_sessions.keys())
@@ -167,7 +167,6 @@ class AbstractBookProcessor:
 
         content = []
         for start, elts in sorted_sessions.items():
-
 
             row_val = [""]
             for r in rooms:
@@ -186,13 +185,19 @@ class AbstractBookProcessor:
         rval = f"\\begin{{tabular}}{{|{timecolspec}{''.join([colspec for _ in rooms])}}} \\hline \n"
         rval += f"& {' & '.join(rooms_latex) } \\\\ \\hline \n"
 
-        return {'start': rval, 'content': content, 'end': "\\end{tabular}", 'multicolumnRows': multicolumnRows, 'width': len(rooms_latex)}
+        return {
+            "start": rval,
+            "content": content,
+            "end": "\\end{tabular}",
+            "multicolumnRows": multicolumnRows,
+            "width": len(rooms_latex),
+        }
 
     def generate_entry_point(self, output_file: pathlib.Path):
         validation_main_template = self._latex_renderer.get_template("main_template.tex")
         dates = []
 
-        delta = self._conf.end_date - self._conf.start_date   # returns timedelta
+        delta = self._conf.end_date - self._conf.start_date  # returns timedelta
         for i in range(delta.days + 1):
             date = self._conf.start_date + datetime.timedelta(days=i)
             dates.append(date)

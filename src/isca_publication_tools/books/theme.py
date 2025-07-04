@@ -1,9 +1,20 @@
 import pathlib
 
+from isca.io.cmt import OralSession, PosterSession
 from isca.model.event import Conference
-from isca.model.session import OralPresentation, PosterPresentation
-from isca.model.item import ShowAndTellPresentation, SpecialPresentation, SurveyTalk
+from isca.model.session import OralSession, PosterSession, KeynoteSession, SpecialSession, ShowAndTellSession
+from isca.model.item import ShowAndTellPresentation, SpecialPresentation, SurveyTalk, OralPresentation, PosterPresentation
 
+
+SPECIFIC_SESSION_IDS = {
+    KeynoteSession: "keynote",
+    SpecialSession: "special",
+    ShowAndTellSession: "showandtell"
+}
+GENERIC_SESSION_IDS = {
+    OralSession: "oral",
+    PosterSession: "poster"
+}
 SPECIFIC_PRESENTATION_IDS = {
     ShowAndTellPresentation: "showandtell",
     SpecialPresentation: "special",
@@ -30,8 +41,12 @@ def generate_theme_file(conf: Conference, output_file: pathlib.Path):
         f_color_theme.write(f"\\definecolor{{DefaultBackgroundColour}}{{HTML}}{{{conf.theme['colors']['background'].replace('#', '')}}}\n")
         f_color_theme.write(f"\\colorlet{{DefaultBackgroundColour}}{{DefaultBackgroundColour}}\n")
         f_color_theme.write(f"\\colorlet{{DefaultForegroundColour}}{{DefaultForegroundColour}}\n")
-        f_color_theme.write(f"\\colorlet{{FooterBackgroundColour}}{{DefaultForegroundColour}}\n") # FIXME: hardcoded
-        f_color_theme.write(f"\\colorlet{{FooterForegroundColour}}{{white}}\n") # FIXME: hardcoded
+
+         # FIXME: hardcoded
+        f_color_theme.write(f"\\colorlet{{FooterBackgroundColour}}{{DefaultForegroundColour}}\n")
+        f_color_theme.write(f"\\colorlet{{FooterForegroundColour}}{{white}}\n")
+        f_color_theme.write(f"\\colorlet{{RoomColour}}{{DefaultForegroundColour}}\n")
+        f_color_theme.write(f"\\colorlet{{RoomCellColour}}{{gray!25!white}}\n")
         f_color_theme.write("\n")
         tcb_lines.append('default/.style={colframe=DefaultForegroundColour, colback=DefaultBackgroundColour}')
 

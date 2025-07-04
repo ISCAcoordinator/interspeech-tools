@@ -22,13 +22,15 @@ from ..books.filters import (
     has_paper,
     is_presentation_survey,
     is_presentation_bluesky,
-    get_presentation_type,
-    get_session_type,
     extract_date,
     extract_verbose_date,
     get_session_timeslot,
     get_presentation_timeslot,
     compact_number,
+)
+from ..books.theme import (
+    get_presentation_type,
+    get_session_type,
 )
 
 
@@ -120,7 +122,7 @@ class AbstractBookProcessor:
         # List rooms
         rooms = set()
         for timeslot in timeslots:
-            if timeslot.sessions is not None:
+            if (timeslot.sessions is not None) and (len(timeslot.sessions) > 1):
                 for session in timeslot.sessions:
                     rooms.add(session.room)
         rooms = sorted(rooms, key=lambda x: x.name)

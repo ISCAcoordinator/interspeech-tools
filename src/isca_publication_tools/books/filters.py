@@ -10,8 +10,6 @@ from isca.model.person import Person
 
 from .utils import latexify
 
-from .theme import SPECIFIC_PRESENTATION_IDS, GENERIC_PRESENTATION_IDS, SPECIFIC_SESSION_IDS, GENERIC_SESSION_IDS
-
 
 def is_presentation(input: object) -> bool:
     return isinstance(input, Presentation)
@@ -53,31 +51,6 @@ def sort_by_last_name(people: set[Person]) -> list[Person]:
 def sort_by_name(people: set[Person]) -> list[Person]:
     list_people = sorted(people, key=lambda x: x.name)
     return list_people
-
-
-def get_presentation_type(input_presentation: Presentation) -> str:
-    if type(input_presentation) in SPECIFIC_PRESENTATION_IDS:
-        return SPECIFIC_PRESENTATION_IDS[type(input_presentation)]
-
-    if type(input_presentation) in GENERIC_PRESENTATION_IDS:
-        return GENERIC_PRESENTATION_IDS[type(input_presentation)]
-
-    logger = logging.getLogger("get_type")
-    logger.warning(f"{type(input_presentation)} is unknown for the validation book, use the default information")
-    return "default"
-
-
-def get_session_type(input_session: Session) -> str:
-    if type(input_session) in SPECIFIC_SESSION_IDS:
-        return SPECIFIC_SESSION_IDS[type(input_session)]
-
-    if type(input_session) in GENERIC_SESSION_IDS:
-        return GENERIC_SESSION_IDS[type(input_session)]
-
-    logger = logging.getLogger("get_type")
-    logger.warning(f"{type(input_session)} is unknown for the validation book, use the default information")
-    return "default"
-
 
 def extract_date(input_time: datetime.datetime) -> str:
     return input_time.strftime("%Y-%m-%d")

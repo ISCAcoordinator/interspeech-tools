@@ -26,11 +26,14 @@ from ..books.filters import (
     get_latexified_presenters,
     is_presentation,
     has_paper,
-    get_presentation_type
+)
+
+from ..books.theme import (
+    get_presentation_type,
 )
 
 
-def list_elts(conf: Conference, ignore_sessions:bool) -> dict[str, Paper] | dict[str, Presentation]:
+def list_elts(conf: Conference, ignore_sessions: bool) -> dict[str, Paper] | dict[str, Presentation]:
     if ignore_sessions:
         return conf.papers
     else:
@@ -112,7 +115,6 @@ def main(args: argparse.Namespace):
     jenv_latex.filters["latexified_authors"] = get_latexified_authors
     jenv_latex.filters["presenters"] = get_latexified_presenters
     jenv_latex.filters["get_presentation_type"] = get_presentation_type
-    jenv_latex.filters["get_session_type"] = get_session_type
 
     colour_file = None
     if args.bootstrap:
@@ -127,7 +129,7 @@ def main(args: argparse.Namespace):
             print(template_file)
             shutil.copy(template_file, cls_file)
 
-        colour_file = cls_file.parent/"theme/colours.tex"
+        colour_file = cls_file.parent / "theme/colours.tex"
         if colour_file.exists():
             raise Exception(f"The colour file {colour_file} already exists, delete it if you want to bootstrap/reset")
         colour_file.parent.mkdir(exist_ok=True, parents=True)
@@ -154,7 +156,11 @@ def main(args: argparse.Namespace):
     validation_main_template = jenv_latex.get_template("main_template.tex")
 
     with open(val_book_file, "w") as f:
-        f.write(validation_main_template.render(classname=args.classname, papers=list_elts(conf, args.no_sessions), authors=conf.authors))
+        f.write(
+            validation_main_template.render(
+                classname=args.classname, papers=list_elts(conf, args.no_sessions), authors=conf.authors
+            )
+        )
 
     if args.compile:
         compile(val_book_file)

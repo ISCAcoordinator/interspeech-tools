@@ -1,3 +1,4 @@
+import re
 import datetime
 import logging
 
@@ -101,3 +102,6 @@ def is_presentation_survey(input_presentation: Presentation) -> bool:
 
 def is_presentation_bluesky(input_presentation: Presentation) -> bool:
     return isinstance(input_presentation, BlueSkyPresentation)
+
+def compact_number(input: str) -> str:
+    return re.sub(r'[ ]+([0-9]+)', r'~\g<1>', input)

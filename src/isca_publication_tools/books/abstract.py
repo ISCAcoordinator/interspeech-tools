@@ -28,6 +28,7 @@ from ..books.filters import(
     extract_verbose_date,
     get_session_timeslot,
     get_presentation_timeslot,
+    compact_number
 )
 
 class AbstractBookProcessor:
@@ -51,6 +52,7 @@ class AbstractBookProcessor:
 
         # Set generic filters
         jenv_latex.filters["latexify"] = latexify
+        jenv_latex.filters["compact_numbers"] = compact_number
         jenv_latex.filters["has_paper"] = has_paper
         jenv_latex.filters["is_presentation"] = is_presentation
         jenv_latex.filters["sort_authors"] = sort_by_last_name

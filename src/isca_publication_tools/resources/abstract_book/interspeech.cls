@@ -308,7 +308,7 @@
 \newcommand{\sessionslot}[7]{
 	\vspace{0.5cm}
     \begin{minipage}{\linewidth} % NOTE: the use of minipage prevents the break of the page/col. between the session info.
-        \pagetarget{#1}{}\subsection[\texorpdfstring{{\color{black}[#4]} #1 - #2}{#2}]{
+        \pagetarget{#1}{}\subsection[\texorpdfstring{{\color{black}[#4]} #1 - #2}{#1 - #2}]{
             \begin{center}
                 #1 \\
                 \vspace{0.2cm}

@@ -1,6 +1,6 @@
 \BLOCK{ for session in sessions }
 \sessionslot{\VAR{session.id}}
-            {\VAR{session.name}}
+            {\VAR{session.name | compact_numbers}}
             {\VAR{session.start | extract_verbose_date}}
             {\VAR{session | get_session_timeslot}}
             {\VAR{session.room.name}}

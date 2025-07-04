@@ -1,0 +1,84 @@
+\documentclass[twoside, noabstract]{\VAR{classname}}
+
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+
+\usepackage{ragged2e}
+\usepackage{hyphenat}
+
+% NOTE: seems to be totally ignored. Maybe it is contradicting the use of the package hyphenat
+\hyphenation{Socio-phonetics}
+\hyphenation{Para-linguistics}
+\hyphenation{Light-weight}
+
+
+% Some rendering helpers
+\usepackage{enumitem}
+\usepackage[breakall]{truncate}
+
+% Watermark
+% usepackage[colorspec=0.95]{draftwatermark}
+% \usepackage[colormodel=rgb,colorspec={0.96, 0.99, 0.95}]{draftwatermark}
+% \SetWatermarkText{DRAFT}
+% \SetWatermarkScale{1.5}
+
+\RequirePackage{tipa}
+\usepackage{newunicodechar}
+% NOTE: one paper has this in the title
+\newunicodechar{ɹ}{\textturnr}
+% \newunicodechar{ɤ}{\textipa{7} }
+
+\title{Interspeech 2025 - Validation}
+\author{ }
+\hypersetup{
+    colorlinks=true,
+    linkcolor=LinkColour,
+    pdftitle={INTERSPEECH 2025 - Programme Book},
+}
+
+
+\begin{document}
+
+\maketitle{}
+
+% \rmfamily
+
+\setlist{noitemsep,topsep=2pt,parsep=2pt,partopsep=0pt,leftmargin=1em}
+
+\def\emailtruncatelength{2cm}
+\def\titletruncatelength{4cm}
+
+\pagestyle{fancy}
+
+\newpage
+\pagestyle{plain}
+{
+\def\arraystretch{1.6}%
+\linespread{0.8}
+\sffamily
+\BLOCK{ for date in dates }
+  \begin{landscape}
+    \section*{\VAR{date | extract_verbose_date}}
+    \input{auto/\VAR{date | extract_date}_table.tex}
+  \end{landscape}
+  \newpage
+\BLOCK{ endfor }
+\rmfamily
+\linespread{1}
+}
+\clearpage
+
+
+
+\phantomsection
+\addcontentsline{toc}{section}{Program Schedule}%
+\pagestyle{fancy}
+\BLOCK{ for date in dates }
+    \dayschedule{\VAR{date | extract_verbose_date}}{auto/\VAR{date | extract_date}.tex}
+\BLOCK{ endfor }
+\clearpage
+
+\section{Author Index}
+\input{auto/author_index.tex}
+
+\end{document}

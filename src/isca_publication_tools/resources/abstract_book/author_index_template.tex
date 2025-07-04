@@ -1,0 +1,14 @@
+\begin{multicols*}{2}
+\begin{FlushLeft}
+\BLOCK{ for author in (authors | sort_authors) }
+    \BLOCK{ for paper in (author | list_papers) }
+        \BLOCK{ if loop.index == 1 }
+            {\footnotesize \VAR{author.lastname | latexify}, \VAR{author.firstname | latexify}\dotfill \authorpaperbox{\hyperlink{\VAR{paper.id}}{\VAR{paper.id}} \hfill [\pageref*{\VAR{paper.id}}]}} \newline
+        \BLOCK{ else }
+            {\footnotesize~\hfill\authorpaperbox[default]{\hyperlink{\VAR{paper.id}}{\VAR{paper.id}} \hfill [\pageref*{\VAR{paper.id}}]}} \newline
+        \BLOCK{ endif }
+    \BLOCK{ endfor }
+\BLOCK{ endfor }
+\end{FlushLeft}
+\end{multicols*}
+\restoregeometry{}

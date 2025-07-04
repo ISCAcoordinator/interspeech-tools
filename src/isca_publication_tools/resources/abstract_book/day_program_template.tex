@@ -1,0 +1,22 @@
+\BLOCK{ for session in sessions }
+\sessionslot{\VAR{session.id}}
+            {\VAR{session.name}}
+            {\VAR{session.start | extract_verbose_date}}
+            {\VAR{session | get_session_timeslot}}
+            {\VAR{session.room.name}}
+            {\VAR{session | type_session}}
+            {}
+
+  \BLOCK{ for presentation in session.presentations }
+    \BLOCK{ if presentation | has_paper }
+\presentation{\VAR{presentation | type_presentation}}
+             {\VAR{presentation.presented_paper.id}}
+             {\VAR{presentation.presented_paper.title | latexify}}
+             {\VAR{presentation | latexified_authors}}
+             {\VAR{session | get_presentation_timeslot(loop.index-1)}}
+             {\VAR{presentation.presented_paper.abstract | latexify}}
+
+    \BLOCK{ endif }
+  \BLOCK{ endfor }
+
+\BLOCK{ endfor }

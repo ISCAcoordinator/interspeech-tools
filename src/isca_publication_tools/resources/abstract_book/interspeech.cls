@@ -13,19 +13,22 @@
 \DeclareOption{screen}{\@printfalse}
 \DeclareOption{abstract}{\@abstracttrue}
 \DeclareOption{noabstract}{\@abstractfalse}
-\DeclareOption*{\PassOptionsToClass{\CurrentOption}{article}}
+\DeclareOption*{\PassOptionsToClass{\CurrentOption}{book}}
 \ProcessOptions\relax
 
-\LoadClass{article}
+\LoadClass{book}
 
 % TODO: to sort
 \RequirePackage{hyperref}
-\RequirePackage{etoc}
 \RequirePackage{multicol}
 \RequirePackage{array}
 % \newcolumntype{L}[1]{>{\raggedright\let\newline\\\arraybackslash\hspace{0pt}}m{#1}}
 \newcolumntype{C}[1]{>{\centering\let\newline\\\arraybackslash\hspace{0pt}}m{#1}}
 % \newcolumntype{R}[1]{>{\raggedleft\let\newline\\\arraybackslash\hspace{0pt}}m{#1}}
+
+\RequirePackage{etoc}
+\etocsettocstyle{\noindent\rule{\linewidth}{1.5pt}\vskip0.5\baselineskip}{\noindent\rule{\linewidth}{1.5pt}}
+
 %%% }}}
 
 

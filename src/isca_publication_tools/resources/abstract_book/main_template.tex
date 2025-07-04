@@ -50,6 +50,48 @@
 
 \pagestyle{fancy}
 
+
+{
+    % % We defined the background picture design by the graphic designer
+    % \AddToShipoutPictureBG*{%
+    %     \AtPageLowerLeft{%
+    %         \includegraphics[width=\paperwidth,height=\paperheight]{content-elements/online/toc_background.pdf}%
+    %     }%
+    % }%
+
+    \setcounter{secnumdepth}{0}
+    \setcounter{tocdepth}{1}
+
+    \begingroup
+    % \parindent 0pt \parfillskip 0pt \leftskip 0cm % \rightskip 1cm
+
+    % Stylize the section
+    \etocsetstyle {section}
+    {}
+    {\leavevmode\leftskip 0cm\relax}
+    {%
+        \hfill\bfseries\Large%
+        \makebox[9.5cm][r]{%
+            \etocname
+            \hfill%
+            \mdseries\etocpage%
+        }%
+        \par\hfill\rule{10cm}{1.5pt}\par%\vspace{0.5cm}
+    }{\bigskip}
+
+    % Stylize the title
+    \etocsettocstyle{%
+        %\bfseries\fontsize{50}{60}\selectfont Content%
+        ~ % NOTE: needed to ensure vspace is taken into account
+        \par\vspace{2cm}\hfill\rule{10cm}{1.5pt}%
+        \par%\vspace{0.5cm}%
+    }{}
+
+    \tableofcontents
+    \endgroup
+}
+
+
 \newpage
 \pagestyle{plain}
 {

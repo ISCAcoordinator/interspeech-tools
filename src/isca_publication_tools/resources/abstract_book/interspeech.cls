@@ -437,6 +437,7 @@
 \setlength{\parskip}{1pt}
 
 % column width in the graphical tabular depictions
-\def\tablecolwidth{2.2cm}
+% FIXME: hardcoded in the class, it could be nice to have this automatically computed
+\def\tablecolwidth{3cm}
 \def\tutorialtablecolwidth{5.0cm}
-\def\tabletimecolwidth{1.1cm}
+\def\tabletimecolwidth{2.5cm}

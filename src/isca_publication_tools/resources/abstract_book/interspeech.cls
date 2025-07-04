@@ -26,9 +26,6 @@
 \newcolumntype{C}[1]{>{\centering\let\newline\\\arraybackslash\hspace{0pt}}m{#1}}
 % \newcolumntype{R}[1]{>{\raggedleft\let\newline\\\arraybackslash\hspace{0pt}}m{#1}}
 
-\RequirePackage{etoc}
-\etocsettocstyle{\noindent\rule{\linewidth}{1.5pt}\vskip0.5\baselineskip}{\noindent\rule{\linewidth}{1.5pt}}
-
 %%% }}}
 
 
@@ -102,6 +99,24 @@
 \renewcommand{\rmdefault}{ptm}
 \renewcommand{\ttdefault}{pcr}
 \renewcommand{\familydefault}{\sfdefault}
+
+%%% }}}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%% Table of Contents
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%% {{{
+
+\RequirePackage{etoc}
+\etocsettocstyle{\noindent\rule{\linewidth}{1.5pt}\vskip0.5\baselineskip}{\noindent\rule{\linewidth}{1.5pt}}
+% Remove indentation and tweak spacing in local table of contents
+\etocsetstyle{section}
+  {} % before toc
+  {} % after toc
+  {\noindent\etocname\hfill\etocpage} % entry format: name + page number
+  % {\noindent\etocskipfirstprefix} % for each entry
+  {} % after each entry
 
 %%% }}}
 

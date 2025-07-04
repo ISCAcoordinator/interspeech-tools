@@ -161,7 +161,9 @@ class AbstractBookProcessor:
             row_val = [""]
             for r in rooms:
                 if r in elts:
-                    cell_val = f"\\cellcolor{{DefaultBackgroundColour}}{{\\color{{DefaultForegroundColour}}\\bf {elts[r].name}}}"
+                    session = elts[r]
+                    session_type = get_session_type(session)
+                    cell_val = f"\\cellcolor{{{session_type.capitalize()}BackgroundColour}}{{\\color{{{session_type.capitalize()}ForegroundColour}}\\bf {session.name}}}"
                     row_val.append(cell_val)
                 else:
                     row_val.append("")

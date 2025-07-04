@@ -1,0 +1,57 @@
+
+\BLOCK{ for scope, html_code in default_colors.items() }
+
+%% Default colour information
+\definecolor{Default\VAR{scope.capitalize()}Colour}{HTML}{\VAR{html_code}}
+\colorlet{Default\VAR{scope.capitalize()}Colour}{Default\VAR{scope.capitalize()}Colour}
+
+\BLOCK{ endfor }
+
+%% FIXME: hardcoded
+\colorlet{LinkColour}{DefaultForegroundColour}
+\colorlet{FooterBackgroundColour}{DefaultForegroundColour}
+\colorlet{FooterForegroundColour}{white}
+\colorlet{RoomColour}{DefaultForegroundColour}
+\colorlet{RoomCellColour}{gray!25!white}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% Colours not defined in the configuration
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\BLOCK{ for session_type, color_info in known_session_types.items() }
+
+%% \VAR{session_type.capitalize()} colour information
+\BLOCK{ for scope, html_code in color_info.items() }
+\definecolor{\VAR{session_type.capitalize()}\VAR{scope.capitalize()}Colour}{HTML}{\VAR{html_code}}
+\colorlet{\VAR{session_type.capitalize()}\VAR{scope.capitalize()}Colour}{\VAR{session_type.capitalize()}\VAR{scope.capitalize()}Colour}
+\BLOCK{ endfor }
+
+\BLOCK{ endfor }
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% Colours not defined in the configuration (so defaulting)
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\BLOCK{ for session_type in unknown_session_types }
+\BLOCK{ for scope, _ in default_colors.items() }
+
+%% \VAR{session_type.capitalize()} colour information
+\colorlet{\VAR{session_type.capitalize()}\VAR{scope.capitalize()}Colour}{Default\VAR{scope.capitalize()}Colour}
+
+\BLOCK{ endfor }
+\BLOCK{ endfor }
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% And finally define some styles
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\tcbset{
+    default/.style={colframe=DefaultForegroundColour, colback=DefaultBackgroundColour},
+    \BLOCK{ for session_type, _ in known_session_types.items() }
+    \VAR{session_type}/.style={{colframe=\VAR{session_type.capitalize()}ForegroundColour, colback=\VAR{session_type.capitalize()}BackgroundColour}},
+    \BLOCK{ endfor }
+    \BLOCK{ for session_type in unknown_session_types }
+    \VAR{session_type}/.style={{colframe=\VAR{session_type.capitalize()}ForegroundColour, colback=\VAR{session_type.capitalize()}BackgroundColour}},
+    \BLOCK{ endfor }
+}

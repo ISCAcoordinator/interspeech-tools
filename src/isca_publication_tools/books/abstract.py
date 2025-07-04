@@ -10,74 +10,24 @@ from isca.model.item import Paper
 from isca.model.event import Conference
 
 
-from ..books.utils import (
-    latexify,
-)
-from ..books.filters import (
-    sort_by_last_name,
-    sort_by_name,
-    get_latexified_authors,
-    get_latexified_presenters,
-    is_presentation,
-    has_paper,
-    is_presentation_survey,
-    is_presentation_bluesky,
-    extract_date,
-    extract_verbose_date,
-    get_session_timeslot,
-    get_presentation_timeslot,
-    compact_number,
-)
-from ..books.theme import (
-    get_presentation_type,
+from .theme import (
     get_session_type,
 )
+from .jinja_helpers import configure_latex_jinja
 
 
 class AbstractBookProcessor:
     def __init__(self, conf: Conference):
         self._conf = conf
 
-        templateLoader = jinja2.PackageLoader("isca_publication_tools", "resources/abstract_book")
-        jenv_latex = jinja2.Environment(
-            block_start_string="\\BLOCK{",
-            block_end_string="}",
-            variable_start_string="\\VAR{",
-            variable_end_string="}",
-            comment_start_string="\\#{",
-            comment_end_string="}",
-            line_statement_prefix="% ;;",
-            line_comment_prefix="% ##",
-            trim_blocks=True,
-            autoescape=False,
-            loader=templateLoader,
-        )
-
-        # Set generic filters
-        jenv_latex.filters["latexify"] = latexify
-        jenv_latex.filters["compact_numbers"] = compact_number
-        jenv_latex.filters["has_paper"] = has_paper
-        jenv_latex.filters["is_presentation"] = is_presentation
-        jenv_latex.filters["sort_authors"] = sort_by_last_name
-        jenv_latex.filters["sort_reviewers"] = sort_by_name
-        jenv_latex.filters["authors"] = get_latexified_authors
-        jenv_latex.filters["presenters"] = get_latexified_presenters
-        jenv_latex.filters["type_presentation"] = get_presentation_type
-        jenv_latex.filters["type_session"] = get_session_type
-        jenv_latex.filters["extract_date"] = extract_date
-        jenv_latex.filters["extract_verbose_date"] = extract_verbose_date
-        jenv_latex.filters["get_session_timeslot"] = get_session_timeslot
-        jenv_latex.filters["get_presentation_timeslot"] = get_presentation_timeslot
-        jenv_latex.filters["is_survey"] = is_presentation_survey
-        jenv_latex.filters["is_bluesky"] = is_presentation_bluesky
+        template_loader = jinja2.PackageLoader("isca_publication_tools", "resources/abstract_book")
+        self._template_engine = configure_latex_jinja(template_loader)
 
         # Set conference specific filters
         def list_papers(author: Person) -> list[Paper]:
             return conf.list_papers(author)
 
-        jenv_latex.filters["list_papers"] = list_papers
-
-        self._latex_renderer = jenv_latex
+        self._template_engine.filters["list_papers"] = list_papers
 
     def process(self, root_output_dir: pathlib.Path) -> None:
 
@@ -100,17 +50,17 @@ class AbstractBookProcessor:
                         day_sessions.append(session)
 
             day_sessions = sorted(day_sessions, key=lambda x: x.start)
-            day_program_template = self._latex_renderer.get_template("day_program_template.tex")
+            day_program_template = self._template_engine.get_template("day_program_template.tex")
             outfilename = root_output_dir / f"{date}.tex"
             with open(outfilename, "w") as outfile:
                 outfile.write(day_program_template.render(sessions=day_sessions))
 
-        reviewer_template = self._latex_renderer.get_template("reviewers_index_template.tex")
+        reviewer_template = self._template_engine.get_template("reviewers_index_template.tex")
         outfilename = root_output_dir / "reviewers_index.tex"
         with open(outfilename, "w") as outfile:
             outfile.write(reviewer_template.render(reviewers=self._conf.reviewers))
 
-        author_template = self._latex_renderer.get_template("authors_index_template.tex")
+        author_template = self._template_engine.get_template("authors_index_template.tex")
         outfilename = root_output_dir / "authors_index.tex"
         with open(outfilename, "w") as outfile:
             outfile.write(author_template.render(authors=self._conf.authors))
@@ -182,7 +132,7 @@ class AbstractBookProcessor:
 
 
     def generate_entry_point(self, output_file: pathlib.Path):
-        validation_main_template = self._latex_renderer.get_template("main_template.tex")
+        validation_main_template = self._template_engine.get_template("main_template.tex")
         dates = []
 
         delta = self._conf.end_date - self._conf.start_date  # returns timedelta

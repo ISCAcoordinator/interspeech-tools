@@ -7,6 +7,7 @@ from re import A
 from isca_publication_tools.books.theme import generate_theme_file
 import shutil
 import importlib.resources
+import jinja2
 
 # ISCA Lib
 from isca.io.cmt import CMTSerialiser
@@ -14,6 +15,7 @@ from isca.io.cmt import CMTSerialiser
 # Helpers
 from ..books.utils import compile
 from ..books.abstract import AbstractBookProcessor
+from ..books.jinja_helpers import configure_latex_jinja
 
 
 #################################################################################################
@@ -90,7 +92,10 @@ def main(args: argparse.Namespace):
 
     # Generate the them
     if colour_file is not None:
-        generate_theme_file(conf, colour_file)
+
+        template_loader = jinja2.PackageLoader("isca_publication_tools", "resources/abstract_book")
+        template_engine = configure_latex_jinja(template_loader)
+        generate_theme_file(conf, colour_file, template_engine)
 
 
     processor = AbstractBookProcessor(conf)

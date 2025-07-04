@@ -1,5 +1,6 @@
 import logging
 import pathlib
+import jinja2
 
 from isca.io.cmt import OralSession, PosterSession
 from isca.model.event import Conference
@@ -51,91 +52,45 @@ def get_session_type(input_session: Session) -> str:
     return "default"
 
 
-def generate_theme_file(conf: Conference, output_file: pathlib.Path):
+def generate_theme_file(conf: Conference, output_file: pathlib.Path, template_engine: jinja2.Environment):
     if conf.theme is None:
         raise Exception("There is no theme element defined for the conference")
 
     if "colors" not in conf.theme:
         raise Exception("There is no default colors in the theme")
 
-    tcb_lines = []
-    with open(output_file, "w") as f_color_theme:
-        f_color_theme.write("%% Default colour information\n")
-        f_color_theme.write(
-            f"\\definecolor{{DefaultForegroundColour}}{{HTML}}{{{conf.theme['colors']['foreground'].replace('#', '')}}}\n"
-        )
-        f_color_theme.write(
-            f"\\definecolor{{LinkColour}}{{HTML}}{{{conf.theme['colors']['foreground'].replace('#', '')}}}\n"
-        )
-        f_color_theme.write(
-            f"\\definecolor{{DefaultBackgroundColour}}{{HTML}}{{{conf.theme['colors']['background'].replace('#', '')}}}\n"
-        )
-        f_color_theme.write(f"\\colorlet{{DefaultBackgroundColour}}{{DefaultBackgroundColour}}\n")
-        f_color_theme.write(f"\\colorlet{{DefaultForegroundColour}}{{DefaultForegroundColour}}\n")
+    # Now move to the other colors
+    default_colors = dict()
+    if "colors" not in conf.theme:
+        raise Exception("Default background and foreground colors should be defined")
 
-        # FIXME: hardcoded
-        f_color_theme.write(f"\\colorlet{{FooterBackgroundColour}}{{DefaultForegroundColour}}\n")
-        f_color_theme.write(f"\\colorlet{{FooterForegroundColour}}{{white}}\n")
-        f_color_theme.write(f"\\colorlet{{RoomColour}}{{DefaultForegroundColour}}\n")
-        f_color_theme.write(f"\\colorlet{{RoomCellColour}}{{gray!25!white}}\n")
-        f_color_theme.write("\n")
-        tcb_lines.append("default/.style={colframe=DefaultForegroundColour, colback=DefaultBackgroundColour}")
+    for scope, html_code in conf.theme["colors"].items():
+        default_colors[scope] = html_code.replace("#", "")
 
-        # Now move to the other colors
-        configured_session_type_theme = set()
-        for elt, elt_info in conf.theme.items():
-            # Ignore the default key
-            if elt in ("colors", "font", "footer"):
-                continue
+    unknown_session_types = list()
+    known_session_types = dict()
+    for elt, elt_info in conf.theme.items():
+        # Ignore the default key
+        if elt in ("colors", "font", "footer"):
+            continue
 
-            #
-            if "colors" not in elt_info:
-                f_color_theme.write(f"\\colorlet{{{elt.capitalize()}BackgroundColour}}{{DefaultBackgroundColour}}\n")
-                f_color_theme.write(f"\\colorlet{{{elt.capitalize()}ForegroundColour}}{{DefaultForegroundColour}}\n")
-            else:
-                f_color_theme.write(f"%% {elt.capitalize()} colour information\n")
-                f_color_theme.write(
-                    f"\\definecolor{{{elt.capitalize()}ForegroundColour}}{{HTML}}{{{elt_info['colors']['foreground'].replace('#', '')}}}\n"
-                )
-                f_color_theme.write(
-                    f"\\definecolor{{{elt.capitalize()}BackgroundColour}}{{HTML}}{{{elt_info['colors']['background'].replace('#', '')}}}\n"
-                )
-                f_color_theme.write(
-                    f"\\colorlet{{{elt.capitalize()}BackgroundColour}}{{{elt.capitalize()}BackgroundColour}}\n"
-                )
-                f_color_theme.write(
-                    f"\\colorlet{{{elt.capitalize()}ForegroundColour}}{{{elt.capitalize()}ForegroundColour}}\n"
-                )
-                f_color_theme.write("\n")
-            tcb_lines.append(
-                f"{elt}/.style={{colframe={elt.capitalize()}ForegroundColour, colback={elt.capitalize()}BackgroundColour}}"
-            )
-            configured_session_type_theme.add(elt)
+        #
+        if "colors" not in elt_info:
+            unknown_session_types.append(elt)
+        else:
+            known_session_types[elt] = dict()
+            for scope, html_code in elt_info['colors'].items():
+                known_session_types[elt][scope] = html_code.replace("#", "")
 
 
-        f_color_theme.write("\n\n")
-        f_color_theme.write(f"%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%\n")
-        f_color_theme.write(f"%% Colours not defined in the configuration\n")
-        f_color_theme.write(f"%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%\n")
-        session_types = set()
-        for session in conf.sessions:
-            session_types.add(get_session_type(session))
+    session_types = set()
+    for session in conf.sessions:
+        session_types.add(get_session_type(session))
 
-        for session_type in session_types:
-            if session_type not in configured_session_type_theme:
-                f_color_theme.write(f"%% {session_type.capitalize()} colour information\n")
-                f_color_theme.write(
-                    f"\\colorlet{{{session_type.capitalize()}BackgroundColour}}{{DefaultBackgroundColour}}\n"
-                )
-                f_color_theme.write(
-                    f"\\colorlet{{{session_type.capitalize()}ForegroundColour}}{{DefaultForegroundColour}}\n"
-                )
-                f_color_theme.write("\n")
-                tcb_lines.append(
-                    f"{session_type}/.style={{colframe={session_type.capitalize()}ForegroundColour, colback={session_type.capitalize()}BackgroundColour}}"
-                )
+    for session_type in session_types:
+        if session_type not in known_session_types:
+            unknown_session_types.append(session_type)
 
-        # Now we are done, just add the
-        f_color_theme.write("\\tcbset{\n  ")
-        f_color_theme.write(",\n  ".join(tcb_lines))
-        f_color_theme.write("\n}")
+    day_program_template = template_engine.get_template("colour_template.tex")
+    with open(output_file, "w") as outfile:
+        outfile.write(day_program_template.render(default_colors=default_colors, known_session_types=known_session_types, unknown_session_types=unknown_session_types))

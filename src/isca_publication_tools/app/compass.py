@@ -100,9 +100,11 @@ class CompassDataGenerator:
             cur_person = {
                 "id": author.id,
                 "email": author.email,
+                "name": author.name,
+                "orderingName": author.str_sorting_by_last_name(),
                 "firstName": firstname,
                 "lastName": author.lastname,
-                "Company": author.main_affiliation,
+                "Company": author.default_affiliation,
                 "configuratorType": "person:person",
             }
 

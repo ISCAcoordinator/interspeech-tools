@@ -1,25 +1,25 @@
 \BLOCK{ for session in sessions }
-\sessionslot{\VAR{session.id}}
-            {\VAR{session.name | compact_numbers}}
-            {\VAR{session.start | extract_verbose_date}}
-            {\VAR{session | get_session_timeslot}}
-            {\VAR{session.room.name}}
-            {\VAR{session | type_session}}
+\sessionslot{\VAR{session[0].id}}
+            {\VAR{session[0].name | compact_numbers}}
+            {\VAR{session[0].start | extract_verbose_date}}
+            {\VAR{session[1] | format_timeslot}}
+            {\VAR{session[2].name}}
+            {\VAR{session[0] | type_session}}
             {}
 
-  \BLOCK{ for presentation in session.presentations }
+  \BLOCK{ for presentation in session[0].presentations }
     \BLOCK{ if presentation | is_survey }
 \survey{\VAR{presentation.id}}
        {\VAR{presentation.title | latexify}}
        {\VAR{presentation | presenters}}
-       {\VAR{session | get_presentation_timeslot(loop.index-1)}}
+       {\VAR{session[0] | get_presentation_timeslot(loop.index-1)}}
 
     \BLOCK{ elif presentation | is_bluesky }
 
 \bluesky{\VAR{presentation.presented_paper.id}}
        {\VAR{presentation.title | latexify}}
        {\VAR{presentation | presenters}}
-       {\VAR{session | get_presentation_timeslot(loop.index-1)}}
+       {\VAR{session[0] | get_presentation_timeslot(loop.index-1)}}
        {\VAR{presentation.presented_paper.abstract | latexify}}
 
     \BLOCK{ elif presentation | has_paper }
@@ -28,7 +28,7 @@
              {\VAR{presentation.presented_paper.id}}
              {\VAR{presentation.presented_paper.title | latexify}}
              {\VAR{presentation | authors}}
-             {\VAR{session | get_presentation_timeslot(loop.index-1)}}
+             {\VAR{session[0] | get_presentation_timeslot(loop.index-1)}}
              {\VAR{presentation.presented_paper.abstract | latexify}}
 
     \BLOCK{ endif }

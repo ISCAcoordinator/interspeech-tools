@@ -438,6 +438,6 @@
 
 % column width in the graphical tabular depictions
 % FIXME: hardcoded in the class, it could be nice to have this automatically computed
-\def\tablecolwidth{3cm}
+\def\tablecolwidth{2cm}
 \def\tutorialtablecolwidth{5.0cm}
 \def\tabletimecolwidth{2.5cm}

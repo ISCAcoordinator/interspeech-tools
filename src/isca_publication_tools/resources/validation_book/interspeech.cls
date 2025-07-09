@@ -255,12 +255,19 @@
 %%    #1 the ID of the presentation in the session
 %%    #2 the title
 %%    #3 the authors
-%%    #5 the abstract
-\newcommand{\paper}[4]{%
+%%    #4 the abstract
+%%    #5 the resource
+\newcommand{\paper}[5]{%
     \begin{spacing}{1.3}
         \noindent\pagetarget{#1}{\timebox[colframe=red, colback=yellow!20]{ \textbf{#1} }\ {\large\textbf{#2} } }
     \end{spacing}
-    \noindent{\normalfont\textit{#3}}
+    \noindent{\normalfont\textit{#3}} \\
+    %
+    \ifx&#5&%
+    \else
+        \bigskip
+        \par\noindent{\textbf{Resource:}} {\url{#5}}
+    \fi
     %
     \bigskip
     %
@@ -280,7 +287,8 @@
 %%    #4 the authors
 %%    #5 the presenters
 %%    #6 the abstract
-\newcommand{\presentation}[6]{%
+%%    #7 the resource
+\newcommand{\presentation}[7]{%
     \begin{spacing}{1.3}
         \noindent\pagetarget{#2}{\timebox[#1]{ \textbf{#2} }\ {\large\textbf{#3} } }
     \end{spacing}
@@ -289,6 +297,12 @@
     \bigskip
     %
     \par\noindent{\textbf{Presenter(s):} \normalfont\textit{#5}}
+    %
+    \ifx&#7&%
+    \else
+        \par\noindent{\textbf{Resource:}} {\url{#7}}
+    \fi
+    %
     \bigskip
     %
     \if@abstract

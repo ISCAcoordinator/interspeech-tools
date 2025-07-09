@@ -96,17 +96,27 @@
 \begin{multicols*}{2}
 \BLOCK{ for paper_id, paper in papers.items() }
   \BLOCK{ if (paper | is_presentation) }
-    \presentation{\VAR{paper | type}}{\VAR{paper_id}}{\VAR{paper.presented_paper.title | latexify}}{\VAR{paper | latexified_authors}}{\VAR{paper | presenters}}{\VAR{ paper.presented_paper.abstract | latexify }}
+    \presentation{\VAR{paper | type_presentation}}
+                 {\VAR{paper_id}}
+                 {\VAR{paper.presented_paper.title | latexify}}
+                 {\VAR{paper | validation_authors}}
+                 {\VAR{paper | validation_presenters}}
+                 {\VAR{ paper.presented_paper.abstract | latexify }}
+                 {\VAR{paper.presented_paper.resource if (paper.presented_paper.resource is not none)}}
   \BLOCK{ else }
-    \paper{\VAR{paper_id}}{\VAR{paper.title | latexify}}{\VAR{paper | latexified_authors}}{\VAR{ paper.abstract | latexify }}
+    \paper{\VAR{paper_id}}
+          {\VAR{paper.title | latexify}}
+          {\VAR{paper | authors}}
+          {\VAR{ paper.abstract | latexify }}
+          {\VAR{paper.resource if (paper.resource is not none)}}
   \BLOCK{ endif }
+
 \BLOCK{ endfor }
 \end{multicols*}
 
 \clearpage
 
 \section{Author Index}
-
 \begin{multicols*}{2}
 \begin{FlushLeft}
 \BLOCK{ for author in (authors | sort_authors) }

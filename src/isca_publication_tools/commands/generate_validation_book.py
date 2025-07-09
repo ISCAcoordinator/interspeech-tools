@@ -9,28 +9,15 @@ import shutil
 import importlib.resources
 
 # ISCA Lib
-from isca.io.cmt import CMTSerialiser
 from isca.model.event import Conference
-from isca.model.item import Paper, Presentation
-from isca.model.session import PresentationSession
+from isca.model.item import Paper
 from isca.model.person import Person
+from isca.model.program import PresentationSession, Presentation
+from isca.io.cmt import CMTSerialiser
 
 # Helpers
-from ..books.utils import (
-    latexify,
-    compile,
-)
-from ..books.filters import (
-    sort_by_last_name,
-    get_latexified_authors,
-    get_latexified_presenters,
-    is_presentation,
-    has_paper,
-)
-
-from ..books.theme import (
-    get_presentation_type,
-)
+from ..books.utils import compile
+from ..books.jinja_helpers import configure_latex_jinja
 
 
 def list_elts(conf: Conference, ignore_sessions: bool) -> dict[str, Paper] | dict[str, Presentation]:
@@ -92,30 +79,10 @@ def main(args: argparse.Namespace):
     val_book_file = pathlib.Path(args.val_book_file)
     val_book_file.parent.mkdir(exist_ok=True, parents=True)
 
-    templateLoader = jinja2.PackageLoader("isca_publication_tools", "resources/validation_book")
-    jenv_latex = jinja2.Environment(
-        block_start_string="\\BLOCK{",
-        block_end_string="}",
-        variable_start_string="\\VAR{",
-        variable_end_string="}",
-        comment_start_string="\\#{",
-        comment_end_string="}",
-        line_statement_prefix="%%",
-        line_comment_prefix="%#",
-        trim_blocks=True,
-        autoescape=False,
-        loader=templateLoader,
-    )
-
-    # Set filters
-    jenv_latex.filters["latexify"] = latexify
-    jenv_latex.filters["has_paper"] = has_paper
-    jenv_latex.filters["is_presentation"] = is_presentation
-    jenv_latex.filters["sort_authors"] = sort_by_last_name
-    jenv_latex.filters["latexified_authors"] = get_latexified_authors
-    jenv_latex.filters["presenters"] = get_latexified_presenters
-    jenv_latex.filters["get_presentation_type"] = get_presentation_type
-
+    abstract_template_loader = jinja2.PackageLoader("isca_publication_tools", "resources/abstract_book")
+    abstract_template_engine = configure_latex_jinja(abstract_template_loader)
+    validation_template_loader = jinja2.PackageLoader("isca_publication_tools", "resources/validation_book")
+    validation_template_engine = configure_latex_jinja(validation_template_loader)
     colour_file = None
     if args.bootstrap:
         cls_file = val_book_file.parent / "interspeech.cls"
@@ -144,16 +111,16 @@ def main(args: argparse.Namespace):
     conf = serialiser.load(conf_path)
     conf.resolve_author_paper_association()
 
-    # Generate the them
+     # Generate the them
     if colour_file is not None:
-        generate_theme_file(conf, colour_file)
+        generate_theme_file(conf, colour_file, abstract_template_engine)
 
     # Prepare content template
     def list_papers(author: Person) -> list[Paper]:
         return conf.list_papers(author)
 
-    jenv_latex.filters["list_papers"] = list_papers
-    validation_main_template = jenv_latex.get_template("main_template.tex")
+    validation_template_engine.filters["list_papers"] = list_papers
+    validation_main_template = validation_template_engine.get_template("main_template.tex")
 
     with open(val_book_file, "w") as f:
         f.write(

@@ -3,7 +3,7 @@ import logging
 import pandas as pd
 
 from isca.model.person import Role
-from isca.model.session import PosterSession, PresentationSession, OralSession, SpecialSession
+from isca.model.program import PosterSession, PresentationSession, OralSession, SpecialSession
 from isca.model import Conference
 
 

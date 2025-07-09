@@ -2,10 +2,14 @@ import logging
 import pathlib
 import jinja2
 
-from isca.io.cmt import OralSession, PosterSession
 from isca.model.event import Conference
-from isca.model.session import OralSession, PosterSession, KeynoteSession, SpecialSession, ShowAndTellSession, Session
-from isca.model.item import (
+from isca.model.item import Session
+from isca.model.program import (
+    OralSession,
+    PosterSession,
+    KeynoteSession,
+    SpecialSession,
+    ShowAndTellSession,
     ShowAndTellPresentation,
     SpecialPresentation,
     SurveyTalk,
@@ -79,9 +83,8 @@ def generate_theme_file(conf: Conference, output_file: pathlib.Path, template_en
             unknown_session_types.append(elt)
         else:
             known_session_types[elt] = dict()
-            for scope, html_code in elt_info['colors'].items():
+            for scope, html_code in elt_info["colors"].items():
                 known_session_types[elt][scope] = html_code.replace("#", "")
-
 
     session_types = set()
     for session in conf.sessions:
@@ -93,4 +96,10 @@ def generate_theme_file(conf: Conference, output_file: pathlib.Path, template_en
 
     day_program_template = template_engine.get_template("colour_template.tex")
     with open(output_file, "w") as outfile:
-        outfile.write(day_program_template.render(default_colors=default_colors, known_session_types=known_session_types, unknown_session_types=unknown_session_types))
+        outfile.write(
+            day_program_template.render(
+                default_colors=default_colors,
+                known_session_types=known_session_types,
+                unknown_session_types=unknown_session_types,
+            )
+        )

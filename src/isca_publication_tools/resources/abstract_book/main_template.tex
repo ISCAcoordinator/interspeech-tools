@@ -1,7 +1,9 @@
 \documentclass[twoside, abstract]{\VAR{classname}}
 
-\usepackage[T1]{fontenc}
-\usepackage[utf8]{inputenc}
+\usepackage{fontspec} % <--- enables Unicode fonts with LuaLaTeX or XeLaTeX
+% \setmainfont{Latin Modern Roman}
+\setmainfont{Charis SIL}
+\setsansfont{Charis SIL}
 
 \usepackage{ragged2e}
 \usepackage{hyphenat}
@@ -11,22 +13,9 @@
 \hyphenation{Para-linguistics}
 \hyphenation{Light-weight}
 
-
 % Some rendering helpers
 \usepackage{enumitem}
 \usepackage[breakall]{truncate}
-
-% Watermark
-% usepackage[colorspec=0.95]{draftwatermark}
-% \usepackage[colormodel=rgb,colorspec={0.96, 0.99, 0.95}]{draftwatermark}
-% \SetWatermarkText{DRAFT}
-% \SetWatermarkScale{1.5}
-
-\RequirePackage{tipa}
-\usepackage{newunicodechar}
-% NOTE: one paper has this in the title
-\newunicodechar{ɹ}{\textturnr}
-% \newunicodechar{ɤ}{\textipa{7} }
 
 \title{Interspeech 2025 - Validation}
 \author{ }

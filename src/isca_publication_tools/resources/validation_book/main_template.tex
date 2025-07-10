@@ -1,7 +1,9 @@
 \documentclass[twoside, abstract]{\VAR{classname}}
 
-\usepackage[T1]{fontenc}
-\usepackage[utf8]{inputenc}
+\usepackage{fontspec} % <--- enables Unicode fonts with LuaLaTeX or XeLaTeX
+% \setmainfont{Latin Modern Roman}
+\setmainfont{Charis SIL}
+\setsansfont{Charis SIL}
 
 \usepackage{multicol}
 \usepackage{ragged2e}
@@ -41,38 +43,13 @@
 \usepackage{etoc}
 
 % Filler
-% \usepackage{lipsum}
 \usepackage[breakall]{truncate}
-
-% Watermark
-% usepackage[colorspec=0.95]{draftwatermark}
-% \usepackage[colormodel=rgb,colorspec={0.96, 0.99, 0.95}]{draftwatermark}
-% \SetWatermarkText{DRAFT}
-% \SetWatermarkScale{1.5}
 
 \hypersetup{
     colorlinks=true,
     linkcolor=LinkColour,
     pdftitle={INTERSPEECH 2025 - Programme Book},
 }
-
-% % https://tex.stackexchange.com/questions/445744/truncating-multi-line-texts
-% \usepackage{trimclip,lipsum,stackengine}
-% \newcommand\trunclines[3]{ %
-%   \setbox0=\hbox{\parbox[t]{ #2 }{\strut#3} }%
-%   \stackengine{0pt}{\clipbox{0pt \dimexpr\dp0-#1\baselineskip%
-%     -\dp\strutbox+\baselineskip\relax%
-%     {} 0in 0pt}{\copy0} }{\strut}{U}{c}{F}{F}{S}%
-% }
-
-% \newcommand{\summarytablecell}[1]{ #1 }
-
-
-\RequirePackage{tipa}
-\usepackage{newunicodechar}
-% NOTE: one paper has this in the title
-\newunicodechar{ɹ}{\textturnr}
-% \newunicodechar{ɤ}{\textipa{7} }
 
 \title{Interspeech 2025 - Validation}
 \author{ }

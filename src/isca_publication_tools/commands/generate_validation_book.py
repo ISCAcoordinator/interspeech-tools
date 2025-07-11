@@ -93,8 +93,17 @@ def main(args: argparse.Namespace):
             "resources/validation_book/interspeech.cls"
         )
         with importlib.resources.as_file(template_res) as template_file:
-            print(template_file)
             shutil.copy(template_file, cls_file)
+
+        instruction_file = val_book_file.parent / "draft_booklet_instructions.tex"
+        if instruction_file.exists():
+            raise Exception(f"The instruction file{instruction_file} already exists, delete it if you want to bootstrap/reset")
+
+        template_res = importlib.resources.files("isca_publication_tools").joinpath(
+            "resources/validation_book/draft_booklet_instructions.tex"
+        )
+        with importlib.resources.as_file(template_res) as template_file:
+            shutil.copy(template_file, instruction_file)
 
         colour_file = cls_file.parent / "theme/colours.tex"
         if colour_file.exists():
@@ -105,7 +114,7 @@ def main(args: argparse.Namespace):
     conf = None
     serialiser = None
     if args.format == "cmt":
-        serialiser = CMTSerialiser(args.pdf_metadata, args.no_sessions)
+        serialiser = CMTSerialiser(args.pdf_metadata)
     else:
         raise NotImplementedError(f"The format {args.format} is not supported")
     conf = serialiser.load(conf_path)

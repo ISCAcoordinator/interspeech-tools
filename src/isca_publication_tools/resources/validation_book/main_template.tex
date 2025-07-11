@@ -5,6 +5,7 @@
 \setmainfont{Charis SIL}
 \setsansfont{Charis SIL}
 
+\usepackage{csquotes}
 \usepackage{multicol}
 \usepackage{ragged2e}
 \usepackage{hyphenat}
@@ -58,6 +59,7 @@
 \begin{document}
 
 \maketitle{}
+\tableofcontents
 
 % \rmfamily
 
@@ -67,6 +69,12 @@
 \def\titletruncatelength{4cm}
 
 \pagestyle{fancy}
+
+\section{Instructions}
+
+\input{draft_booklet_instructions.tex}
+
+\clearpage
 
 \section{Paper Index}
 

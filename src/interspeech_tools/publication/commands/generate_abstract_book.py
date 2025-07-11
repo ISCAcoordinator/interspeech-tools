@@ -4,7 +4,7 @@ import pathlib
 from re import A
 
 # Templating / rendering
-from isca_publication_tools.books.theme import generate_theme_file
+from ..books.theme import generate_theme_file
 import shutil
 import importlib.resources
 import jinja2
@@ -68,7 +68,7 @@ def main(args: argparse.Namespace):
         if cls_file.exists():
             raise Exception(f"The class file {cls_file} already exists, delete it if you want to bootstrap/reset")
 
-        template_res = importlib.resources.files("isca_publication_tools").joinpath(
+        template_res = importlib.resources.files("interspeech_tools.publication").joinpath(
             "resources/abstract_book/interspeech.cls"
         )
         with importlib.resources.as_file(template_res) as template_file:
@@ -92,7 +92,7 @@ def main(args: argparse.Namespace):
     # Generate the them
     if colour_file is not None:
 
-        template_loader = jinja2.PackageLoader("isca_publication_tools", "resources/abstract_book")
+        template_loader = jinja2.PackageLoader("interspeech_tools.publication", "resources/abstract_book")
         template_engine = configure_latex_jinja(template_loader)
         generate_theme_file(conf, colour_file, template_engine)
 

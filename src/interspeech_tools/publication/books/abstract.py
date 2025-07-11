@@ -23,7 +23,7 @@ class AbstractBookProcessor(ISCAObject):
         if self._conf.program is None:
             raise Exception("The program of the conference should be defined")
 
-        template_loader = jinja2.PackageLoader("isca_publication_tools", "resources/abstract_book")
+        template_loader = jinja2.PackageLoader("interspeech_tools.publication", "resources/abstract_book")
         self._template_engine = configure_latex_jinja(template_loader)
 
         # Set conference specific filters

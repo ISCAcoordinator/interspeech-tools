@@ -3,7 +3,7 @@ import argparse
 import pathlib
 
 # Templating / rendering
-from isca_publication_tools.books.theme import generate_theme_file
+from ..books.theme import generate_theme_file
 import jinja2
 import shutil
 import importlib.resources
@@ -79,9 +79,9 @@ def main(args: argparse.Namespace):
     val_book_file = pathlib.Path(args.val_book_file)
     val_book_file.parent.mkdir(exist_ok=True, parents=True)
 
-    abstract_template_loader = jinja2.PackageLoader("isca_publication_tools", "resources/abstract_book")
+    abstract_template_loader = jinja2.PackageLoader("interspeech_tools.publication", "resources/abstract_book")
     abstract_template_engine = configure_latex_jinja(abstract_template_loader)
-    validation_template_loader = jinja2.PackageLoader("isca_publication_tools", "resources/validation_book")
+    validation_template_loader = jinja2.PackageLoader("interspeech_tools.publication", "resources/validation_book")
     validation_template_engine = configure_latex_jinja(validation_template_loader)
     colour_file = None
     if args.bootstrap:
@@ -89,7 +89,7 @@ def main(args: argparse.Namespace):
         if cls_file.exists():
             raise Exception(f"The class file {cls_file} already exists, delete it if you want to bootstrap/reset")
 
-        template_res = importlib.resources.files("isca_publication_tools").joinpath(
+        template_res = importlib.resources.files("interspeech_tools.publication").joinpath(
             "resources/validation_book/interspeech.cls"
         )
         with importlib.resources.as_file(template_res) as template_file:
@@ -99,7 +99,7 @@ def main(args: argparse.Namespace):
         if instruction_file.exists():
             raise Exception(f"The instruction file{instruction_file} already exists, delete it if you want to bootstrap/reset")
 
-        template_res = importlib.resources.files("isca_publication_tools").joinpath(
+        template_res = importlib.resources.files("interspeech_tools.publication").joinpath(
             "resources/validation_book/draft_booklet_instructions.tex"
         )
         with importlib.resources.as_file(template_res) as template_file:

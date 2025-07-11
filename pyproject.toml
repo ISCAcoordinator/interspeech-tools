@@ -3,9 +3,9 @@ requires = ["setuptools", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "isca_publication_tools"
+name = "interspeech_tools"
 version = "0.0.1"
-description = "ISCA Publication helper tools"
+description = "Interspeech organisation tools"
 readme = {file="README.md", content-type = "text/markdown"}
 authors = [
    {name="Sébastien Le Maguer", email="sebastien.lemaguer@helsinki.fi"}
@@ -33,12 +33,12 @@ dev = [
 ]
 
 [project.urls]
-Homepage = "https://github.com/seblemaguer/isca-publication-tools"
-Issues = "https://github.com/seblemaguer/isca-publication-tools/issues"
-git = "https://github.com/seblemaguer/isca-publication-tools.git"
+Homepage = "https://github.com/seblemaguer/interspeech_tools"
+Issues = "https://github.com/seblemaguer/interspeech_tools/issues"
+git = "https://github.com/seblemaguer/interspeech_tools.git"
 
 [project.scripts]
-isca_pub="isca_publication_tools.main:main"
+is_pub="interspeech_tools.publication.main:main"
 
 [tool.black]
 line-length = 120

@@ -6,6 +6,9 @@ from isca.model.person import Role
 from isca.model.program import PosterSession, PresentationSession, OralSession, SpecialSession
 from isca.model import Conference
 
+import pandas.io.formats.excel
+pandas.io.formats.excel.ExcelFormatter.header_style = None
+
 
 class CompassDataGenerator:
     AGENDA_COLUMNS = [

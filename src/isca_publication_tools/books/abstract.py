@@ -137,7 +137,6 @@ class AbstractBookProcessor(ISCAObject):
 
             content.append(' & '.join(elts))
 
-        print(content)
         end = "\\\\ \\hline \n \\end{tabular}\n\n"
         end += "\\bigskip\n\n"
         return header + " \\\\ \\hline \n".join(content) + end

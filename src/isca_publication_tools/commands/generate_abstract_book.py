@@ -72,7 +72,6 @@ def main(args: argparse.Namespace):
             "resources/abstract_book/interspeech.cls"
         )
         with importlib.resources.as_file(template_res) as template_file:
-            print(template_file)
             shutil.copy(template_file, cls_file)
 
         colour_file = cls_file.parent/"theme/colours.tex"

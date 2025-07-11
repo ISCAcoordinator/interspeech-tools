@@ -41,7 +41,7 @@ def get_latexified_validation_presenters(input_presentation: Presentation) -> st
     list_presenters = []
     if input_presentation.presenters is not None:
         for cur_presenter in input_presentation.presenters:
-            list_presenters.append(cur_presenter.str_with_flatten_affiliations(input_presentation.id, short=True, markers=True))
+            list_presenters.append(cur_presenter.str_with_flatten_affiliations(input_presentation.presented_paper.id, short=True, markers=True))
 
     return latexify(", ".join(list_presenters))
 
@@ -60,7 +60,7 @@ def get_latexified_presenters(input_presentation: Presentation) -> str:
     list_presenters = []
     if input_presentation.presenters is not None:
         for cur_presenter in input_presentation.presenters:
-            list_presenters.append(cur_presenter.str_with_flatten_affiliations(input_presentation.id, short=True))
+            list_presenters.append(cur_presenter.str_with_flatten_affiliations(input_presentation.presented_paper.id, short=True, markers=True))
 
     return latexify(", ".join(list_presenters))
 
@@ -127,6 +127,7 @@ def configure_latex_jinja(template_loader: jinja2.PackageLoader):
     jenv_latex.filters["is_presentation"] = is_presentation
     jenv_latex.filters["sort_authors"] = sort_by_last_name
     jenv_latex.filters["sort_reviewers"] = sort_by_name
+    jenv_latex.filters["sort_presenters"] = sort_by_name
     jenv_latex.filters["authors"] = get_latexified_authors
     jenv_latex.filters["presenters"] = get_latexified_presenters
     jenv_latex.filters["validation_authors"] = get_latexified_validation_authors

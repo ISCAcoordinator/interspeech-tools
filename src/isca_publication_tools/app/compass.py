@@ -124,7 +124,11 @@ class CompassDataGenerator:
         list_agenda = []
         cur_session = None
 
-        for session in self.conference.sessions:
+        if self.conference.program is None:
+            raise Exception("The program is not defined, so the agenda can't be generated")
+
+        for session_info in self.conference.program.sessions:
+            timeslot, room, session = session_info
             if not isinstance(session, PresentationSession):
                 self._logger.warning(
                     f"[{session.id}] The session is not a presentation session",
@@ -136,10 +140,10 @@ class CompassDataGenerator:
             cur_session = {
                 "id": session.id,  # NOTE: Empty as it will be filled by the APP designer
                 "name": session.name,
-                "placeId": session.room.id if session.room is not None else None,
-                "date": session.start.strftime("%d-%m-%y"),
-                "startTime": session.start.strftime("%H:%M"),
-                "endTime": session.end.strftime("%H:%M"),
+                "placeId": room.id,
+                "date": timeslot.start.strftime("%d-%m-%y"),
+                "startTime": timeslot.start.strftime("%H:%M"),
+                "endTime": timeslot.end.strftime("%H:%M"),
                 "configuratorType": "timeslot:session",
             }
 

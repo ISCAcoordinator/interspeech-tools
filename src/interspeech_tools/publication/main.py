@@ -18,18 +18,21 @@ import argparse
 # Messaging/logging
 import logging
 from logging.config import dictConfig
+
 try:
     import pythonjsonlogger
+
     JSON_LOGGER = True
 except Exception:
     JSON_LOGGER = False
 
-from .commands import flatten, generate_validation_book, generate_app_data, generate_abstract_book
+from .commands import flatten, generate_validation_book, generate_app_data, generate_abstract_book, generate_archive
 
 ###############################################################################
 # global constants
 ###############################################################################
 LEVEL = [logging.WARNING, logging.INFO, logging.DEBUG]
+
 
 ###############################################################################
 # Functions
@@ -121,6 +124,7 @@ def define_argument_parser() -> argparse.ArgumentParser:
     generate_validation_book.add_subparsers(subparsers)
     generate_app_data.add_subparsers(subparsers)
     generate_abstract_book.add_subparsers(subparsers)
+    generate_archive.add_subparsers(subparsers)
 
     # Return parser
     return parser

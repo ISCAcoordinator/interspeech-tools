@@ -1,5 +1,7 @@
 import re
 import datetime
+import jinja2
+from pyuca import Collator
 
 from isca.model.person import Person
 from isca.model.item import Paper
@@ -7,7 +9,6 @@ from isca.model.program import PresentationSession, Presentation, SurveyTalk, Bl
 
 
 from .utils import latexify
-import jinja2
 from .theme import (
     get_presentation_type,
     get_session_type,
@@ -72,12 +73,14 @@ def get_latexified_presenters(input_presentation: Presentation) -> str:
 
 
 def sort_by_last_name(people: set[Person]) -> list[Person]:
-    list_people = sorted(people, key=lambda x: x.lastname + " " + str(x.middle_initial) + " " + str(x.firstname))
+    pyuca_collator = Collator()
+    list_people = sorted(people, key=lambda x: pyuca_collator.sort_key(x.lastname + " " + str(x.middle_initial) + " " + str(x.firstname)))
     return list_people
 
 
 def sort_by_name(people: set[Person]) -> list[Person]:
-    list_people = sorted(people, key=lambda x: x.name)
+    pyuca_collator = Collator()
+    list_people = sorted(people, key=lambda x:pyuca_collator.sort_key( x.name))
     return list_people
 
 

@@ -1,6 +1,6 @@
 \BLOCK{ for session in sessions }
 \sessionslot{\VAR{session[0].id}}
-            {\VAR{session[0].name | compact_numbers}}
+            {\VAR{session[0].name.replace("Special Session - ", "") | compact_numbers}}
             {\VAR{session[0].start | extract_verbose_date}}
             {\VAR{session[1] | format_timeslot}}
             {\VAR{session[2].name}}
@@ -16,7 +16,7 @@
 
     \BLOCK{ elif presentation | is_bluesky }
 
-\bluesky{\VAR{presentation.presented_paper.id}}
+\bluesky{\VAR{presentation.id}}
        {\VAR{presentation.title | latexify}}
        {\VAR{presentation | presenters}}
        {\VAR{session[0] | get_presentation_timeslot(loop.index-1)}}
@@ -25,7 +25,7 @@
     \BLOCK{ elif presentation | has_paper }
 
 \presentation{\VAR{presentation | type_presentation}}
-             {\VAR{presentation.presented_paper.id}}
+             {\VAR{presentation.id}}
              {\VAR{presentation.presented_paper.title | latexify}}
              {\VAR{presentation | authors}}
              {\VAR{session[0] | get_presentation_timeslot(loop.index-1)}}

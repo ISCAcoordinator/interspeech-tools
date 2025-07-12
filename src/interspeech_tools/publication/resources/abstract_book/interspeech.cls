@@ -263,7 +263,7 @@
     #1
 }
 \newcommand{\authorpaperbox}[1]{%
-    \authorpapercolorbox{\parbox{2.3cm}{#1}} % NOTE: size picked to fit the page in it
+    \authorpapercolorbox{\parbox{3cm}{#1}} % NOTE: size picked to fit the page in it
 }
 
 \newtcbox{\sectionbox}[1][]{

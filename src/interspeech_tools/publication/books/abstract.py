@@ -4,9 +4,8 @@ import pathlib
 from isca.model.core import ISCAObject
 import jinja2
 
-from isca.model.program import Room, Timeslot
+from isca.model.program import Room, Timeslot, Presentation
 from isca.model.person import Person
-from isca.model.item import Paper
 from isca.model.event import Conference
 
 
@@ -26,11 +25,13 @@ class AbstractBookProcessor(ISCAObject):
         template_loader = jinja2.PackageLoader("interspeech_tools.publication", "resources/abstract_book")
         self._template_engine = configure_latex_jinja(template_loader)
 
+        self._author2presentations = self._conf.program.authors2presentations()
         # Set conference specific filters
-        def list_papers(author: Person) -> list[Paper]:
-            return conf.list_papers(author)
 
-        self._template_engine.filters["list_papers"] = list_papers
+        def list_presentations(author: Person) -> list[Presentation]:
+            return self._author2presentations[author]
+
+        self._template_engine.filters["list_presentations"] = list_presentations
 
     def process(self, root_output_dir: pathlib.Path) -> None:
 
@@ -59,7 +60,7 @@ class AbstractBookProcessor(ISCAObject):
         author_template = self._template_engine.get_template("authors_index_template.tex")
         outfilename = root_output_dir / "authors_index.tex"
         with open(outfilename, "w") as outfile:
-            outfile.write(author_template.render(authors=self._conf.authors))
+            outfile.write(author_template.render(conf=self._conf, authors=self._conf.authors))
 
     def _generate_programme_table(
             self, timeslots: list[Timeslot], max_rooms_per_page:int = 10

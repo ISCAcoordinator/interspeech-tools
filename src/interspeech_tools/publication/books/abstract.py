@@ -114,7 +114,7 @@ class AbstractBookProcessor(ISCAObject):
                 session = sessions[0]
                 session_type = get_session_type(session)
                 row = f"\\multicolumn{{{nb_zones}}}{{c|}}{{"
-                row += f"\\cellcolor{{{session_type.capitalize()}BackgroundColour}}{{\\color{{{session_type.capitalize()}ForegroundColour}}\\bf {session.name}}}"
+                row += f"\\cellcolor{{{session_type.capitalize()}BackgroundColour}}{{\\color{{{session_type.capitalize()}ForegroundColour}}\\bf \\hyperlink{{{session.id}}}{{{session.name}}}}}"
                 row += "}"
                 elts.append(row)
             else:
@@ -129,12 +129,12 @@ class AbstractBookProcessor(ISCAObject):
                         session = room_sessions[0]
                         session_type = get_session_type(session)
                         session_name = session.name.replace("Special Session - ", "") # FIXME: this is hardcoded
-                        elts.append(f"\\multicolumn{{{room.nb_zones}}} {{c|}} {{\\cellcolor{{{session_type.capitalize()}BackgroundColour}} {{\\color{{{session_type.capitalize()}ForegroundColour}} \\textbf{{{session_name}}}}}}}")
+                        elts.append(f"\\multicolumn{{{room.nb_zones}}} {{c|}} {{\\cellcolor{{{session_type.capitalize()}BackgroundColour}} {{\\color{{{session_type.capitalize()}ForegroundColour}}\\bf \\hyperlink{{{session.id}}}{{{session_name}}}}}}}")
                     else:
                         for session in room_sessions:
                             session_type = get_session_type(session)
                             session_name = session.name.replace("Special Session - ", "") # FIXME: this is hardcoded
-                            elts.append(f"\\cellcolor{{{session_type.capitalize()}BackgroundColour}}{{\\color{{{session_type.capitalize()}ForegroundColour}}\\bf {session_name}}}")
+                            elts.append(f"\\cellcolor{{{session_type.capitalize()}BackgroundColour}}{{\\color{{{session_type.capitalize()}ForegroundColour}}\\bf \\hyperlink{{{session.id}}}{{{session_name}}}}}")
 
             content.append(' & '.join(elts))
 

@@ -7,6 +7,7 @@ from isca.model.program import PosterSession, PresentationSession, OralSession, 
 from isca.model import Conference
 
 import pandas.io.formats.excel
+
 pandas.io.formats.excel.ExcelFormatter.header_style = None
 
 
@@ -48,10 +49,7 @@ class CompassDataGenerator:
         "orderingName",
         "exhibitorId",
     ]
-    PERSON_WANTED_ROLES = [
-        Role.AUTHOR,
-        Role.PRESENTER
-    ]
+    PERSON_WANTED_ROLES = [Role.AUTHOR, Role.PRESENTER]
 
     def __init__(self, conference: Conference):
         self._logger = logging.getLogger(self.__class__.__name__)
@@ -143,6 +141,7 @@ class CompassDataGenerator:
             cur_session = {
                 "id": session.id,  # NOTE: Empty as it will be filled by the APP designer
                 "name": session.name,
+                "subtitle": session.id,
                 "placeId": room.id,
                 "date": timeslot.start.strftime("%d-%m-%y"),
                 "startTime": timeslot.start.strftime("%H:%M"),
@@ -168,10 +167,19 @@ class CompassDataGenerator:
 
             # TODO: add color
             color = None
-            if (self.conference.theme is not None) and ("colors" in self.conference.theme) and ("foreground" in self.conference.theme["colors"]):
+            if (
+                (self.conference.theme is not None)
+                and ("colors" in self.conference.theme)
+                and ("foreground" in self.conference.theme["colors"])
+            ):
                 color = str(self.conference.theme["colors"]["foreground"])
 
-            if (self.conference.theme is not None) and (session_type in self.conference.theme) and ("colors" in self.conference.theme[session_type]) and ("foreground" in self.conference.theme[session_type]["colors"]):
+            if (
+                (self.conference.theme is not None)
+                and (session_type in self.conference.theme)
+                and ("colors" in self.conference.theme[session_type])
+                and ("foreground" in self.conference.theme[session_type]["colors"])
+            ):
                 color = str(self.conference.theme[session_type]["colors"]["foreground"])
 
             if color is not None:
@@ -179,7 +187,7 @@ class CompassDataGenerator:
 
             # Add presentations
             for presentation_idx, presentation in enumerate(session.presentations, 0):
-                cur_presentation = {x:cur_session[x] for x in cur_session.keys()}
+                cur_presentation = {x: cur_session[x] for x in cur_session.keys()}
                 cur_presentation["id"] = presentation.id
                 cur_presentation["parent"] = cur_session["id"]
                 cur_presentation["configuratorType"] = f"timeslot:{session_type}"

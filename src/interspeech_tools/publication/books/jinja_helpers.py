@@ -45,9 +45,12 @@ def get_latexified_validation_presenters(input_presentation: Presentation) -> st
             if input_presentation.presented_paper is None:
                 list_presenters.append(cur_presenter.str_with_flatten_affiliations(None, short=True, markers=False))
             else:
-                list_presenters.append(cur_presenter.str_with_flatten_affiliations(input_presentation.presented_paper.id, short=True, markers=False))
+                list_presenters.append(
+                    cur_presenter.str_with_flatten_affiliations(input_presentation.presented_paper.id, short=True, markers=False)
+                )
 
     return latexify(", ".join(list_presenters))
+
 
 def get_latexified_authors(input_paper: Paper | Presentation) -> str:
     list_authors = []
@@ -67,20 +70,24 @@ def get_latexified_presenters(input_presentation: Presentation) -> str:
             if input_presentation.presented_paper is None:
                 list_presenters.append(cur_presenter.str_with_flatten_affiliations(None, short=True, markers=False))
             else:
-                list_presenters.append(cur_presenter.str_with_flatten_affiliations(input_presentation.presented_paper.id, short=True, markers=False))
+                list_presenters.append(
+                    cur_presenter.str_with_flatten_affiliations(input_presentation.presented_paper.id, short=True, markers=False)
+                )
 
     return latexify(", ".join(list_presenters))
 
 
 def sort_by_last_name(people: set[Person]) -> list[Person]:
     pyuca_collator = Collator()
-    list_people = sorted(people, key=lambda x: pyuca_collator.sort_key(x.lastname + " " + str(x.middle_initial) + " " + str(x.firstname)))
+    list_people = sorted(
+        people, key=lambda x: pyuca_collator.sort_key(x.lastname + " " + str(x.middle_initial) + " " + str(x.firstname))
+    )
     return list_people
 
 
 def sort_by_name(people: set[Person]) -> list[Person]:
     pyuca_collator = Collator()
-    list_people = sorted(people, key=lambda x:pyuca_collator.sort_key( x.name))
+    list_people = sorted(people, key=lambda x: pyuca_collator.sort_key(x.name))
     return list_people
 
 

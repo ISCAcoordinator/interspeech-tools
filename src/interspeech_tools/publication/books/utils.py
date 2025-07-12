@@ -2,12 +2,15 @@ import pathlib
 import subprocess
 
 import pylatex
+
 # from pylatexenc.latexencode import UnicodeToLatexEncoder
 
 
 # TODO: this case by case management is idiotic...it should be made more general
 def _process_unknown_char(input_char: str) -> str:
     return input_char
+
+
 # raise Exception(f"The following character is not known ==> {input_char} <==")
 
 

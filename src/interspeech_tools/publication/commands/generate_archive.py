@@ -17,9 +17,7 @@ def add_subparsers(subparsers):
 
     # Add arguments
     parser.add_argument("conf_input", help="The input metadata file")
-    parser.add_argument(
-        "output_root_dir", help="The output directory containing the material to be imported in the ISCA Archive"
-    )
+    parser.add_argument("output_root_dir", help="The output directory containing the material to be imported in the ISCA Archive")
 
     parser.set_defaults(func=main)
 

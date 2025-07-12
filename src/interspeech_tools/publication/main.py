@@ -80,9 +80,9 @@ def configure_logger(args):
         cur_formatter_key = "f"
         if JSON_LOGGER:
             logging_config["formatters"]["j"] = {
-                '()': 'pythonjsonlogger.json.JsonFormatter',
-                'fmt': '%(asctime)s %(levelname)s %(filename)s %(lineno)d %(message)s',
-                'rename_fields': {'asctime': 'time', 'levelname': 'level', 'lineno': 'line_number'}
+                "()": "pythonjsonlogger.json.JsonFormatter",
+                "fmt": "%(asctime)s %(levelname)s %(filename)s %(lineno)d %(message)s",
+                "rename_fields": {"asctime": "time", "levelname": "level", "lineno": "line_number"},
             }
             cur_formatter_key = "j"
 
@@ -96,7 +96,6 @@ def configure_logger(args):
 
     # Setup logging configuration
     dictConfig(logging_config)
-
 
 
 def define_argument_parser() -> argparse.ArgumentParser:
@@ -144,6 +143,7 @@ def main():
         args.func(args)
     else:
         arg_parser.print_help()
+
 
 ###############################################################################
 # Wrapping for directly calling the scripts

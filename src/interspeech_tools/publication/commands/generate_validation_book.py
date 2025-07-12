@@ -47,9 +47,7 @@ def add_subparsers(subparsers):
     )
 
     # Add options
-    parser.add_argument(
-        "-b", "--bootstrap", action="store_true", help="Add all elements to generate the validation book"
-    )
+    parser.add_argument("-b", "--bootstrap", action="store_true", help="Add all elements to generate the validation book")
     parser.add_argument("-c", "--classname", default="interspeech", type=str, help="The LaTeX class name")
     parser.add_argument(
         "-C",
@@ -120,7 +118,7 @@ def main(args: argparse.Namespace):
     conf = serialiser.load(conf_path)
     conf.resolve_author_paper_association()
 
-     # Generate the them
+    # Generate the them
     if colour_file is not None:
         generate_theme_file(conf, colour_file, abstract_template_engine)
 

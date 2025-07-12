@@ -62,9 +62,7 @@ class AbstractBookProcessor(ISCAObject):
         with open(outfilename, "w") as outfile:
             outfile.write(author_template.render(conf=self._conf, authors=self._conf.authors))
 
-    def _generate_programme_table(
-            self, timeslots: list[Timeslot], max_rooms_per_page:int = 10
-    ) -> str:
+    def _generate_programme_table(self, timeslots: list[Timeslot], max_rooms_per_page: int = 10) -> str:
 
         rooms = self._conf.program.rooms
 
@@ -77,9 +75,7 @@ class AbstractBookProcessor(ISCAObject):
 
         return "\n\n".join(parts)
 
-    def _generate_programme_table_part(
-            self, timeslots: list[Timeslot], rooms: list[Room]
-    ):
+    def _generate_programme_table_part(self, timeslots: list[Timeslot], rooms: list[Room]):
         content = []
 
         nb_zones = len([r for r in rooms for _ in range(r.nb_zones)])
@@ -128,20 +124,23 @@ class AbstractBookProcessor(ISCAObject):
                     if (room.nb_zones > 1) and (len(room_sessions) == 1):
                         session = room_sessions[0]
                         session_type = get_session_type(session)
-                        session_name = session.name.replace("Special Session - ", "") # FIXME: this is hardcoded
-                        elts.append(f"\\multicolumn{{{room.nb_zones}}} {{c|}} {{\\cellcolor{{{session_type.capitalize()}BackgroundColour}} {{\\color{{{session_type.capitalize()}ForegroundColour}}\\bf \\hyperlink{{{session.id}}}{{{session_name}}}}}}}")
+                        session_name = session.name.replace("Special Session - ", "")  # FIXME: this is hardcoded
+                        elts.append(
+                            f"\\multicolumn{{{room.nb_zones}}} {{c|}} {{\\cellcolor{{{session_type.capitalize()}BackgroundColour}} {{\\color{{{session_type.capitalize()}ForegroundColour}}\\bf \\hyperlink{{{session.id}}}{{{session_name}}}}}}}"
+                        )
                     else:
                         for session in room_sessions:
                             session_type = get_session_type(session)
-                            session_name = session.name.replace("Special Session - ", "") # FIXME: this is hardcoded
-                            elts.append(f"\\cellcolor{{{session_type.capitalize()}BackgroundColour}}{{\\color{{{session_type.capitalize()}ForegroundColour}}\\bf \\hyperlink{{{session.id}}}{{{session_name}}}}}")
+                            session_name = session.name.replace("Special Session - ", "")  # FIXME: this is hardcoded
+                            elts.append(
+                                f"\\cellcolor{{{session_type.capitalize()}BackgroundColour}}{{\\color{{{session_type.capitalize()}ForegroundColour}}\\bf \\hyperlink{{{session.id}}}{{{session_name}}}}}"
+                            )
 
-            content.append(' & '.join(elts))
+            content.append(" & ".join(elts))
 
         end = "\\\\ \\hline \n \\end{tabular}\n\n"
         end += "\\bigskip\n\n"
         return header + " \\\\ \\hline \n".join(content) + end
-
 
     def generate_entry_point(self, output_file: pathlib.Path):
         validation_main_template = self._template_engine.get_template("main_template.tex")

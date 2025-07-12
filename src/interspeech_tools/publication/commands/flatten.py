@@ -6,6 +6,7 @@ import tempfile
 import zipfile
 import os
 
+
 def add_subparsers(subparsers):
     parser = subparsers.add_parser("flatten", help="flatten a directory or an ARCHIVE with PDFs taken from CMT")
 
@@ -35,8 +36,8 @@ def main(args: argparse.Namespace):
         logger.debug(f"Extracting zip file: {input.resolve()}")
         temp_dir = tempfile.TemporaryDirectory()
         input_dir = pathlib.Path(temp_dir.name)
-        os.path.altsep = '\\' # NOTE: CMT zip files are storing data using the Windows file separator
-        with zipfile.ZipFile(input.resolve(), 'r') as zip_ref:
+        os.path.altsep = "\\"  # NOTE: CMT zip files are storing data using the Windows file separator
+        with zipfile.ZipFile(input.resolve(), "r") as zip_ref:
             zip_ref.extractall(input_dir.resolve())
     else:
         input_dir = input
@@ -50,13 +51,10 @@ def main(args: argparse.Namespace):
 
         pdf_files = list(paper_id.glob("**/*.pdf"))
         if len(pdf_files) > 1:
-            logger.warning(
-                f"[{paper_id.stem}] The number of files is above 1 ({len(pdf_files)}), select the first one"
-            )
+            logger.warning(f"[{paper_id.stem}] The number of files is above 1 ({len(pdf_files)}), select the first one")
 
         logger.debug(f"Copy {pdf_files[0].resolve()} {output_dir.resolve()}/{paper_id.stem}.pdf")
         shutil.copy(pdf_files[0].resolve(), output_dir / f"{paper_id.stem}.pdf")
-
 
     if temp_dir is not None:
         temp_dir.cleanup()

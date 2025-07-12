@@ -30,9 +30,7 @@ def add_subparsers(subparsers):
     )
 
     # Add options
-    parser.add_argument(
-        "-b", "--bootstrap", action="store_true", help="Add all elements to generate the abstract book"
-    )
+    parser.add_argument("-b", "--bootstrap", action="store_true", help="Add all elements to generate the abstract book")
     parser.add_argument("-c", "--classname", default="interspeech", type=str, help="The LaTeX class name")
     parser.add_argument(
         "-C",
@@ -48,9 +46,7 @@ def add_subparsers(subparsers):
 
     # Add arguments
     parser.add_argument("conf_input", help="The input metadata file")
-    parser.add_argument(
-        "abstract_book_root_dir", help="The abstract book latex file"
-    )
+    parser.add_argument("abstract_book_root_dir", help="The abstract book latex file")
 
     parser.set_defaults(func=main)
 
@@ -59,7 +55,7 @@ def main(args: argparse.Namespace):
     logger = logging.getLogger(__name__)
     conf_path = pathlib.Path(args.conf_input)
     abstract_book_root_dir = pathlib.Path(args.abstract_book_root_dir)
-    generated_elements_dir = abstract_book_root_dir/"auto"
+    generated_elements_dir = abstract_book_root_dir / "auto"
     generated_elements_dir.mkdir(exist_ok=True, parents=True)
 
     colour_file = None
@@ -74,7 +70,7 @@ def main(args: argparse.Namespace):
         with importlib.resources.as_file(template_res) as template_file:
             shutil.copy(template_file, cls_file)
 
-        colour_file = cls_file.parent/"theme/colours.tex"
+        colour_file = cls_file.parent / "theme/colours.tex"
         if colour_file.exists():
             raise Exception(f"The colour file {colour_file} already exists, delete it if you want to bootstrap/reset")
         colour_file.parent.mkdir(exist_ok=True, parents=True)
@@ -96,13 +92,12 @@ def main(args: argparse.Namespace):
         template_engine = configure_latex_jinja(template_loader)
         generate_theme_file(conf, colour_file, template_engine)
 
-
     processor = AbstractBookProcessor(conf)
     processor.process(generated_elements_dir)
 
     if args.bootstrap:
-        processor.generate_entry_point(abstract_book_root_dir/"main.tex")
+        processor.generate_entry_point(abstract_book_root_dir / "main.tex")
 
     # Prepare content template
     if args.compile:
-        compile(abstract_book_root_dir/"main.tex")
+        compile(abstract_book_root_dir / "main.tex")

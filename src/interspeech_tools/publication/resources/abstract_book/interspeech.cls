@@ -140,12 +140,20 @@
   \fancyhf{} % clear all header and footer fields
   \fancyhead[LE]{
       \begin{tikzpicture}[overlay, remember picture]%
-          \node[anchor=north, inner sep=0,outer sep=0] at (current page.north){\includegraphics[width=\paperwidth]{theme/standard_header_left.pdf}};
+          \node[anchor=north, inner sep=0,outer sep=0] at (current page.north){
+              \IfFileExists{theme/standard_header_left.pdf}
+              {\includegraphics[width=\paperwidth]{theme/standard_header_left.pdf}}
+              {}
+          };
       \end{tikzpicture}
   }
   \fancyhead[LO]{
       \begin{tikzpicture}[overlay, remember picture]%
-          \node[anchor=north, inner sep=0,outer sep=0] at (current page.north) {\includegraphics[width=\paperwidth]{theme/standard_header_right.pdf}};
+          \node[anchor=north, inner sep=0,outer sep=0] at (current page.north){
+              \IfFileExists{theme/standard_header_right.pdf}
+              {\includegraphics[width=\paperwidth]{theme/standard_header_right.pdf}}
+              {}
+          };
       \end{tikzpicture}
   }
   \fancyfoot[C]{

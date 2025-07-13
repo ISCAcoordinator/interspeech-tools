@@ -124,6 +124,7 @@ class CompassDataGenerator:
             elif author.middle_initial is not None:
                 firstname += " " + author.middle_initial
 
+            affiliations = set([a.institute for aff_list in list(author.paper_affiliations.values()) for a in aff_list])
             cur_person = {
                 "id": author.id,
                 "email": author.email,
@@ -131,7 +132,7 @@ class CompassDataGenerator:
                 "orderingName": author.str_sorting_by_last_name(),
                 "firstName": firstname,
                 "lastName": author.lastname,
-                "Company": author.default_affiliation,
+                "subtitle": "; ".join(affiliations),
                 "configuratorType": "person:person",
             }
 

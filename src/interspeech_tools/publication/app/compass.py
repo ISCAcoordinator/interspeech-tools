@@ -3,7 +3,21 @@ import logging
 import pandas as pd
 
 from isca.model.person import Role
-from isca.model.program import PosterSession, PresentationSession, OralSession, SpecialSession
+from isca.model.program import (
+    BlueSkyPresentation,
+    Keynote,
+    KeynoteSession,
+    OralPresentation,
+    PosterPresentation,
+    PosterSession,
+    PresentationSession,
+    OralSession,
+    ShowAndTellPresentation,
+    ShowAndTellSession,
+    SpecialPresentation,
+    SpecialSession,
+    SurveyTalk,
+)
 from isca.model import Conference
 
 import pandas.io.formats.excel
@@ -49,7 +63,26 @@ class CompassDataGenerator:
         "orderingName",
         "exhibitorId",
     ]
+    TAG_COLUMNS = ["id", "name", "subtitle", "subtitleDetail", "configuratorType", "info", "orderingName", "color"]
     PERSON_WANTED_ROLES = [Role.AUTHOR, Role.PRESENTER]
+
+    # FIXME: for now this is hardcoded, it could be good to be more flexible
+    SUPPORTED_SESSION_TYPES = {
+        OralSession: "oral",
+        PosterSession: "poster",
+        ShowAndTellSession: "showandtell",
+        SpecialSession: "special",
+        KeynoteSession: "keynote",
+    }
+    SUPPORTED_PRESENTATION_TYPES = {
+        OralPresentation: "oral",
+        PosterPresentation: "poster",
+        Keynote: "keynote",
+        ShowAndTellPresentation: "showandtell",
+        BlueSkyPresentation: "bluesky",
+        SurveyTalk: "survey",
+        SpecialPresentation: "special",
+    }
 
     def __init__(self, conference: Conference):
         self._logger = logging.getLogger(self.__class__.__name__)
@@ -60,14 +93,7 @@ class CompassDataGenerator:
         self._generate_app_person(output_root_dir / "Persons.xlsx")
         self._generate_app_place(output_root_dir / "Places.xlsx")
         self._generate_app_agenda(output_root_dir / "Timeslots.xlsx")
-        # self._generate_app_institution(output_root_dir / "Institutions.xlsx")
-        # self._generate_app_classifier(output_root_dir / "Classifiers.xlsx")
-
-    def _generate_app_classifier(self, output_classifier_file: pathlib.Path) -> None:
-        pass
-
-    def _generate_app_institution(self, output_institution_file: pathlib.Path) -> None:
-        pass
+        self._generate_app_tags(output_root_dir / "Tags.xlsx")
 
     def _generate_app_place(self, output_place_file: pathlib.Path) -> None:
 
@@ -121,6 +147,70 @@ class CompassDataGenerator:
         df_persons.sort_values(by=["lastName", "firstName"], inplace=True)
         df_persons.to_excel(output_person_file, index=False)
 
+    def _generate_app_tags(self, output_tag_file: pathlib.Path) -> None:
+
+        list_tags = []
+        for _, session_type in CompassDataGenerator.SUPPORTED_SESSION_TYPES.items():
+            if (
+                (self.conference.theme is not None)
+                and ("colors" in self.conference.theme)
+                and ("foreground" in self.conference.theme["colors"])
+            ):
+                color = str(self.conference.theme["colors"]["foreground"])
+
+            color = None
+            if (
+                (self.conference.theme is not None)
+                and (session_type in self.conference.theme)
+                and ("colors" in self.conference.theme[session_type])
+                and ("foreground" in self.conference.theme[session_type]["colors"])
+            ):
+                color = str(self.conference.theme[session_type]["colors"]["foreground"])
+
+            list_tags.append(
+                {
+                    "id": f"{session_type}_session",
+                    "color": color,
+                    "subtitle": session_type,
+                    "configuratorType": "classifier:session_type",
+                }
+            )
+
+        for _, presentation_type in CompassDataGenerator.SUPPORTED_PRESENTATION_TYPES.items():
+            if (
+                (self.conference.theme is not None)
+                and ("colors" in self.conference.theme)
+                and ("foreground" in self.conference.theme["colors"])
+            ):
+                color = str(self.conference.theme["colors"]["foreground"])
+
+            color = None
+            if (
+                (self.conference.theme is not None)
+                and (presentation_type in self.conference.theme)
+                and ("colors" in self.conference.theme[presentation_type])
+                and ("foreground" in self.conference.theme[presentation_type]["colors"])
+            ):
+                color = str(self.conference.theme[presentation_type]["colors"]["foreground"])
+
+            list_tags.append(
+                {
+                    "id": f"{presentation_type}_presentation",
+                    "color": color,
+                    "subtitle": presentation_type,
+                    "configuratorType": "classifier:presentation_type",
+                }
+            )
+
+        # Save the generated dataframe to the excel file
+        df_tags = pd.DataFrame(list_tags)
+        for col_to_add in CompassDataGenerator.TAG_COLUMNS:
+            if col_to_add not in df_tags.columns:
+                df_tags[col_to_add] = ""
+        df_tags = df_tags.reindex(columns=CompassDataGenerator.TAG_COLUMNS)
+        df_tags.sort_values(by=["configuratorType", "id"], inplace=True)
+        df_tags.to_excel(output_tag_file, index=False)
+
     def _generate_app_agenda(self, output_agenda_file: pathlib.Path) -> None:
         list_agenda = []
         cur_session = None
@@ -137,16 +227,22 @@ class CompassDataGenerator:
                 )
                 continue
 
+            if type(session) not in CompassDataGenerator.SUPPORTED_SESSION_TYPES:
+                raise Exception(f"This session type {type(session)} is not yet supported")
+            session_type = CompassDataGenerator.SUPPORTED_SESSION_TYPES[type(session)]
+
             # Initialise the new session
             cur_session = {
-                "id": session.id,  # NOTE: Empty as it will be filled by the APP designer
+                "id": session.id,
                 "name": session.name,
                 "subtitle": session.id,
+                "orderingName": session.id,
                 "placeId": room.id,
                 "date": timeslot.start.strftime("%d-%m-%y"),
                 "startTime": timeslot.start.strftime("%H:%M"),
                 "endTime": timeslot.end.strftime("%H:%M"),
                 "configuratorType": "timeslot:session",
+                "classifierId_1": f"{session_type}_session",
             }
 
             # Add session chairs
@@ -156,42 +252,15 @@ class CompassDataGenerator:
 
             list_agenda.append(cur_session)
 
-            # TODO: deal with the different session type
-            session_type = "oral"
-            if isinstance(session, PosterSession):
-                session_type = "poster"
-            elif isinstance(session, PosterSession):
-                session_type = "show_and_tell"
-            elif isinstance(session, SpecialSession):
-                session_type = "special"
-
-            # TODO: add color
-            color = None
-            if (
-                (self.conference.theme is not None)
-                and ("colors" in self.conference.theme)
-                and ("foreground" in self.conference.theme["colors"])
-            ):
-                color = str(self.conference.theme["colors"]["foreground"])
-
-            if (
-                (self.conference.theme is not None)
-                and (session_type in self.conference.theme)
-                and ("colors" in self.conference.theme[session_type])
-                and ("foreground" in self.conference.theme[session_type]["colors"])
-            ):
-                color = str(self.conference.theme[session_type]["colors"]["foreground"])
-
-            if color is not None:
-                cur_session["color"] = color
-
             # Add presentations
             for presentation_idx, presentation in enumerate(session.presentations, 0):
                 cur_presentation = {x: cur_session[x] for x in cur_session.keys()}
                 cur_presentation["id"] = presentation.id
                 cur_presentation["parent"] = cur_session["id"]
-                cur_presentation["configuratorType"] = f"timeslot:{session_type}"
+                cur_presentation["configuratorType"] = f"timeslot:presentation"
                 cur_presentation["name"] = presentation.title
+
+                # Add abstract
                 abstract = ""
                 if (presentation.abstract is not None) and (not pd.isna(presentation.abstract)):
                     abstract = "<p>" + presentation.abstract.replace("\n\n", "</p>\n<p>") + "</p>"
@@ -200,6 +269,12 @@ class CompassDataGenerator:
                 if isinstance(session, OralSession):
                     cur_presentation["startTime"] = session.start_presentation(presentation_idx).strftime("%H:%M")
                     cur_presentation["endTime"] = session.end_presentation(presentation_idx).strftime("%H:%M")
+
+                # Add tags
+                if type(presentation) not in CompassDataGenerator.SUPPORTED_PRESENTATION_TYPES:
+                    raise Exception(f"This presentation type {type(presentation)} is not yet supported")
+                presentation_type = CompassDataGenerator.SUPPORTED_PRESENTATION_TYPES[type(presentation)]
+                cur_presentation["classifierId_1"] = f"{presentation_type}_presentation"
 
                 # Add presenters
                 if presentation.presenters is not None:

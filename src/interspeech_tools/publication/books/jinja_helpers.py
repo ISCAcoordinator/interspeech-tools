@@ -147,6 +147,7 @@ def configure_latex_jinja(template_loader: jinja2.PackageLoader):
     )
 
     # Set generic filters
+    jenv_latex.filters["short_presentation_id"] = short_presentation_id
     jenv_latex.filters["latexify"] = latexify
     jenv_latex.filters["compact_numbers"] = compact_number
     jenv_latex.filters["has_paper"] = has_paper

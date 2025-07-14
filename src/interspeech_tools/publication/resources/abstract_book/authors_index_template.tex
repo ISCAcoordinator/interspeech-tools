@@ -1,11 +1,11 @@
 \begin{multicols*}{2}
 \begin{FlushLeft}
 \BLOCK{ for author in (authors | sort_authors) }
-    \BLOCK{ for paper in (author | list_presentations) }
+    \BLOCK{ for presentation in (author | list_presentations) }
         \BLOCK{ if loop.index == 1 }
-            {\footnotesize \VAR{author.lastname | latexify}, \VAR{author.firstname | latexify}\dotfill \authorpaperbox{\hyperlink{\VAR{paper.id}}{\VAR{paper.id}} \hfill [\pageref*{\VAR{paper.id}}]}} \newline
+            {\footnotesize \VAR{author.lastname | latexify}, \VAR{author.firstname | latexify}\dotfill \authorpaperbox{\hyperlink{\VAR{presentation | short_presentation_id}}{\VAR{presentation | short_presentation_id}} \hfill [\pageref*{\VAR{presentation | short_presentation_id}}]}} \newline
         \BLOCK{ else }
-            {\footnotesize~\hfill\authorpaperbox{\hyperlink{\VAR{paper.id}}{\VAR{paper.id}} \hfill [\pageref*{\VAR{paper.id}}]}} \newline
+            {\footnotesize~\hfill\authorpaperbox{\hyperlink{\VAR{presentation | short_presentation_id}}{\VAR{presentation | short_presentation_id}} \hfill [\pageref*{\VAR{presentation | short_presentation_id}}]}} \newline
         \BLOCK{ endif }
     \BLOCK{ endfor }
 \BLOCK{ endfor }

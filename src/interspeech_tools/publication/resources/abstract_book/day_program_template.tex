@@ -9,14 +9,14 @@
 
   \BLOCK{ for presentation in session[0].presentations }
     \BLOCK{ if presentation | is_survey }
-\survey{\VAR{presentation.id}}
+\survey{\VAR{presentation | short_presentation_id}}
        {\VAR{presentation.title | latexify}}
        {\VAR{presentation | presenters}}
        {\VAR{session[0] | get_presentation_timeslot(loop.index-1)}}
 
     \BLOCK{ elif presentation | is_bluesky }
 
-\bluesky{\VAR{presentation.id}}
+\bluesky{\VAR{presentation | short_presentation_id}}
        {\VAR{presentation.title | latexify}}
        {\VAR{presentation | presenters}}
        {\VAR{session[0] | get_presentation_timeslot(loop.index-1)}}
@@ -25,7 +25,7 @@
     \BLOCK{ elif presentation | has_paper }
 
 \presentation{\VAR{presentation | type_presentation}}
-             {\VAR{presentation.id}}
+             {\VAR{presentation | short_presentation_id}}
              {\VAR{presentation.presented_paper.title | latexify}}
              {\VAR{presentation | authors}}
              {\VAR{session[0] | get_presentation_timeslot(loop.index-1)}}

@@ -903,7 +903,7 @@ class CMTSerialiser(ISCAObject):
             chairs,
             conf_info["generateDOIs"] if "generateDOIs" in conf_info else False,
             conf_info["theme"] if "theme" in conf_info else None,
-            annuary=self._annuary.compress(),
+            annuary=self._annuary,
         )
 
         if student_award_nominees is not None:

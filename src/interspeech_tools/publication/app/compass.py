@@ -88,6 +88,7 @@ class CompassDataGenerator:
     def __init__(self, conference: Interspeech):
         self._logger = logging.getLogger(self.__class__.__name__)
         self.conference = conference
+        self.conference.compress_annuary(lambda x: bool(x.validate_roles(set([Role.AUTHOR, Role.PRESENTER]))))
 
     def generate_data(self, output_root_dir: pathlib.Path):
         output_root_dir.mkdir(exist_ok=True, parents=True)

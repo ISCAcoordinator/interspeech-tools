@@ -2,7 +2,6 @@ import logging
 import pathlib
 import jinja2
 
-from isca.model.event import Conference
 from isca.model.item import Session
 from isca.model.program import (
     OralSession,
@@ -17,6 +16,7 @@ from isca.model.program import (
     PosterPresentation,
     Presentation,
 )
+from ...model import Interspeech
 
 
 SPECIFIC_SESSION_IDS = {KeynoteSession: "keynote", SpecialSession: "special", ShowAndTellSession: "showandtell"}
@@ -56,7 +56,7 @@ def get_session_type(input_session: Session) -> str:
     return "default"
 
 
-def generate_theme_file(conf: Conference, output_file: pathlib.Path, template_engine: jinja2.Environment):
+def generate_theme_file(conf: Interspeech, output_file: pathlib.Path, template_engine: jinja2.Environment):
     if conf.theme is None:
         raise Exception("There is no theme element defined for the conference")
 

@@ -13,9 +13,9 @@ from isca.model.event import Conference
 from isca.model.item import Paper
 from isca.model.person import Person
 from isca.model.program import PresentationSession, Presentation
-from isca.io.cmt import CMTSerialiser
 
 # Helpers
+from ...io.cmt import CMTSerialiser
 from ..books.utils import compile
 from ..books.jinja_helpers import configure_latex_jinja
 

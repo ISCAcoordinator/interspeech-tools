@@ -2,8 +2,8 @@ import argparse
 import pathlib
 
 # ISCA Lib
-from isca.io.cmt import CMTSerialiser
 from isca.io.archive import ArchiveInputSerialiser
+from ...io.cmt import CMTSerialiser
 
 
 def add_subparsers(subparsers):

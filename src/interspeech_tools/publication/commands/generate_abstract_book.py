@@ -1,7 +1,6 @@
 import logging
 import argparse
 import pathlib
-from re import A
 
 # Templating / rendering
 from ..books.theme import generate_theme_file
@@ -9,10 +8,8 @@ import shutil
 import importlib.resources
 import jinja2
 
-# ISCA Lib
-from isca.io.cmt import CMTSerialiser
-
 # Helpers
+from ...io.cmt import CMTSerialiser
 from ..books.utils import compile
 from ..books.abstract import AbstractBookProcessor
 from ..books.jinja_helpers import configure_latex_jinja

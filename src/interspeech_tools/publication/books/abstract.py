@@ -6,8 +6,9 @@ import jinja2
 
 from isca.model.program import Room, Timeslot, Presentation
 from isca.model.person import Person
-from isca.model.event import Conference
 
+
+from ...model import Interspeech
 
 from .theme import (
     get_session_type,
@@ -16,7 +17,7 @@ from .jinja_helpers import configure_latex_jinja
 
 
 class AbstractBookProcessor(ISCAObject):
-    def __init__(self, conf: Conference):
+    def __init__(self, conf: Interspeech):
         super().__init__()
         self._conf = conf
         if self._conf.program is None:

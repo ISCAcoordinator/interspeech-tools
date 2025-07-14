@@ -1,6 +1,8 @@
 import pathlib
 import logging
+
 import pandas as pd
+import pandas.io.formats.excel
 
 from isca.model.person import Role
 from isca.model.program import (
@@ -18,9 +20,8 @@ from isca.model.program import (
     SpecialSession,
     SurveyTalk,
 )
-from isca.model import Conference
 
-import pandas.io.formats.excel
+from ...model import Interspeech
 
 pandas.io.formats.excel.ExcelFormatter.header_style = None
 
@@ -84,7 +85,7 @@ class CompassDataGenerator:
         SpecialPresentation: "special",
     }
 
-    def __init__(self, conference: Conference):
+    def __init__(self, conference: Interspeech):
         self._logger = logging.getLogger(self.__class__.__name__)
         self.conference = conference
 

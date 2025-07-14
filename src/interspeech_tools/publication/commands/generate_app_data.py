@@ -2,7 +2,7 @@ import argparse
 import pathlib
 
 # ISCA Lib
-from isca.io.cmt import CMTSerialiser
+from ...io.cmt import CMTSerialiser
 from ..app.compass import CompassDataGenerator
 
 

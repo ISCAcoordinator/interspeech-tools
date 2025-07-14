@@ -20,14 +20,14 @@ We assume that the data from the google drive is stored into `../data/ForPublica
 
 ```sh
 mkdir -p output/validation_book/
-is_pub -vv generate_validation_book -b -C ../data/ForPublicationCommittee/config.yaml output/validation_book/
+is_pub -vv generate_validation_book -b --compile-tool="latexmk" ../data/ForPublicationCommittee/config.yaml output/validation_book/
 ```
 
 ### Generate the abstract book
 
 ```sh
 mkdir -p output/abstract_book/
-is_pub -vv generate_abstract_book -b -C ../data/ForPublicationCommittee/config.yaml output/abstract_book/
+is_pub -vv generate_abstract_book -b --compile-tool="latexmk" ../data/ForPublicationCommittee/config.yaml output/abstract_book/
 ```
 
 ### Generate the app data

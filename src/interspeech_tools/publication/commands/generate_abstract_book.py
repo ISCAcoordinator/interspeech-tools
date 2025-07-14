@@ -30,10 +30,9 @@ def add_subparsers(subparsers):
     parser.add_argument("-b", "--bootstrap", action="store_true", help="Add all elements to generate the abstract book")
     parser.add_argument("-c", "--classname", default="interspeech", type=str, help="The LaTeX class name")
     parser.add_argument(
-        "-C",
-        "--compile",
-        action="store_true",
-        help="Compile the book (use latexmk if available, else use lualatex. pdflatex and xelatex are not supported)",
+        "--compile-tool",
+        default="none",
+        help="tools to compile the book (none: no compilation, auto: use what is available, latexmk, lualtex) [none]",
     )
     parser.add_argument(
         "-p", "--pdf-path", type=str, default=None, help="The alternative directory containing the PDF files (flatten!)"
@@ -95,6 +94,5 @@ def main(args: argparse.Namespace):
     if args.bootstrap:
         processor.generate_entry_point(abstract_book_root_dir / "main.tex")
 
-    # Prepare content template
-    if args.compile:
-        compile(abstract_book_root_dir / "main.tex")
+    if args.compile_tool != "none":
+        compile(abstract_book_root_dir / "main.tex", args.compile_tool)

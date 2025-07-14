@@ -50,10 +50,9 @@ def add_subparsers(subparsers):
     parser.add_argument("-b", "--bootstrap", action="store_true", help="Add all elements to generate the validation book")
     parser.add_argument("-c", "--classname", default="interspeech", type=str, help="The LaTeX class name")
     parser.add_argument(
-        "-C",
-        "--compile",
-        action="store_true",
-        help="Compile the book (use latexmk if available, else use lualatex. pdflatex and xelatex are not supported)",
+        "--compile-tool",
+        default="none",
+        help="tools to compile the book (none: no compilation, auto: use what is available, latexmk, lualtex) [none]",
     )
     parser.add_argument("-n", "--no-sessions", action="store_true", help="Do not use the sessions, use only the papers")
     parser.add_argument(
@@ -136,5 +135,5 @@ def main(args: argparse.Namespace):
             )
         )
 
-    if args.compile:
-        compile(val_book_file)
+    if args.compile_tool != "none":
+        compile(val_book_file, args.compile_tool)

@@ -15,6 +15,16 @@ from .theme import (
 )
 
 
+def short_presentation_id(input: Presentation) -> str:
+    presentation_id = input.id
+    presentation_id = re.sub(r"Area([0-9])-", r"Area0\1-", presentation_id)
+    shorten = {"Area": "A", "Oral": "O", "Poster": "P", "ShowAndTell": "ST"}
+    for s, v in shorten.items():
+        presentation_id = presentation_id.replace(s, v)
+
+    return presentation_id
+
+
 def is_presentation(input: object) -> bool:
     return isinstance(input, Presentation)
 

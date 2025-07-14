@@ -51,6 +51,7 @@ CMT_SESSION_ROOMS_SHEET_NAME = "Rooms"
 CMT_SESSION_KEYNOTE_SHEET_NAME = "Keynotes"
 CMT_SESSION_BLUESKY_SHEET_NAME = "BlueSky Papers"
 CMT_SESSION_SURVEY_TALKS_SHEET_NAME = "Survey Talks"
+CMT_SESSION_STUDENT_AWARD_NOMINEES_SHEET_NAME = "StudentAwardNominees"
 CMT_SESSION_PAPER_SEPARATOR = ","
 
 CMT_CHAIR_CONF_SEPARATOR = ","
@@ -311,8 +312,10 @@ class CMTSerialiser(ISCAObject):
         if self.ignore_sessions:
             return self.load_conference(conf_metadata_file, papers=papers, sessions=None)
         else:
-            _, program = self.load_sessions(session_file, papers, presenters)
-            return self.load_conference(conf_metadata_file, program=program, papers=papers)
+            _, program, student_award_nominees = self.load_sessions(session_file, papers, presenters)
+            return self.load_conference(
+                conf_metadata_file, program=program, papers=papers, student_award_nominees=student_award_nominees
+            )
 
     def load_users(self, user_spreadsheet_file: pathlib.Path, ignore_role: bool = True) -> Annuary:
         users = Annuary()
@@ -657,12 +660,23 @@ class CMTSerialiser(ISCAObject):
             survey_talks[survey_talk["Survey ID"]] = survey
         return survey_talks
 
+    def _load_student_award_nominees(self, session_summary_file: pathlib.Path) -> set[str]:
+        df = load_excel(
+            session_summary_file,
+            sheet_name=CMT_SESSION_STUDENT_AWARD_NOMINEES_SHEET_NAME,
+        )
+
+        list_nominees = set()
+        for _, nominee_info in df.iterrows():
+            list_nominees.add(str(nominee_info["Paper ID"]))
+        return list_nominees
+
     def load_sessions(
         self,
         session_summary_file: pathlib.Path,
         dict_papers: dict[str, Paper],
         dict_presenters: dict[str, list[Person] | None] = {},
-    ) -> tuple[list[Session], dict[str, Timeslot]]:
+    ) -> tuple[list[Session], Program, set[str]]:
 
         list_sessions = []
 
@@ -743,12 +757,6 @@ class CMTSerialiser(ISCAObject):
 
             session_id = str(session_info["Session name"])
             session_name = str(session_info["Session title"])
-
-            # FIXME: Sorting and shortening is hardcoded, this should be done somewhere else
-            session_id = re.sub(r"Area([0-9])-", r"Area0\1-", session_id)
-            shorten = {"Area": "A", "Oral": "O", "Poster": "P", "ShowAndTell": "ST"}
-            for s, v in shorten.items():
-                session_id = session_id.replace(s, v)
 
             # Create the sessions
             cur_time_slot = dict_timeslots[session_info["Timeslot name*"]]
@@ -840,7 +848,8 @@ class CMTSerialiser(ISCAObject):
             program.add_session(cur_time_slot, cur_room, cur_session)
             list_sessions.append(cur_session)
 
-        return list_sessions, program
+        nominees_id = self._load_student_award_nominees(session_summary_file)
+        return list_sessions, program, nominees_id
 
     def load_conference(
         self,
@@ -848,6 +857,7 @@ class CMTSerialiser(ISCAObject):
         papers: dict[str, Paper],
         program: Program | None = None,
         sessions: list[Session] | None = None,
+        student_award_nominees: set[str] | None = None,
     ) -> Conference:
 
         if (sessions is not None) and (papers is not None):
@@ -895,6 +905,10 @@ class CMTSerialiser(ISCAObject):
             conf_info["theme"] if "theme" in conf_info else None,
             annuary=self._annuary.compress(),
         )
+
+        if student_award_nominees is not None:
+            for paper_id in student_award_nominees:
+                conf.add_student_award_nominees(paper_id)
 
         return conf
 

@@ -20,8 +20,8 @@ from isca.model.program import (
     SpecialSession,
     SurveyTalk,
 )
-
 from ...model import Interspeech
+from ..books.jinja_helpers import short_presentation_id
 
 pandas.io.formats.excel.ExcelFormatter.header_style = None
 
@@ -204,6 +204,13 @@ class CompassDataGenerator:
                 }
             )
 
+        list_tags.append(
+            {
+                "id": "best_student_paper_nominee",
+                "subtitle": "best student paper nominee",
+                "configuratorType": "classifier:paper_flag",
+            }
+        )
         # Save the generated dataframe to the excel file
         df_tags = pd.DataFrame(list_tags)
         for col_to_add in CompassDataGenerator.TAG_COLUMNS:
@@ -256,11 +263,18 @@ class CompassDataGenerator:
 
             # Add presentations
             for presentation_idx, presentation in enumerate(session.presentations, 0):
-                cur_presentation = {x: cur_session[x] for x in cur_session.keys()}
-                cur_presentation["id"] = presentation.id
-                cur_presentation["parent"] = cur_session["id"]
-                cur_presentation["configuratorType"] = f"timeslot:presentation"
-                cur_presentation["name"] = presentation.title
+                cur_presentation = {
+                    "id": presentation.presented_paper.id if presentation.presented_paper is not None else presentation.id,
+                    "parent": cur_session["id"],
+                    "configuratorType": "timeslot:presentation",
+                    "name": presentation.title,
+                    "subtitle": short_presentation_id(presentation),
+                    "orderingName": presentation.id,
+                    "placeId": cur_session["placeId"],
+                    "date": cur_session["date"],
+                    "startTime": cur_session["startTime"],
+                    "endTime": cur_session["endTime"],
+                }
 
                 # Add abstract
                 abstract = ""
@@ -277,6 +291,11 @@ class CompassDataGenerator:
                     raise Exception(f"This presentation type {type(presentation)} is not yet supported")
                 presentation_type = CompassDataGenerator.SUPPORTED_PRESENTATION_TYPES[type(presentation)]
                 cur_presentation["classifierId_1"] = f"{presentation_type}_presentation"
+
+                if (presentation.presented_paper is not None) and (
+                    self.conference.is_student_award_nominee(presentation.presented_paper)
+                ):
+                    cur_presentation["classifierId_2"] = "best_student_paper_nominee"
 
                 # Add presenters
                 if presentation.presenters is not None:
@@ -298,8 +317,11 @@ class CompassDataGenerator:
 
         # Added columns
         columns = CompassDataGenerator.AGENDA_COLUMNS.copy()
+        other_columns = []
         for col_to_keep in df_agenda.columns:
             if col_to_keep not in columns:
-                columns.append(col_to_keep)
+                other_columns.append(col_to_keep)
+
+        columns = columns + sorted(other_columns)
         df_agenda = df_agenda.reindex(columns=columns)
         df_agenda.to_excel(output_agenda_file, index=False)

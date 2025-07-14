@@ -756,6 +756,7 @@ class CMTSerialiser(ISCAObject):
                 continue
 
             session_id = str(session_info["Session name"])
+            session_id = re.sub(r"Area([0-9])-", r"Area0\1-", session_id)
             session_name = str(session_info["Session title"])
 
             # Create the sessions

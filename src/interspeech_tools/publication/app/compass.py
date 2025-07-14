@@ -247,7 +247,7 @@ class CompassDataGenerator:
                 "subtitle": session.id,
                 "orderingName": session.id,
                 "placeId": room.id,
-                "date": timeslot.start.strftime("%d-%m-%y"),
+                "date": timeslot.start.strftime("%Y-%m-%d"),
                 "startTime": timeslot.start.strftime("%H:%M"),
                 "endTime": timeslot.end.strftime("%H:%M"),
                 "configuratorType": "timeslot:session",
@@ -322,6 +322,13 @@ class CompassDataGenerator:
             if col_to_keep not in columns:
                 other_columns.append(col_to_keep)
 
-        columns = columns + sorted(other_columns)
+        def _custom_key(x: str) -> tuple[str, int]:
+            elts = x.split("_")
+            if len(elts) == 1:
+                return (elts[0], 0)
+            else:
+                return ("_".join(elts[:-1]), int(elts[-1]))
+
+        columns = columns + sorted(other_columns, key=lambda x: _custom_key(x))
         df_agenda = df_agenda.reindex(columns=columns)
         df_agenda.to_excel(output_agenda_file, index=False)

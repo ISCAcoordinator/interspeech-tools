@@ -85,9 +85,10 @@ class CompassDataGenerator:
         SpecialPresentation: "special",
     }
 
-    def __init__(self, conference: Interspeech):
+    def __init__(self, conference: Interspeech, size_split: int = 1000):
         self._logger = logging.getLogger(self.__class__.__name__)
         self.conference = conference
+        self.size_split = size_split
         self.conference.compress_annuary(lambda x: bool(x.validate_roles(set([Role.AUTHOR, Role.PRESENTER]))))
 
     def generate_data(self, output_root_dir: pathlib.Path):
@@ -141,14 +142,24 @@ class CompassDataGenerator:
             # Entry is done
             list_persons.append(cur_person)
 
-        # Save the generated dataframe to the excel file
+        # Prepare the dataframe
         df_persons = pd.DataFrame(list_persons)
         for col_to_add in CompassDataGenerator.PERSON_COLUMNS:
             if col_to_add not in df_persons.columns:
                 df_persons[col_to_add] = ""
         df_persons = df_persons.reindex(columns=CompassDataGenerator.PERSON_COLUMNS)
         df_persons.sort_values(by=["lastName", "firstName"], inplace=True)
-        df_persons.to_excel(output_person_file, index=False)
+
+        # Split and save
+        nb_persons = df_persons.index.shape[0]
+        nb_slices = nb_persons // self.size_split
+        for i_slice in range(0, nb_slices):
+            cur_file = output_person_file.parent / (output_person_file.stem + f"_{i_slice+1}" + output_person_file.suffix)
+            df_persons.iloc[i_slice * self.size_split : (i_slice + 1) * self.size_split].to_excel(cur_file, index=False)
+
+        i_slice = nb_slices
+        cur_file = output_person_file.parent / (output_person_file.stem + f"_{i_slice+1}" + output_person_file.suffix)
+        df_persons.iloc[i_slice * self.size_split : (i_slice + 1) * nb_persons].to_excel(cur_file, index=False)
 
     def _generate_app_tags(self, output_tag_file: pathlib.Path) -> None:
 
@@ -174,7 +185,7 @@ class CompassDataGenerator:
                 {
                     "id": f"{session_type}_session",
                     "color": color,
-                    "subtitle": session_type,
+                    "name": session_type,
                     "configuratorType": "classifier:session_type",
                 }
             )
@@ -271,7 +282,7 @@ class CompassDataGenerator:
                     "name": presentation.title,
                     "subtitle": short_presentation_id(presentation),
                     "orderingName": presentation.id,
-                    "placeId": cur_session["placeId"],
+                    "placeId_1": cur_session["placeId"],
                     "date": cur_session["date"],
                     "startTime": cur_session["startTime"],
                     "endTime": cur_session["endTime"],

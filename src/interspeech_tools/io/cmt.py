@@ -569,7 +569,6 @@ class CMTSerialiser(ISCAObject):
         df = load_excel(
             session_summary_file,
             sheet_name=CMT_SESSION_BLUESKY_SHEET_NAME,
-            names=["Paper ID"],
         )
 
         bs_paper_ids = set()

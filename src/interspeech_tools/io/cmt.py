@@ -560,7 +560,7 @@ class CMTSerialiser(ISCAObject):
                 f"[{worksheet}] total number of submissions {total_papers}: "
                 + f"failed_papers={failed_papers} ({failed_papers/total_papers*100:.2f}%), "
                 + f"word_papers={word_papers} ({word_papers/total_papers*100:.2f}%), "
-                + f"nopdf ={no_pdf} ({no_pdf/total_papers*100:.2f}%)"
+                + f"nopdf={no_pdf} ({no_pdf/total_papers*100:.2f}%)"
             )
 
         return dict_papers, self._annuary, dict_presenters

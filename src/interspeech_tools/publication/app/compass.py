@@ -123,7 +123,7 @@ class CompassDataGenerator:
         for author in authors:
             firstname = author.firstname
             if firstname is None:
-                firstname = "PLACE_HOLDER"
+                firstname = "PLACE_HOLDER"  # FIXME: this should not be valid
             elif author.middle_initial is not None:
                 firstname += " " + author.middle_initial
 

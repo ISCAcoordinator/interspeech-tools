@@ -37,26 +37,26 @@ def has_paper(input: Presentation) -> bool:
     return True
 
 
-def get_latexified_validation_authors(input_paper: Paper | Presentation) -> str:
+def get_latexified_validation_authors(input_paper: Paper | Presentation, short: bool = True) -> str:
     list_authors = []
     if is_presentation(input_paper):
         input_paper = input_paper.presented_paper
 
     for cur_author in input_paper.authors:
-        list_authors.append(cur_author.str_with_flatten_affiliations(input_paper.id, short=True, markers=True))
+        list_authors.append(cur_author.str_with_flatten_affiliations(input_paper.id, short=short, markers=True))
 
     return latexify(", ".join(list_authors))
 
 
-def get_latexified_validation_presenters(input_presentation: Presentation) -> str:
+def get_latexified_validation_presenters(input_presentation: Presentation, short: bool = True) -> str:
     list_presenters = []
     if input_presentation.presenters is not None:
         for cur_presenter in input_presentation.presenters:
             if input_presentation.presented_paper is None:
-                list_presenters.append(cur_presenter.str_with_flatten_affiliations(None, short=True, markers=False))
+                list_presenters.append(cur_presenter.str_with_flatten_affiliations(None, short=short, markers=True))
             else:
                 list_presenters.append(
-                    cur_presenter.str_with_flatten_affiliations(input_presentation.presented_paper.id, short=True, markers=False)
+                    cur_presenter.str_with_flatten_affiliations(input_presentation.presented_paper.id, short=short, markers=True)
                 )
 
     return latexify(", ".join(list_presenters))

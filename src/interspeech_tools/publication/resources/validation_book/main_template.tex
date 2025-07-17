@@ -1,9 +1,13 @@
-\documentclass[twoside, abstract]{\VAR{classname}}
+\documentclass[twoside, noabstract]{\VAR{classname}}
 
 \usepackage{fontspec} % <--- enables Unicode fonts with LuaLaTeX or XeLaTeX
-% \setmainfont{Latin Modern Roman}
 \setmainfont{Charis SIL}
 \setsansfont{Charis SIL}
+
+\usepackage{enumitem}
+\setlist[itemize]{topsep=0pt,before=\leavevmode\vspace{-1.5em}}
+\setlist[description]{style=nextline}
+
 
 \usepackage{csquotes}
 \usepackage{multicol}
@@ -77,44 +81,15 @@
 \clearpage
 
 \section{Paper Index}
+\label{section:paper_index}
 
-\begin{multicols*}{2}
-\BLOCK{ for paper_id, paper in papers.items() }
-  \BLOCK{ if (paper | is_presentation) }
-    \presentation{\VAR{paper | type_presentation}}
-                 {\VAR{paper_id}}
-                 {\VAR{paper.presented_paper.title | latexify}}
-                 {\VAR{paper | validation_authors}}
-                 {\VAR{paper | validation_presenters}}
-                 {\VAR{ paper.presented_paper.abstract | latexify }}
-                 {\VAR{paper.presented_paper.resource if (paper.presented_paper.resource is not none)}}
-  \BLOCK{ else }
-    \paper{\VAR{paper_id}}
-          {\VAR{paper.title | latexify}}
-          {\VAR{paper | authors}}
-          {\VAR{ paper.abstract | latexify }}
-          {\VAR{paper.resource if (paper.resource is not none)}}
-  \BLOCK{ endif }
-
-\BLOCK{ endfor }
-\end{multicols*}
+\input{paper_index}
 
 \clearpage
 
 \section{Author Index}
-\begin{multicols*}{2}
-\begin{FlushLeft}
-\BLOCK{ for author in (authors | sort_authors) }
-    \BLOCK{ for paper in (author | list_papers) }
-        \BLOCK{ if loop.index == 1 }
-            {\footnotesize \VAR{author.lastname | latexify}, \VAR{author.firstname | latexify}\dotfill \authorpaperbox{\hyperlink{\VAR{paper.id}}{\VAR{paper.id}} \hfill [\pageref*{\VAR{paper.id}}]}} \newline
-        \BLOCK{ else }
-            {\footnotesize~\hfill\authorpaperbox{\hyperlink{\VAR{paper.id}}{\VAR{paper.id}} \hfill [\pageref*{\VAR{paper.id}}]}} \newline
-        \BLOCK{ endif }
-    \BLOCK{ endfor }
-\BLOCK{ endfor }
-\end{FlushLeft}
-\end{multicols*}
-\restoregeometry{}
+\label{section:author_index}
+
+\input{author_index}
 
 \end{document}

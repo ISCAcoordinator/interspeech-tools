@@ -12,7 +12,7 @@ import pandas as pd
 # Model helpers
 from isca.model.event import Conference
 from isca.model.core import ISCAObject
-from isca.model.person import Person, Affiliation, Role, Annuary
+from isca.model.person import Person, Speaker, Affiliation, Role, Annuary
 from isca.model.item import Paper, Session
 from isca.model.program import (
     Program,
@@ -177,6 +177,7 @@ class CMTSerialiser(ISCAObject):
 
             if cur_person is None:
                 cur_person = Person(
+                    None,
                     first_name,
                     last_name,
                     email=email,
@@ -212,7 +213,7 @@ class CMTSerialiser(ISCAObject):
                 cur_presenter = self._annuary.find_person_by_email(pres_email)
                 if cur_presenter is None:
                     # FIXME: force unknwon affiliation
-                    cur_presenter = Person(pres_firstname, pres_lastname, Affiliation("Unknown"), pres_email)
+                    cur_presenter = Person(None, pres_firstname, pres_lastname, Affiliation("Unknown"), pres_email)
                     self._annuary.add(cur_presenter)
                 cur_presenter.add_role(Role.PRESENTER)
                 presenters = [cur_presenter]
@@ -375,6 +376,7 @@ class CMTSerialiser(ISCAObject):
                             raise Exception(f'The role ("{r}") is unknown')
 
                 cur_user = Person(
+                    None,
                     first_name.strip(),
                     last_name.strip(),
                     email=str(user_row["Email"]).strip(),
@@ -448,6 +450,7 @@ class CMTSerialiser(ISCAObject):
                             raise Exception(f'The role ("{r}") is unknown')
 
                 cur_user = Person(
+                    None,
                     first_name.strip(),
                     last_name.strip(),
                     email=str(user_row["Email"]).strip(),
@@ -576,7 +579,7 @@ class CMTSerialiser(ISCAObject):
             bs_paper_ids.add(str(bs_row["Paper ID"]))
         return bs_paper_ids
 
-    def _load_keynotes(self, session_summary_file: pathlib.Path) -> dict[str, Keynote]:
+    def _load_keynotes(self, session_summary_file: pathlib.Path, papers: dict[str, Paper] | None = None) -> dict[str, Keynote]:
         df = load_excel(
             session_summary_file,
             sheet_name=CMT_SESSION_KEYNOTE_SHEET_NAME,
@@ -585,10 +588,11 @@ class CMTSerialiser(ISCAObject):
         keynotes = dict()
         for _, row in df.iterrows():
             email = str(row["Email"])
-            speaker = self._annuary.find_person_by_email(email)
-            if speaker is None:
+            person = self._annuary.find_person_by_email(email)
+            if person is None:
                 affiliation = Affiliation(row["Organization"], row["Country"])
-                speaker = Person(
+                speaker = Speaker(
+                    None,
                     row["First Name"],
                     row["Last Name"],
                     affiliation,
@@ -596,15 +600,20 @@ class CMTSerialiser(ISCAObject):
                     set(),
                     None,
                     row["Middle Initial"] if "Middle Initial" in row else None,
+                    row["Bio"] if "Bio" in row else None,
+                    row["Website"] if "Website" in row else None,
+                    pathlib.Path(row["Photo"]) if "Photo" in row else None,
                 )
+                self._annuary.add(speaker)
+            else:
+                speaker = Speaker.from_person(person)
+                speaker.biography = row["Bio"] if "Bio" in row else None
+                speaker.url = row["Website"] if "Website" in row else None
+                speaker.photo = session_summary_file.parent / row["Photo"] if "Photo" in row else None
+                self._annuary.replace(person, speaker)
 
-            speaker.add_role(Role.PRESENTER)
-            speaker.biography = row["Bio"]
-
-            keynote = Keynote(
-                row["Keynote ID"], row["Paper Title"], [speaker], 60, row["Abstract"]  # FIXME: duration is hardcoded
-            )
-
+            # FIXME: duration is hardcoded
+            keynote = Keynote(row["Keynote ID"], row["Paper Title"], [speaker], 60, row["Abstract"])
             keynotes[keynote.id] = keynote
 
         return keynotes
@@ -640,6 +649,7 @@ class CMTSerialiser(ISCAObject):
 
                 roles = set([Role.PRESENTER])
                 presenter = Person(
+                    None,
                     first_name.strip(),
                     last_name.strip(),
                     email=str(survey_talk["Email"]).strip(),
@@ -682,6 +692,7 @@ class CMTSerialiser(ISCAObject):
         # Load rooms
         dict_rooms = dict()
         df = load_excel(session_summary_file, sheet_name=CMT_SESSION_ROOMS_SHEET_NAME)
+        plenary_room = None
         for _, room_info in df.iterrows():
             capacity = str(room_info["Capacity"]).strip()
             if (capacity == "") or (capacity == "nan"):
@@ -698,11 +709,16 @@ class CMTSerialiser(ISCAObject):
             room = Room(
                 str(room_info["Room name"]).replace(" ", "_"),
                 str(room_info["Room name"]),
-                str(room_info["Room type"]),
+                str(room_info["Room type"]).lower(),
                 nb_zones,
             )
             dict_rooms[room.name] = room
+            if room.type == "plenary":
+                if plenary_room is not None:
+                    raise Exception(f"There is already a plenary room {plenary_room}, can't have another one: {room}")
+                plenary_room = room
 
+        assert plenary_room is not None, "There is no plenary room, which is impossible for Interspeech"
         # Now load timeslots
         dict_timeslots = dict()
         df = load_excel(session_summary_file, sheet_name=CMT_SESSION_TIMESLOTS_SHEET_NAME)
@@ -726,7 +742,7 @@ class CMTSerialiser(ISCAObject):
 
         # Load the keynotes
         keynotes = self._load_keynotes(session_summary_file)
-        for keynote_id, keynote in keynotes.items():
+        for _, keynote in keynotes.items():
             if keynote.presenters is None:
                 raise Exception(f"[{keynote.id}] The keynote doesn't have speaker")
             title = ", ".join([p.name for p in keynote.presenters]) + ": " + keynote.title
@@ -742,7 +758,7 @@ class CMTSerialiser(ISCAObject):
                 presentations=[keynote],
             )
             list_sessions.append(session)
-            # timeslot.add_session(session)
+            program.add_session(timeslot, plenary_room, session)
 
         # Load additional elements
         survey_talks = self._load_survey_talks(session_summary_file)
@@ -886,7 +902,7 @@ class CMTSerialiser(ISCAObject):
                     first_name = " ".join(elts[:-1])
                     last_name = elts[-1]
                     # FIXME: for now the email is slightly forced
-                    cur_chair = Person(first_name, last_name, "noemail@nodomain.org")
+                    cur_chair = Person(None, first_name, last_name, "noemail@nodomain.org")
                     cur_chair.add_role(Role.CHAIR)
                     chairs.append(cur_chair)
 

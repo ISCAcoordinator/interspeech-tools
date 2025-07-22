@@ -5,7 +5,7 @@ from pyuca import Collator
 
 from isca.model.person import Person
 from isca.model.item import Paper
-from isca.model.program import PresentationSession, Presentation, SurveyTalk, BlueSkyPresentation, Timeslot
+from isca.model.program import PresentationSession, Presentation, SurveyTalk, BlueSkyPresentation, Timeslot, Keynote
 
 
 from .utils import latexify
@@ -127,6 +127,10 @@ def is_presentation_bluesky(input_presentation: Presentation) -> bool:
     return isinstance(input_presentation, BlueSkyPresentation)
 
 
+def is_presentation_keynote(input_presentation: Presentation) -> bool:
+    return isinstance(input_presentation, Keynote)
+
+
 def compact_number(input: str) -> str:
     return re.sub(r"[ ]+([0-9]+)", r"~\g<1>", input)
 
@@ -167,5 +171,6 @@ def configure_latex_jinja(template_loader: jinja2.PackageLoader):
     jenv_latex.filters["get_presentation_timeslot"] = get_presentation_timeslot
     jenv_latex.filters["is_survey"] = is_presentation_survey
     jenv_latex.filters["is_bluesky"] = is_presentation_bluesky
+    jenv_latex.filters["is_keynote"] = is_presentation_keynote
 
     return jenv_latex

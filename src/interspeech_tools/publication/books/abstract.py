@@ -37,6 +37,8 @@ class AbstractBookProcessor(ISCAObject):
     def process(self, root_output_dir: pathlib.Path) -> None:
 
         root_output_dir.mkdir(exist_ok=True, parents=True)
+
+        # core program
         delta = self._conf.end_date - self._conf.start_date  # returns timedelta
         for i in range(delta.days + 1):
             date = self._conf.start_date + datetime.timedelta(days=i)
@@ -53,11 +55,20 @@ class AbstractBookProcessor(ISCAObject):
             outfilename = root_output_dir / f"{date}.tex"
             with open(outfilename, "w") as outfile:
                 outfile.write(day_program_template.render(sessions=self._conf.program.get_day_sessions(date)))
+
+        # Keynote index
+        keynote_template = self._template_engine.get_template("keynotes_template.tex")
+        outfilename = root_output_dir / "keynotes.tex"
+        with open(outfilename, "w") as outfile:
+            outfile.write(keynote_template.render(sessions=self._conf.sessions))
+
+        # Reviewer index
         reviewer_template = self._template_engine.get_template("reviewers_index_template.tex")
         outfilename = root_output_dir / "reviewers_index.tex"
         with open(outfilename, "w") as outfile:
             outfile.write(reviewer_template.render(reviewers=self._conf.reviewers))
 
+        # Author index
         author_template = self._template_engine.get_template("authors_index_template.tex")
         outfilename = root_output_dir / "authors_index.tex"
         with open(outfilename, "w") as outfile:

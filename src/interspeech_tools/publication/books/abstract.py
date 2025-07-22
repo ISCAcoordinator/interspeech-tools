@@ -111,7 +111,7 @@ class AbstractBookProcessor(ISCAObject):
                 session = sessions[0]
                 session_type = get_session_type(session)
                 row = f"\\multicolumn{{{nb_zones}}}{{c|}}{{"
-                row += f"\\cellcolor{{{session_type.capitalize()}BackgroundColour}}{{\\color{{{session_type.capitalize()}ForegroundColour}}\\bf \\hyperlink{{{session.id}}}{{{session.name}}}}}"
+                row += f"\\cellcontent{{{session.id}}}{{{session.name}}}{{{session_type.capitalize()}BackgroundColour}}{{{session_type.capitalize()}ForegroundColour}}"
                 row += "}"
                 elts.append(row)
             else:
@@ -127,14 +127,14 @@ class AbstractBookProcessor(ISCAObject):
                         session_type = get_session_type(session)
                         session_name = session.name.replace("Special Session - ", "")  # FIXME: this is hardcoded
                         elts.append(
-                            f"\\multicolumn{{{room.nb_zones}}} {{c|}} {{\\cellcolor{{{session_type.capitalize()}BackgroundColour}} {{\\color{{{session_type.capitalize()}ForegroundColour}}\\bf \\hyperlink{{{session.id}}}{{{session_name}}}}}}}"
+                            f"\\multicolumn{{{room.nb_zones}}}{{c|}}{{\\cellcontent{{{session.id}}}{{{session_name}}}{{{session_type.capitalize()}BackgroundColour}}{{{session_type.capitalize()}ForegroundColour}}}}"
                         )
                     else:
                         for session in room_sessions:
                             session_type = get_session_type(session)
                             session_name = session.name.replace("Special Session - ", "")  # FIXME: this is hardcoded
                             elts.append(
-                                f"\\cellcolor{{{session_type.capitalize()}BackgroundColour}}{{\\color{{{session_type.capitalize()}ForegroundColour}}\\bf \\hyperlink{{{session.id}}}{{{session_name}}}}}"
+                                f"\\cellcontent{{{session.id}}}{{{session_name}}}{{{session_type.capitalize()}BackgroundColour}}{{{session_type.capitalize()}ForegroundColour}}"
                             )
 
             content.append(" & ".join(elts))

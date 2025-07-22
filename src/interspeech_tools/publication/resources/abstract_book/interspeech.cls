@@ -320,6 +320,15 @@
 }
 
 
+%% Command \cellcontent takes 4 arguments
+%%    #1 The ID of session
+%%    #2 The title of the session
+%%    #3 The background color of the cell
+%%    #4 The font color
+\newcommand{\cellcontent}[4]{%
+    \cellcolor{#4}{\color{#4}\bf \hyperlink{#1}{#2}}
+}
+
 %% Command \sessionslot takes 7 arguments:
 %%    #1 the ID of the session
 %%    #2 the title of the session

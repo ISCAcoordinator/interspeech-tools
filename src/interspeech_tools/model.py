@@ -2,8 +2,50 @@ import datetime
 
 from isca.model.item import Paper, Session
 from isca.model.person import Person, Annuary
-from isca.model.program import Program
-from isca.model.event import Conference
+from isca.model.program import Presentation, PresentationSession, Program
+from isca.model.event import Conference, Event
+
+
+class Satellite(Event):
+    def __init__(
+        self,
+        id: str,
+        name: str,
+        start_date: datetime.date,
+        end_date: datetime.date,
+        location: str,
+        description: str,
+        url: str,
+    ):
+        super().__init__(id, name, start_date, end_date, location, url)
+        self.description = description
+
+
+class Tutorial(Presentation):
+    def __init__(
+        self, id: str, title: str, presenters: list[Person] | None, duration: int, description: str, is_invited: bool = False
+    ):
+        super().__init__(id, title, presenters, duration, description)
+        self._is_invited = is_invited
+
+    @property
+    def description(self) -> str:
+        return str(self.abstract)
+
+    @property
+    def is_invited(self) -> bool:
+        return self._is_invited
+
+
+class TutorialSession(PresentationSession):
+    def __init__(self, id: str, name: str, start: datetime.datetime, end: datetime.datetime, tutorial: Tutorial):
+        super().__init__(id, name, start, end, [tutorial])
+
+    @property
+    def tutorial(self) -> Tutorial:
+        presentation = self.presentations[0]
+        assert isinstance(presentation, Tutorial)
+        return presentation
 
 
 class Interspeech(Conference):

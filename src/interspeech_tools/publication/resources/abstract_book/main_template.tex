@@ -89,11 +89,23 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%% Keynotes
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\IfFileExists{auto/keynotes.tex}
+{%
 \newpage
 \section{Keynote speakers}
 \pagestyle{fancy}
 \input{auto/keynotes.tex}
+}{}
 
+
+\IfFileExists{auto/surveys.tex}
+{%}
+\newpage
+\section{Survey talks}
+\pagestyle{fancy}
+\input{auto/surveys.tex}
+}{}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%% Actual program

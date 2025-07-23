@@ -1,0 +1,15 @@
+\BLOCK{ for session in sessions }
+  \BLOCK{ for presentation in session.presentations }
+    \BLOCK{ if presentation | is_survey }
+    \BLOCK{ set presenter = presentation.presenters[0] }
+\subsection*{ \VAR{presentation.title | latexify}}
+\VAR{presenter.str_with_flatten_affiliations(None, short=True, markers=False) | latexify}
+
+\subsubsection*{Abstract}
+\VAR{presentation.abstract | latexify}
+
+\subsubsection*{Biography}
+\VAR{presenter.biography | latexify}
+    \BLOCK{ endif }
+  \BLOCK{ endfor }
+\BLOCK{ endfor }

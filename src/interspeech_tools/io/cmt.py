@@ -625,48 +625,57 @@ class CMTSerialiser(ISCAObject):
         )
 
         survey_talks = dict()
-        for _, survey_talk in df.iterrows():
+        for _, row in df.iterrows():
 
-            presenter = self._annuary.find_person_by_email(survey_talk["Email"])
+            presenter = self._annuary.find_person_by_email(row["Email"])
 
             if presenter is None:
-                first_name = str(survey_talk["First Name"]).strip()
+                first_name = str(row["First Name"]).strip()
 
                 middle_initial = ""
-                if ("Middle Initial (optional)" in survey_talk) and (not pd.isna(survey_talk["Middle Initial (optional)"])):
-                    middle_initial = str(survey_talk["Middle Initial (optional)"]).strip()
+                if ("Middle Initial (optional)" in row) and (not pd.isna(row["Middle Initial (optional)"])):
+                    middle_initial = str(row["Middle Initial (optional)"]).strip()
 
-                if pd.isna(survey_talk["Last Name"]) or (str(survey_talk["Last Name"]) == ""):
+                if pd.isna(row["Last Name"]) or (str(row["Last Name"]) == ""):
                     last_name = first_name.strip()
                     first_name = ""
                 else:
-                    last_name = str(survey_talk["Last Name"])
+                    last_name = str(row["Last Name"])
 
                 affiliation = Affiliation(
-                    institute=str(survey_talk["Organization"]).strip(),
-                    country=str(survey_talk["Country"]).strip(),
+                    institute=str(row["Organization"]).strip(),
+                    country=str(row["Country"]).strip(),
                 )
 
                 roles = set([Role.PRESENTER])
-                presenter = Person(
+                presenter = Speaker(
                     None,
                     first_name.strip(),
                     last_name.strip(),
-                    email=str(survey_talk["Email"]).strip(),
+                    email=str(row["Email"]).strip(),
                     roles=roles,
                     default_affiliation=affiliation,
                     middle_initial=middle_initial,
                 )
+
+                self._annuary.add(presenter)
+            else:
+                speaker = Speaker.from_person(presenter)
+                speaker.biography = row["Bio"] if "Bio" in row else None
+                speaker.url = row["Website"] if "Website" in row else None
+                speaker.photo = session_summary_file.parent / row["Photo"] if "Photo" in row else None
+                self._annuary.replace(presenter, speaker)
+                presenter = speaker
             presenters = [presenter]
 
             survey = SurveyTalk(
-                survey_talk["Survey ID"],
-                title=survey_talk["Paper Title"],
+                row["Survey ID"],
+                title=row["Paper Title"],
                 presenters=list(presenters),
                 duration=40,
-                abstract=survey_talk["Abstract"],
+                abstract=row["Abstract"],
             )
-            survey_talks[survey_talk["Survey ID"]] = survey
+            survey_talks[row["Survey ID"]] = survey
         return survey_talks
 
     def _load_student_award_nominees(self, session_summary_file: pathlib.Path) -> set[str]:

@@ -41,7 +41,7 @@ class Interspeech(Conference):
             annuary,
         )
         self.best_student_papers_nominees: set[Paper] = set()
-        self.best_themed_papers_nominees: set[Paper] = set()
+        self.best_theme_papers_nominees: set[Paper] = set()
 
     def add_student_award_nominees(self, paper: Paper | str):
         if isinstance(paper, str):
@@ -54,3 +54,15 @@ class Interspeech(Conference):
             paper = self.papers[paper]
 
         return paper in self.best_student_papers_nominees
+
+    def add_theme_award_nominees(self, paper: Paper | str):
+        if isinstance(paper, str):
+            paper = self.papers[paper]
+
+        self.best_theme_papers_nominees.add(paper)
+
+    def is_theme_award_nominee(self, paper: Paper | str):
+        if isinstance(paper, str):
+            paper = self.papers[paper]
+
+        return paper in self.best_theme_papers_nominees

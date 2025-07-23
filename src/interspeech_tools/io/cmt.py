@@ -52,6 +52,7 @@ CMT_SESSION_KEYNOTE_SHEET_NAME = "Keynotes"
 CMT_SESSION_BLUESKY_SHEET_NAME = "BlueSky Papers"
 CMT_SESSION_SURVEY_TALKS_SHEET_NAME = "Survey Talks"
 CMT_SESSION_STUDENT_AWARD_NOMINEES_SHEET_NAME = "StudentAwardNominees"
+CMT_SESSION_THEME_AWARD_NOMINEES_SHEET_NAME = "ThemeAwardNominees"
 CMT_SESSION_PAPER_SEPARATOR = ","
 
 CMT_CHAIR_CONF_SEPARATOR = ","
@@ -313,9 +314,13 @@ class CMTSerialiser(ISCAObject):
         if self.ignore_sessions:
             return self.load_conference(conf_metadata_file, papers=papers, sessions=None)
         else:
-            _, program, student_award_nominees = self.load_sessions(session_file, papers, presenters)
+            _, program, student_award_nominees, theme_award_nominees = self.load_sessions(session_file, papers, presenters)
             return self.load_conference(
-                conf_metadata_file, program=program, papers=papers, student_award_nominees=student_award_nominees
+                conf_metadata_file,
+                program=program,
+                papers=papers,
+                student_award_nominees=student_award_nominees,
+                theme_award_nominees=theme_award_nominees,
             )
 
     def load_users(self, user_spreadsheet_file: pathlib.Path, ignore_role: bool = True) -> Annuary:
@@ -377,7 +382,7 @@ class CMTSerialiser(ISCAObject):
 
                 cur_user = Person(
                     None,
-                    first_name.strip(),
+                    first_name.strip() if first_name is not None else None,
                     last_name.strip(),
                     email=str(user_row["Email"]).strip(),
                     roles=roles,
@@ -400,7 +405,9 @@ class CMTSerialiser(ISCAObject):
             df = load_excel(user_spreadsheet_file, sheet_name=worksheet)
 
             for _, user_row in df.iterrows():
-                cur_reviewer = self._annuary.find_person_by_email(str(user_row["Email"]).strip())
+                assert not pd.isna(user_row["Email"])
+                email = str(user_row["Email"]).strip().lower()
+                cur_reviewer = self._annuary.find_person_by_email(email)
                 if cur_reviewer is not None:
                     cur_reviewer.add_role(Role.REVIEWER)
                     reviewers.add(cur_reviewer)
@@ -626,8 +633,9 @@ class CMTSerialiser(ISCAObject):
 
         survey_talks = dict()
         for _, row in df.iterrows():
-
-            presenter = self._annuary.find_person_by_email(row["Email"])
+            assert not pd.isna(row["Email"])
+            email = str(row["Email"]).lower().strip()
+            presenter = self._annuary.find_person_by_email(email)
 
             if presenter is None:
                 first_name = str(row["First Name"]).strip()
@@ -678,6 +686,17 @@ class CMTSerialiser(ISCAObject):
             survey_talks[row["Survey ID"]] = survey
         return survey_talks
 
+    def _load_theme_award_nominees(self, session_summary_file: pathlib.Path) -> set[str]:
+        df = load_excel(
+            session_summary_file,
+            sheet_name=CMT_SESSION_THEME_AWARD_NOMINEES_SHEET_NAME,
+        )
+
+        list_nominees = set()
+        for _, nominee_info in df.iterrows():
+            list_nominees.add(str(nominee_info["Paper ID"]))
+        return list_nominees
+
     def _load_student_award_nominees(self, session_summary_file: pathlib.Path) -> set[str]:
         df = load_excel(
             session_summary_file,
@@ -694,7 +713,7 @@ class CMTSerialiser(ISCAObject):
         session_summary_file: pathlib.Path,
         dict_papers: dict[str, Paper],
         dict_presenters: dict[str, list[Person] | None] = {},
-    ) -> tuple[list[Session], Program, set[str]]:
+    ) -> tuple[list[Session], Program, set[str], set[str]]:
 
         list_sessions = []
 
@@ -873,8 +892,9 @@ class CMTSerialiser(ISCAObject):
             program.add_session(cur_time_slot, cur_room, cur_session)
             list_sessions.append(cur_session)
 
-        nominees_id = self._load_student_award_nominees(session_summary_file)
-        return list_sessions, program, nominees_id
+        student_nominees_id = self._load_student_award_nominees(session_summary_file)
+        theme_nominees_id = self._load_theme_award_nominees(session_summary_file)
+        return list_sessions, program, student_nominees_id, theme_nominees_id
 
     def load_conference(
         self,
@@ -883,6 +903,7 @@ class CMTSerialiser(ISCAObject):
         program: Program | None = None,
         sessions: list[Session] | None = None,
         student_award_nominees: set[str] | None = None,
+        theme_award_nominees: set[str] | None = None,
     ) -> Conference:
 
         if (sessions is not None) and (papers is not None):
@@ -934,6 +955,10 @@ class CMTSerialiser(ISCAObject):
         if student_award_nominees is not None:
             for paper_id in student_award_nominees:
                 conf.add_student_award_nominees(paper_id)
+
+        if theme_award_nominees is not None:
+            for paper_id in theme_award_nominees:
+                conf.add_theme_award_nominees(paper_id)
 
         return conf
 

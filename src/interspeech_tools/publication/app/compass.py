@@ -211,7 +211,7 @@ class CompassDataGenerator:
                 {
                     "id": f"{presentation_type}_presentation",
                     "color": color,
-                    "subtitle": presentation_type,
+                    "name": presentation_type,
                     "configuratorType": "classifier:presentation_type",
                 }
             )
@@ -219,10 +219,19 @@ class CompassDataGenerator:
         list_tags.append(
             {
                 "id": "best_student_paper_nominee",
-                "subtitle": "best student paper nominee",
+                "name": "best student paper nominee",
                 "configuratorType": "classifier:paper_flag",
             }
         )
+
+        list_tags.append(
+            {
+                "id": "best_theme_paper_nominee",
+                "name": "best theme paper nominee",
+                "configuratorType": "classifier:paper_flag",
+            }
+        )
+
         # Save the generated dataframe to the excel file
         df_tags = pd.DataFrame(list_tags)
         for col_to_add in CompassDataGenerator.TAG_COLUMNS:
@@ -254,11 +263,11 @@ class CompassDataGenerator:
 
             # Initialise the new session
             cur_session = {
-                "id": session.id,
+                "id": f"timeslot_{session.id}",
                 "name": session.name,
                 "subtitle": session.id,
                 "orderingName": session.id,
-                "placeId": room.id,
+                "placeId_1": room.id,
                 "date": timeslot.start.strftime("%Y-%m-%d"),
                 "startTime": timeslot.start.strftime("%H:%M"),
                 "endTime": timeslot.end.strftime("%H:%M"),
@@ -275,14 +284,16 @@ class CompassDataGenerator:
 
             # Add presentations
             for presentation_idx, presentation in enumerate(session.presentations, 0):
+                timeslot_id = presentation.presented_paper.id if presentation.presented_paper is not None else presentation.id
+                timeslot_id = f"timeslot_{timeslot_id}"
                 cur_presentation = {
-                    "id": presentation.presented_paper.id if presentation.presented_paper is not None else presentation.id,
+                    "id": timeslot_id,
                     "parent": cur_session["id"],
                     "configuratorType": "timeslot:presentation",
                     "name": presentation.title,
                     "subtitle": short_presentation_id(presentation),
                     "orderingName": presentation.id,
-                    "placeId_1": cur_session["placeId"],
+                    "placeId_1": cur_session["placeId_1"],
                     "date": cur_session["date"],
                     "startTime": cur_session["startTime"],
                     "endTime": cur_session["endTime"],
@@ -308,6 +319,14 @@ class CompassDataGenerator:
                     self.conference.is_student_award_nominee(presentation.presented_paper)
                 ):
                     cur_presentation["classifierId_2"] = "best_student_paper_nominee"
+
+                if (presentation.presented_paper is not None) and (
+                    self.conference.is_theme_award_nominee(presentation.presented_paper)
+                ):
+                    cur_presentation["classifierId_3"] = "best_theme_paper_nominee"
+
+                if (presentation_type == "oral") or (presentation_type == "survey") or (presentation_type == "keynote"):
+                    cur_presentation["classifierId_4"] = CompassDataGenerator.LIVE_CAPTION_TAG
 
                 # Add presenters
                 if presentation.presenters is not None:

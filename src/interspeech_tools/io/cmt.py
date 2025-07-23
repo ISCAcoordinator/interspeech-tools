@@ -48,7 +48,7 @@ CMT_CORRESPONDING_MARKER = "*"
 CMT_SESSION_TIMESLOTS_SHEET_NAME = "Timeslots"
 CMT_SESSION_SESSIONS_SHEET_NAME = "Sessions"
 CMT_SESSION_ROOMS_SHEET_NAME = "Rooms"
-CMT_SESSION_KEYNOTE_SHEET_NAME = "Keynotes"
+CMT_SESSION_KEYNOTES_SHEET_NAME = "Keynotes"
 CMT_SESSION_BLUESKY_SHEET_NAME = "BlueSky Papers"
 CMT_SESSION_SURVEY_TALKS_SHEET_NAME = "Survey Talks"
 CMT_SESSION_STUDENT_AWARD_NOMINEES_SHEET_NAME = "StudentAwardNominees"
@@ -589,7 +589,7 @@ class CMTSerialiser(ISCAObject):
     def _load_keynotes(self, session_summary_file: pathlib.Path, papers: dict[str, Paper] | None = None) -> dict[str, Keynote]:
         df = load_excel(
             session_summary_file,
-            sheet_name=CMT_SESSION_KEYNOTE_SHEET_NAME,
+            sheet_name=CMT_SESSION_KEYNOTES_SHEET_NAME,
         )
 
         keynotes = dict()

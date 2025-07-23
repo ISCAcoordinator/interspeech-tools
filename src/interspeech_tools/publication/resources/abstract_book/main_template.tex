@@ -98,6 +98,13 @@
 \input{auto/keynotes.tex}
 }{}
 
+\IfFileExists{auto/tutorials.tex}
+{%
+\newpage
+\section{Tutorials}
+\pagestyle{fancy}
+\input{auto/tutorials.tex}
+}{}
 
 \IfFileExists{auto/surveys.tex}
 {%}
@@ -115,27 +122,27 @@
 \input{auto/special_sessions.tex}
 }{}
 
-% %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% %%% Actual program
-% %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%% Actual program
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-% \newpage
-% \pagestyle{plain}
-% {
-% \def\arraystretch{1.6}%
-% \linespread{0.8}
-% \sffamily
-% \BLOCK{ for date in dates }
-%   \begin{landscape}
-%     \section*{\VAR{date | extract_verbose_date}}
-%     \input{auto/\VAR{date | extract_date}_table.tex}
-%   \end{landscape}
-%   \newpage
-% \BLOCK{ endfor }
-% \rmfamily
-% \linespread{1}
-% }
-% \clearpage
+\newpage
+\pagestyle{plain}
+{
+\def\arraystretch{1.6}%
+\linespread{0.8}
+\sffamily
+\BLOCK{ for date in dates }
+  \begin{landscape}
+    \section*{\VAR{date | extract_verbose_date}}
+    \input{auto/\VAR{date | extract_date}_table.tex}
+  \end{landscape}
+  \newpage
+\BLOCK{ endfor }
+\rmfamily
+\linespread{1}
+}
+\clearpage
 
 
 

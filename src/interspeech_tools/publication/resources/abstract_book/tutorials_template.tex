@@ -1,0 +1,6 @@
+\BLOCK{ for tutorial_session in tutorial_sessions }
+\BLOCK{ set tutorial = tutorial_session.tutorial }
+\subsection*{ \VAR{tutorial.title | latexify}}
+\VAR{tutorial.description.strip() | latexify}
+
+\BLOCK{ endfor }

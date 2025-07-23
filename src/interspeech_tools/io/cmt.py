@@ -34,7 +34,7 @@ from isca.model.program import (
 )
 from isca.io.utils.helpers import load_excel
 
-from ..model import Interspeech
+from ..model import Interspeech, Tutorial, TutorialSession
 from .utils.pdf import load_pdf_information, WordException, PDFMetadataException
 
 ###############################################################################
@@ -49,6 +49,7 @@ CMT_SESSION_TIMESLOTS_SHEET_NAME = "Timeslots"
 CMT_SESSION_SESSIONS_SHEET_NAME = "Sessions"
 CMT_SESSION_ROOMS_SHEET_NAME = "Rooms"
 CMT_SESSION_KEYNOTES_SHEET_NAME = "Keynotes"
+CMT_SESSION_TUTORIALS_SHEET_NAME = "Tutorials"
 CMT_SESSION_BLUESKY_SHEET_NAME = "BlueSky Papers"
 CMT_SESSION_SURVEY_TALKS_SHEET_NAME = "Survey Talks"
 CMT_SESSION_STUDENT_AWARD_NOMINEES_SHEET_NAME = "StudentAwardNominees"
@@ -687,6 +688,24 @@ class CMTSerialiser(ISCAObject):
             survey_talks[row["Survey ID"]] = survey
         return survey_talks
 
+    def _load_tutorials(
+        self, session_summary_file: pathlib.Path, timeslots: dict[str, Timeslot], rooms: dict[str, Room]
+    ) -> list[tuple[Timeslot, Room, TutorialSession]]:
+        df = load_excel(
+            session_summary_file,
+            sheet_name=CMT_SESSION_TUTORIALS_SHEET_NAME,
+        )
+
+        tutorials = []
+        for _, row in df.iterrows():
+            timeslot = timeslots[str(row["Timeslot name*"])]
+            room = rooms[str(row["Room name*"])]
+            tutorial = Tutorial(str(row["Tutorial ID"]), str(row["Title"]), [], timeslot.duration, str(row["Description"]), False)
+            tutorial_session = TutorialSession(f"session_{tutorial.id}", tutorial.title, timeslot.start, timeslot.end, tutorial)
+            tutorials.append((timeslot, room, tutorial_session))
+
+        return tutorials
+
     def _load_theme_award_nominees(self, session_summary_file: pathlib.Path) -> set[str]:
         df = load_excel(
             session_summary_file,
@@ -757,10 +776,29 @@ class CMTSerialiser(ISCAObject):
             start_time = datetime.strptime(start_time, "%Y-%m-%d %H:%M:%S")
             end_time = f"{timeslot_info['Date']} {timeslot_info['End']}"
             end_time = datetime.strptime(end_time, "%Y-%m-%d %H:%M:%S")
+
+            timeslot_type_str = str(timeslot_info["Timeslot type"]).lower().replace(" ", "_")
+            if timeslot_type_str == "ceremony":
+                timeslot_type = TimeslotType.CEREMONY
+            elif timeslot_type_str == "keynote":
+                timeslot_type = TimeslotType.KEYNOTE
+            elif timeslot_type_str == "coffee_break":
+                timeslot_type = TimeslotType.COFFEE_BREAK
+            elif timeslot_type_str == "lunch_break":
+                timeslot_type = TimeslotType.LUNCH_BREAK
+            elif timeslot_type_str == "science":
+                timeslot_type = TimeslotType.SCIENCE
+            elif timeslot_type_str == "tutorial":
+                timeslot_type = TimeslotType.TUTORIAL
+            elif (timeslot_type_str == "general_assembly") or (timeslot_type_str == "ga"):
+                timeslot_type = TimeslotType.GENERAL_ASSEMBLY
+            else:
+                raise Exception(f'The timeslot type "{timeslot_type_str}" is unknown')
+
             cur_timeslot = Timeslot(
                 timeslot_info["Timeslot name"],
                 timeslot_info["Timeslot name"],
-                TimeslotType.KEYNOTE,
+                timeslot_type,
                 start_time,
                 end_time,
             )
@@ -768,6 +806,12 @@ class CMTSerialiser(ISCAObject):
             dict_timeslots[timeslot_info["Timeslot name"]] = cur_timeslot
 
         program = Program(list(dict_timeslots.values()), list(dict_rooms.values()))
+
+        # Load the tutorials
+        tutorial_informations = self._load_tutorials(session_summary_file, dict_timeslots, dict_rooms)
+        for tuto_elts in tutorial_informations:
+            list_sessions.append(tuto_elts[2])
+            program.add_session(timeslot=tuto_elts[0], room=tuto_elts[1], session=tuto_elts[2])
 
         # Load the keynotes
         keynotes = self._load_keynotes(session_summary_file)

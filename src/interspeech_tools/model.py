@@ -22,9 +22,7 @@ class Satellite(Event):
 
 
 class Tutorial(Presentation):
-    def __init__(
-        self, id: str, title: str, presenters: list[Person] | None, duration: int, description: str, is_invited: bool = False
-    ):
+    def __init__(self, id: str, title: str, presenters: list[Person], duration: int, description: str, is_invited: bool = False):
         super().__init__(id, title, presenters, duration, description)
         self._is_invited = is_invited
 

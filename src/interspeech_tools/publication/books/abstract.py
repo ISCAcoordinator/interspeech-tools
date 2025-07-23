@@ -8,7 +8,7 @@ from isca.model.program import Room, Timeslot, Presentation
 from isca.model.person import Person
 
 
-from ...model import Interspeech
+from ...model import Interspeech, TutorialSession
 
 from .theme import (
     get_session_type,
@@ -57,6 +57,13 @@ class AbstractBookProcessor(ISCAObject):
             outfilename = root_output_dir / f"{date}.tex"
             with open(outfilename, "w") as outfile:
                 outfile.write(day_program_template.render(sessions=self._conf.program.get_day_sessions(date)))
+
+        # Tutorials
+        tutorial_template = self._template_engine.get_template("tutorials_template.tex")
+        outfilename = root_output_dir / "tutorials.tex"
+        tutorials = [s for s in self._conf.sessions if isinstance(s, TutorialSession)]
+        with open(outfilename, "w") as outfile:
+            outfile.write(tutorial_template.render(tutorial_sessions=tutorials))
 
         # Keynotes
         keynote_template = self._template_engine.get_template("keynotes_template.tex")
@@ -107,7 +114,6 @@ class AbstractBookProcessor(ISCAObject):
 
         for timeslot in timeslots:
             sessions = self._conf.program.get_timeslot_sessions(timeslot)
-
             row = {"timeslot_str": timeslot.timeslot_without_date().replace(" ", ""), "elts": []}
 
             if not sessions:

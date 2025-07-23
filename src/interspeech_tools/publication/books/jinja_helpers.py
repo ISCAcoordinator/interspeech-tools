@@ -5,8 +5,9 @@ from pyuca import Collator
 
 from isca.model.person import Person
 from isca.model.item import Paper
-from isca.model.program import PresentationSession, Presentation, SurveyTalk, BlueSkyPresentation, Timeslot, Keynote
+from isca.model.program import PresentationSession, Presentation, Timeslot, Keynote
 
+from ...model import SurveyTalk, BlueSkyPresentation
 
 from .utils import latexify
 from .theme import (

@@ -7,16 +7,11 @@ from isca.model.program import (
     OralSession,
     PosterSession,
     KeynoteSession,
-    SpecialSession,
-    ShowAndTellSession,
-    ShowAndTellPresentation,
-    SpecialPresentation,
-    SurveyTalk,
     OralPresentation,
     PosterPresentation,
     Presentation,
 )
-from ...model import Interspeech
+from ...model import Interspeech, SpecialSession, ShowAndTellSession, ShowAndTellPresentation, SpecialPresentation, SurveyTalk
 
 
 SPECIFIC_SESSION_IDS = {KeynoteSession: "keynote", SpecialSession: "special", ShowAndTellSession: "showandtell"}

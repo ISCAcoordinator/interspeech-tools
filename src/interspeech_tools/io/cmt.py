@@ -16,25 +16,29 @@ from isca.model.person import Person, Speaker, Affiliation, Role, Annuary
 from isca.model.item import Paper, Session
 from isca.model.program import (
     Program,
-    BlueSkyPresentation,
     OralPresentation,
     PosterPresentation,
-    SurveyTalk,
-    SpecialPresentation,
-    ShowAndTellPresentation,
     Keynote,
     KeynoteSession,
     OralSession,
     PosterSession,
-    SpecialSession,
-    ShowAndTellSession,
     Room,
     Timeslot,
     TimeslotType,
 )
 from isca.io.utils.helpers import load_excel
 
-from ..model import Interspeech, Tutorial, TutorialSession
+from ..model import (
+    Interspeech,
+    Tutorial,
+    TutorialSession,
+    BlueSkyPresentation,
+    SurveyTalk,
+    SpecialPresentation,
+    ShowAndTellPresentation,
+    SpecialSession,
+    ShowAndTellSession,
+)
 from .utils.pdf import load_pdf_information, WordException, PDFMetadataException
 
 ###############################################################################

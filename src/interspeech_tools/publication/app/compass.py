@@ -6,7 +6,6 @@ import pandas.io.formats.excel
 
 from isca.model.person import Role, Speaker
 from isca.model.program import (
-    BlueSkyPresentation,
     Keynote,
     KeynoteSession,
     OralPresentation,
@@ -14,13 +13,16 @@ from isca.model.program import (
     PosterSession,
     PresentationSession,
     OralSession,
+)
+from ...model import (
+    Interspeech,
     ShowAndTellPresentation,
     ShowAndTellSession,
     SpecialPresentation,
     SpecialSession,
     SurveyTalk,
+    BlueSkyPresentation,
 )
-from ...model import Interspeech
 from ..books.jinja_helpers import short_presentation_id
 
 pandas.io.formats.excel.ExcelFormatter.header_style = None

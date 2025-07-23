@@ -87,7 +87,7 @@
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%%% Keynotes
+%%% Some useful info
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 \IfFileExists{auto/keynotes.tex}
@@ -107,60 +107,68 @@
 \input{auto/surveys.tex}
 }{}
 
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%%% Actual program
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
+\IfFileExists{auto/special_sessions.tex}
+{%}
 \newpage
-\pagestyle{plain}
-{
-\def\arraystretch{1.6}%
-\linespread{0.8}
-\sffamily
-\BLOCK{ for date in dates }
-  \begin{landscape}
-    \section*{\VAR{date | extract_verbose_date}}
-    \input{auto/\VAR{date | extract_date}_table.tex}
-  \end{landscape}
-  \newpage
-\BLOCK{ endfor }
-\rmfamily
-\linespread{1}
-}
-\clearpage
-
-
-
-
-\phantomsection
-\addcontentsline{toc}{section}{Program Schedule}%
+\section{Special Sessions}
 \pagestyle{fancy}
-\BLOCK{ for date in dates }
-    \dayschedule{\VAR{date | extract_verbose_date}}{auto/\VAR{date | extract_date}.tex}
-\BLOCK{ endfor }
-\clearpage
+\input{auto/special_sessions.tex}
+}{}
 
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%%% Scientific Review Committee
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% %%% Actual program
+% %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+% \newpage
+% \pagestyle{plain}
+% {
+% \def\arraystretch{1.6}%
+% \linespread{0.8}
+% \sffamily
+% \BLOCK{ for date in dates }
+%   \begin{landscape}
+%     \section*{\VAR{date | extract_verbose_date}}
+%     \input{auto/\VAR{date | extract_date}_table.tex}
+%   \end{landscape}
+%   \newpage
+% \BLOCK{ endfor }
+% \rmfamily
+% \linespread{1}
+% }
+% \clearpage
+
+
+
 
 % \phantomsection
-% \addcontentsline{toc}{section}{Scientific Review Committee}%
-\section{Scientific Review Committee}%
-\pagestyle{fancy}
-\input{auto/reviewers_index.tex}
-\clearpage
+% \addcontentsline{toc}{section}{Program Schedule}%
+% \pagestyle{fancy}
+% \BLOCK{ for date in dates }
+%     \dayschedule{\VAR{date | extract_verbose_date}}{auto/\VAR{date | extract_date}.tex}
+% \BLOCK{ endfor }
+% \clearpage
 
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%%% Author index part
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% %%% Scientific Review Committee
+% %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-\section{Author Index}
-\pagestyle{fancy}
-\input{auto/authors_index.tex}
+% % \phantomsection
+% % \addcontentsline{toc}{section}{Scientific Review Committee}%
+% \section{Scientific Review Committee}%
+% \pagestyle{fancy}
+% \input{auto/reviewers_index.tex}
+% \clearpage
 
-\IfFileExists{theme/back_cover.pdf}
-{\includepdf[pages=1,pagecommand={\thispagestyle{plain}}]{theme/back_cover}}
-{\maketitle{}}
+% %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% %%% Author index part
+% %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+% \section{Author Index}
+% \pagestyle{fancy}
+% \input{auto/authors_index.tex}
+
+% \IfFileExists{theme/back_cover.pdf}
+% {\includepdf[pages=1,pagecommand={\thispagestyle{plain}}]{theme/back_cover}}
+% {\maketitle{}}
 
 \end{document}

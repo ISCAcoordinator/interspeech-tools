@@ -655,16 +655,17 @@ class CMTSerialiser(ISCAObject):
                     country=str(row["Country"]).strip(),
                 )
 
-                roles = set([Role.PRESENTER])
                 presenter = Speaker(
                     None,
                     first_name.strip(),
                     last_name.strip(),
-                    email=str(row["Email"]).strip(),
-                    roles=roles,
+                    email=email,
                     default_affiliation=affiliation,
                     middle_initial=middle_initial,
                 )
+                presenter.biography = row["Bio"] if "Bio" in row else None
+                presenter.url = row["Website"] if "Website" in row else None
+                presenter.photo = session_summary_file.parent / row["Photo"] if "Photo" in row else None
 
                 self._annuary.add(presenter)
             else:
@@ -814,7 +815,17 @@ class CMTSerialiser(ISCAObject):
             elif session_type.lower() == "show and tell":
                 cur_session = ShowAndTellSession(session_id, session_name, cur_time_slot.start, cur_time_slot.end)
             elif session_type.lower() == "special":
-                cur_session = SpecialSession(session_id, session_name, cur_time_slot.start, cur_time_slot.end)
+                if ("Description" not in session_info) or (pd.isna(session_info["Description"])):
+                    description = "<TO FILL>"
+                    self.logger.warning(
+                        f'The description for the special session "{session_id}" is missing, for now replaced with a filler'
+                    )
+                else:
+                    description = str(session_info["Description"])
+                session_name = session_name.replace("Special Session - ", "")
+                cur_session = SpecialSession(
+                    session_id, session_name, cur_time_slot.start, cur_time_slot.end, description=description
+                )
             else:
                 self.logger.error(
                     f'[{session_id}] This session type "{session_type}" is not yet supported (ignored)',

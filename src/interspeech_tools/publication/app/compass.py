@@ -4,7 +4,7 @@ import logging
 import pandas as pd
 import pandas.io.formats.excel
 
-from isca.model.person import Role
+from isca.model.person import Role, Speaker
 from isca.model.program import (
     BlueSkyPresentation,
     Keynote,
@@ -65,6 +65,7 @@ class CompassDataGenerator:
         "exhibitorId",
     ]
     TAG_COLUMNS = ["id", "name", "subtitle", "subtitleDetail", "configuratorType", "info", "orderingName", "color"]
+    LIVE_CAPTION_TAG = "68777baead7a96c528c16e59"
     PERSON_WANTED_ROLES = [Role.AUTHOR, Role.PRESENTER]
 
     # FIXME: for now this is hardcoded, it could be good to be more flexible
@@ -117,13 +118,14 @@ class CompassDataGenerator:
     def _generate_app_person(self, output_person_file: pathlib.Path) -> None:
 
         list_persons = []
+        seen_ids = set()
 
         # List the authors
         authors = self.conference.authors
         for author in authors:
             firstname = author.firstname
             if firstname is None:
-                firstname = "PLACE_HOLDER"  # FIXME: this should not be valid
+                firstname = " "  # FIXME: this should not be valid
             elif author.middle_initial is not None:
                 firstname += " " + author.middle_initial
 
@@ -139,8 +141,51 @@ class CompassDataGenerator:
                 "configuratorType": "person:person",
             }
 
+            if isinstance(author, Speaker):
+                cur_person["info"] = author.biography
+
             # Entry is done
             list_persons.append(cur_person)
+            seen_ids.add(author.id)
+
+        # List presenters
+        for session in self.conference.sessions:
+            if not isinstance(session, PresentationSession):
+                continue
+
+            for presentation in session.presentations:
+                if presentation.presenters is None:
+                    continue
+
+                for presenter in presentation.presenters:
+                    if presenter.id in seen_ids:
+                        continue
+
+                    firstname = presenter.firstname
+                    if firstname is None:
+                        firstname = " "  # FIXME: this should not be valid
+                    elif presenter.middle_initial is not None:
+                        firstname += " " + presenter.middle_initial
+
+                    affiliations = set(
+                        [a.institute for aff_list in list(presenter.paper_affiliations.values()) for a in aff_list]
+                    )
+                    cur_person = {
+                        "id": presenter.id,
+                        "email": presenter.email,
+                        "name": presenter.name,
+                        "orderingName": presenter.str_sorting_by_last_name(),
+                        "firstName": firstname,
+                        "lastName": presenter.lastname,
+                        "subtitle": "; ".join(affiliations),
+                        "configuratorType": "person:person",
+                    }
+
+                    if isinstance(presenter, Speaker):
+                        cur_person["info"] = presenter.biography
+
+                    list_persons.append(cur_person)
+                    seen_ids.add(presenter.id)
 
         # Prepare the dataframe
         df_persons = pd.DataFrame(list_persons)

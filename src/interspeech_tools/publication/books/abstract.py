@@ -65,10 +65,16 @@ class AbstractBookProcessor(ISCAObject):
             outfile.write(keynote_template.render(sessions=self._conf.sessions))
 
         # Surveys
-        keynote_template = self._template_engine.get_template("surveys_template.tex")
+        surveys_template = self._template_engine.get_template("surveys_template.tex")
         outfilename = root_output_dir / "surveys.tex"
         with open(outfilename, "w") as outfile:
-            outfile.write(keynote_template.render(sessions=self._conf.sessions))
+            outfile.write(surveys_template.render(sessions=self._conf.sessions))
+
+        # Special Sessions
+        special_sessions_template = self._template_engine.get_template("special_sessions_template.tex")
+        outfilename = root_output_dir / "special_sessions.tex"
+        with open(outfilename, "w") as outfile:
+            outfile.write(special_sessions_template.render(sessions=self._conf.sessions))
 
         # Reviewer index
         reviewer_template = self._template_engine.get_template("reviewers_index_template.tex")

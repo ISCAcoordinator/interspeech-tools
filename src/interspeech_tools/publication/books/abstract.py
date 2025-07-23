@@ -30,6 +30,8 @@ class AbstractBookProcessor(ISCAObject):
         # Set conference specific filters
 
         def list_presentations(author: Person) -> list[Presentation]:
+            if author not in self._author2presentations:
+                return []
             return self._author2presentations[author]
 
         self._template_engine.filters["list_presentations"] = list_presentations

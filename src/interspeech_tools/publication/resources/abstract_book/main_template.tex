@@ -31,7 +31,9 @@
 
 \begin{document}
 
-\maketitle{}
+\IfFileExists{theme/cover.pdf}
+{\includepdf[pages=1,pagecommand={\thispagestyle{plain}}]{theme/cover}}
+{\maketitle{}}
 
 % \rmfamily
 
@@ -144,5 +146,9 @@
 \section{Author Index}
 \pagestyle{fancy}
 \input{auto/authors_index.tex}
+
+\IfFileExists{theme/back_cover.pdf}
+{\includepdf[pages=1,pagecommand={\thispagestyle{plain}}]{theme/back_cover}}
+{\maketitle{}}
 
 \end{document}

@@ -1,0 +1,30 @@
+\begin{table}[htb!]
+\begin{tabularx}{\linewidth}{|C{\tabletimecolwidth}|\BLOCK{ for r in rooms }\BLOCK{ for _ in range(r.nb_zones) }C{\tablecolwidth}|\BLOCK{ endfor }\BLOCK{ endfor }} \hline
+
+& \BLOCK{ for r in rooms -}
+\BLOCK{ if r.nb_zones > 1 }
+  \multicolumn{\VAR{r.nb_zones}}{c|}{\cellcolor{RoomCellColour} \textbf{\VAR{r.name}}}
+\BLOCK{ else }
+  \cellcolor{RoomCellColour} \textbf{\VAR{r.name}}
+\BLOCK{ endif }
+\BLOCK{- if not loop.last } & \BLOCK{ endif }
+\BLOCK{- endfor } \\ \hline
+
+\BLOCK{ for row in rows }
+  \VAR{row.timeslot_str} &
+  \BLOCK{- for elt in row.elts }
+    \BLOCK{ if elt.type == "multicolumn" }
+      \multicolumn{\VAR{elt.colspan}}{c|}{
+      \BLOCK{ if elt.content is string }\BLOCK{ else }\cellcontent{\VAR{elt.content.id}}{\VAR{elt.content.name}}{\VAR{elt.content.bg}}{\VAR{elt.content.fg}}\BLOCK{ endif }
+      }
+    \BLOCK{ elif elt.type == "cell" }
+      \cellcontent{\VAR{elt.content.id}}{\VAR{elt.content.name}}{\VAR{elt.content.bg}}{\VAR{elt.content.fg}}
+    \BLOCK{ else }
+      % empty cell
+    \BLOCK{ endif }
+    \BLOCK{- if not loop.last } & \BLOCK{ endif }
+  \BLOCK{- endfor } \\ \hline
+\BLOCK{ endfor }
+
+\end{tabularx}
+\end{table}

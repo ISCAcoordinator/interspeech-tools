@@ -88,71 +88,78 @@ class AbstractBookProcessor(ISCAObject):
         return "\n\n".join(parts)
 
     def _generate_programme_table_part(self, timeslots: list[Timeslot], rooms: list[Room]):
-        content = []
+        nb_zones = sum(r.nb_zones for r in rooms)
+        rows = []
 
-        nb_zones = len([r for r in rooms for _ in range(r.nb_zones)])
-        # Prepare header
-        timecolspec = "C{\\tabletimecolwidth}|"
-        colspec = "C{\\tablecolwidth}|"
-        header = f"\\begin{{tabular}}{{|{timecolspec}{''.join([colspec for _ in range(nb_zones)])}}} \\hline \n"
-
-        rooms_latex = []
-        for r in rooms:
-            if r.nb_zones > 1:
-                rooms_latex.append(f"\\multicolumn{{{r.nb_zones}}} {{c|}} {{\\cellcolor{{RoomCellColour}} \\textbf{{{r.name}}}}}")
-            else:
-                rooms_latex.append(f"\\cellcolor{{RoomCellColour}}\\textbf{{{r.name}}}")
-        header += f"& {' & '.join(rooms_latex) } \\\\ \\hline \n"
-
-        # Reorganize sessions per time_start (FIXME: this should be put up a bit)
         for timeslot in timeslots:
-            self._logger.info(timeslot)
             sessions = self._conf.program.get_timeslot_sessions(timeslot)
-            timeslot_str = timeslot.timeslot_without_date().replace(" ", "")
-            elts = [timeslot_str]
+
+            row = {"timeslot_str": timeslot.timeslot_without_date().replace(" ", ""), "elts": []}
+
             if not sessions:
-                row = f"\\multicolumn{{{nb_zones}}}{{c|}}{{"
-                row += timeslot.name
-                row += "}"
-                elts.append(row)
+                row["elts"].append({"type": "multicolumn", "colspan": nb_zones, "content": timeslot.name})
             elif len(sessions.keys()) == 1:
                 sessions = sessions[list(sessions.keys())[0]]
                 if len(sessions) > 1:
                     raise Exception("For now, only one session implies an overall session")
                 session = sessions[0]
                 session_type = get_session_type(session)
-                row = f"\\multicolumn{{{nb_zones}}}{{c|}}{{"
-                row += f"\\cellcontent{{{session.id}}}{{{session.name}}}{{{session_type.capitalize()}BackgroundColour}}{{{session_type.capitalize()}ForegroundColour}}"
-                row += "}"
-                elts.append(row)
+                row["elts"].append(
+                    {
+                        "type": "multicolumn",
+                        "colspan": nb_zones,
+                        "content": {
+                            "id": session.id,
+                            "name": session.name,
+                            "bg": f"{session_type.capitalize()}BackgroundColour",
+                            "fg": f"{session_type.capitalize()}ForegroundColour",
+                        },
+                    }
+                )
             else:
                 for room in rooms:
                     if room not in sessions:
-                        elts.append("")
+                        row["elts"].append({"type": "empty"})
                         continue
 
                     room_sessions = sessions[room]
-                    # FIXME: for now it is all or nothing. We don't support partial zones
-                    if (room.nb_zones > 1) and (len(room_sessions) == 1):
+                    if room.nb_zones > 1 and len(room_sessions) == 1:
                         session = room_sessions[0]
                         session_type = get_session_type(session)
-                        session_name = session.name.replace("Special Session - ", "")  # FIXME: this is hardcoded
-                        elts.append(
-                            f"\\multicolumn{{{room.nb_zones}}}{{c|}}{{\\cellcontent{{{session.id}}}{{{session_name}}}{{{session_type.capitalize()}BackgroundColour}}{{{session_type.capitalize()}ForegroundColour}}}}"
+                        session_name = session.name.replace("Special Session - ", "")
+                        row["elts"].append(
+                            {
+                                "type": "multicolumn",
+                                "colspan": room.nb_zones,
+                                "content": {
+                                    "id": session.id,
+                                    "name": session_name,
+                                    "bg": f"{session_type.capitalize()}BackgroundColour",
+                                    "fg": f"{session_type.capitalize()}ForegroundColour",
+                                },
+                            }
                         )
                     else:
                         for session in room_sessions:
                             session_type = get_session_type(session)
-                            session_name = session.name.replace("Special Session - ", "")  # FIXME: this is hardcoded
-                            elts.append(
-                                f"\\cellcontent{{{session.id}}}{{{session_name}}}{{{session_type.capitalize()}BackgroundColour}}{{{session_type.capitalize()}ForegroundColour}}"
+                            session_name = session.name.replace("Special Session - ", "")
+                            row["elts"].append(
+                                {
+                                    "type": "cell",
+                                    "content": {
+                                        "id": session.id,
+                                        "name": session_name,
+                                        "bg": f"{session_type.capitalize()}BackgroundColour",
+                                        "fg": f"{session_type.capitalize()}ForegroundColour",
+                                    },
+                                }
                             )
 
-            content.append(" & ".join(elts))
+            rows.append(row)
 
-        end = "\\\\ \\hline \n \\end{tabular}\n\n"
-        end += "\\bigskip\n\n"
-        return header + " \\\\ \\hline \n".join(content) + end
+        # Render the template
+        template = self._template_engine.get_template("program_table_template.tex")
+        return template.render(nb_zones=nb_zones, rooms=rooms, rows=rows)
 
     def generate_entry_point(self, output_file: pathlib.Path):
         validation_main_template = self._template_engine.get_template("main_template.tex")

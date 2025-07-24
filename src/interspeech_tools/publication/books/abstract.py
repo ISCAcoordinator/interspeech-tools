@@ -2,18 +2,29 @@ import datetime
 import pathlib
 
 from isca.model.core import ISCAObject
+from isca.model.item import Session
 import jinja2
 
-from isca.model.program import Room, Timeslot, Presentation
+from isca.model.program import KeynoteSession, OralSession, PosterSession, Room, Timeslot, Presentation
 from isca.model.person import Person
 
 
-from ...model import Interspeech, Tutorial, TutorialSession
+from ...model import Interspeech, ShowAndTellSession, SpecialSession, TutorialSession
 
 from .theme import (
     get_session_type,
 )
 from .jinja_helpers import configure_latex_jinja
+
+
+def is_content_session(input_session: Session) -> bool:
+    return (
+        isinstance(input_session, KeynoteSession)
+        or isinstance(input_session, OralSession)
+        or isinstance(input_session, PosterSession)
+        or isinstance(input_session, SpecialSession)
+        or isinstance(input_session, ShowAndTellSession)
+    )
 
 
 class AbstractBookProcessor(ISCAObject):
@@ -42,6 +53,7 @@ class AbstractBookProcessor(ISCAObject):
 
         # core program
         delta = self._conf.end_date - self._conf.start_date  # returns timedelta
+        content_dates = []
         for i in range(delta.days + 1):
             date = self._conf.start_date + datetime.timedelta(days=i)
             outfilename = root_output_dir / f"{date}_table.tex"
@@ -52,57 +64,63 @@ class AbstractBookProcessor(ISCAObject):
                 outfile.write(self._generate_programme_table(day_timeslots))
                 outfile.write("\n")
 
+            # Get the sessions
+            sessions = self._conf.program.get_day_sessions(date)
+            sessions = [s for s in sessions if is_content_session(s[0])]
+
             # Generate the program content
-            day_program_template = self._template_engine.get_template("day_program_template.tex")
-            outfilename = root_output_dir / f"{date}.tex"
-            with open(outfilename, "w") as outfile:
-                outfile.write(day_program_template.render(sessions=self._conf.program.get_day_sessions(date)))
+            if sessions:
+                content_dates.append(date)
+                day_program_template = self._template_engine.get_template("day_program.tex.jinja2")
+                outfilename = root_output_dir / f"{date}.tex"
+                with open(outfilename, "w") as outfile:
+                    outfile.write(day_program_template.render(sessions=sessions))
 
         # Best student papers
-        best_students = self._template_engine.get_template("best_papers_template.tex")
+        best_students = self._template_engine.get_template("best_papers.tex.jinja2")
         outfilename = root_output_dir / "best_student.tex"
         with open(outfilename, "w") as outfile:
             outfile.write(best_students.render(papers=self._conf.best_student_papers_nominees))
 
         # Best theme papers
-        best_themes = self._template_engine.get_template("best_papers_template.tex")
+        best_themes = self._template_engine.get_template("best_papers.tex.jinja2")
         outfilename = root_output_dir / "best_theme.tex"
         with open(outfilename, "w") as outfile:
             outfile.write(best_themes.render(papers=self._conf.best_theme_papers_nominees))
 
         # Tutorials
-        tutorial_template = self._template_engine.get_template("tutorials_template.tex")
+        tutorial_template = self._template_engine.get_template("tutorials.tex.jinja2")
         outfilename = root_output_dir / "tutorials.tex"
         tutorials = self._conf.program.select_sessions(lambda t, r, s: isinstance(s, TutorialSession))
         with open(outfilename, "w") as outfile:
             outfile.write(tutorial_template.render(tutorial_sessions=tutorials))
 
         # Keynotes
-        keynote_template = self._template_engine.get_template("keynotes_template.tex")
+        keynote_template = self._template_engine.get_template("keynotes.tex.jinja2")
         outfilename = root_output_dir / "keynotes.tex"
         with open(outfilename, "w") as outfile:
             outfile.write(keynote_template.render(sessions=self._conf.sessions))
 
         # Surveys
-        surveys_template = self._template_engine.get_template("surveys_template.tex")
+        surveys_template = self._template_engine.get_template("surveys.tex.jinja2")
         outfilename = root_output_dir / "surveys.tex"
         with open(outfilename, "w") as outfile:
             outfile.write(surveys_template.render(sessions=self._conf.sessions))
 
         # Special Sessions
-        special_sessions_template = self._template_engine.get_template("special_sessions_template.tex")
+        special_sessions_template = self._template_engine.get_template("special_sessions.tex.jinja2")
         outfilename = root_output_dir / "special_sessions.tex"
         with open(outfilename, "w") as outfile:
             outfile.write(special_sessions_template.render(sessions=self._conf.sessions))
 
         # Reviewer index
-        reviewer_template = self._template_engine.get_template("reviewers_index_template.tex")
+        reviewer_template = self._template_engine.get_template("reviewers_index.tex.jinja2")
         outfilename = root_output_dir / "reviewers_index.tex"
         with open(outfilename, "w") as outfile:
             outfile.write(reviewer_template.render(reviewers=self._conf.reviewers))
 
         # Author index
-        author_template = self._template_engine.get_template("authors_index_template.tex")
+        author_template = self._template_engine.get_template("authors_index.tex.jinja2")
         outfilename = root_output_dir / "authors_index.tex"
         with open(outfilename, "w") as outfile:
             outfile.write(author_template.render(conf=self._conf, authors=self._conf.authors))
@@ -190,16 +208,29 @@ class AbstractBookProcessor(ISCAObject):
             rows.append(row)
 
         # Render the template
-        template = self._template_engine.get_template("program_table_template.tex")
+        template = self._template_engine.get_template("program_table.tex.jinja2")
         return template.render(nb_zones=nb_zones, rooms=rooms, rows=rows)
 
     def generate_entry_point(self, output_file: pathlib.Path):
-        validation_main_template = self._template_engine.get_template("main_template.tex")
+        validation_main_template = self._template_engine.get_template("main.tex.jinja2")
         dates = []
 
         delta = self._conf.end_date - self._conf.start_date  # returns timedelta
         for i in range(delta.days + 1):
             date = self._conf.start_date + datetime.timedelta(days=i)
+
+        # core program
+        delta = self._conf.end_date - self._conf.start_date  # returns timedelta
+        content_dates = []
+        for i in range(delta.days + 1):
+            date = self._conf.start_date + datetime.timedelta(days=i)
             dates.append(date)
+
+            # Get the sessions
+            sessions = self._conf.program.get_day_sessions(date)
+            sessions = [s for s in sessions if is_content_session(s[0])]
+            if sessions:
+                content_dates.append(date)
+
         with open(output_file, "w") as f:
-            f.write(validation_main_template.render(classname="interspeech", dates=dates))
+            f.write(validation_main_template.render(classname="interspeech", dates=dates, content_dates=content_dates))

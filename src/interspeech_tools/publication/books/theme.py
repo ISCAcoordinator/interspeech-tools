@@ -35,7 +35,7 @@ def get_presentation_type(input_presentation: Presentation) -> str:
         return GENERIC_PRESENTATION_IDS[type(input_presentation)]
 
     logger = logging.getLogger("get_presentation_type")
-    logger.warning(f"{type(input_presentation)} is unknown for the validation book, use the default information")
+    logger.warning(f"{type(input_presentation)} is unknown, use the default information")
     return "default"
 
 
@@ -47,7 +47,7 @@ def get_session_type(input_session: Session) -> str:
         return GENERIC_SESSION_IDS[type(input_session)]
 
     logger = logging.getLogger("get_session_type")
-    logger.warning(f"{type(input_session)} is unknown for the validation book, use the default information")
+    logger.warning(f"{type(input_session)} is unknown, use the default information")
     return "default"
 
 
@@ -89,7 +89,7 @@ def generate_theme_file(conf: Interspeech, output_file: pathlib.Path, template_e
         if session_type not in known_session_types:
             unknown_session_types.append(session_type)
 
-    day_program_template = template_engine.get_template("colour_template.tex")
+    day_program_template = template_engine.get_template("colour.tex.jinja2")
     with open(output_file, "w") as outfile:
         outfile.write(
             day_program_template.render(

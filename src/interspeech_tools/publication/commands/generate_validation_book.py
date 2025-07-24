@@ -146,19 +146,19 @@ def main(args: argparse.Namespace):
     validation_template_engine.filters["list_papers"] = list_papers
 
     # Render author index
-    validation_author_index_template = validation_template_engine.get_template("author_index_template.tex")
+    validation_author_index_template = validation_template_engine.get_template("author_index.tex.jinja2")
     val_book_entry_file = val_book_directory / "author_index.tex"
     with open(val_book_entry_file, "w") as f:
         f.write(validation_author_index_template.render(authors=conf.authors))
 
     # Render paper index
-    validation_paper_index_template = validation_template_engine.get_template("paper_index_template.tex")
+    validation_paper_index_template = validation_template_engine.get_template("paper_index.tex.jinja2")
     val_book_entry_file = val_book_directory / "paper_index.tex"
     with open(val_book_entry_file, "w") as f:
         f.write(validation_paper_index_template.render(papers=list_elts(conf, args.no_sessions)))
 
     # Render entry file
-    validation_main_template = validation_template_engine.get_template("main_template.tex")
+    validation_main_template = validation_template_engine.get_template("main.tex.jinja2")
     val_book_entry_file = val_book_directory / "validation_book.tex"
     with open(val_book_entry_file, "w") as f:
         f.write(validation_main_template.render(classname=args.classname))

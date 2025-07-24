@@ -161,13 +161,10 @@
 }
 \clearpage
 
-
-
-
 % \phantomsection
 % \addcontentsline{toc}{section}{Program Schedule}%
 % \pagestyle{fancy}
-% \BLOCK{ for date in dates }
+% \BLOCK{ for date in content_dates }
 %     \dayschedule{\VAR{date | extract_verbose_date}}{auto/\VAR{date | extract_date}.tex}
 % \BLOCK{ endfor }
 % \clearpage
@@ -191,8 +188,8 @@
 % \pagestyle{fancy}
 % \input{auto/authors_index.tex}
 
-% \IfFileExists{theme/back_cover.pdf}
-% {\includepdf[pages=1,pagecommand={\thispagestyle{plain}}]{theme/back_cover}}
-% {\maketitle{}}
+\IfFileExists{theme/back_cover.pdf}
+{\includepdf[pages=1,pagecommand={\thispagestyle{plain}}]{theme/back_cover}}
+{}
 
 \end{document}

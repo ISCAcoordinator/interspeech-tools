@@ -58,6 +58,18 @@ class AbstractBookProcessor(ISCAObject):
             with open(outfilename, "w") as outfile:
                 outfile.write(day_program_template.render(sessions=self._conf.program.get_day_sessions(date)))
 
+        # Best student papers
+        best_students = self._template_engine.get_template("best_papers_template.tex")
+        outfilename = root_output_dir / "best_student.tex"
+        with open(outfilename, "w") as outfile:
+            outfile.write(best_students.render(papers=self._conf.best_student_papers_nominees))
+
+        # Best theme papers
+        best_themes = self._template_engine.get_template("best_papers_template.tex")
+        outfilename = root_output_dir / "best_theme.tex"
+        with open(outfilename, "w") as outfile:
+            outfile.write(best_themes.render(papers=self._conf.best_theme_papers_nominees))
+
         # Tutorials
         tutorial_template = self._template_engine.get_template("tutorials_template.tex")
         outfilename = root_output_dir / "tutorials.tex"

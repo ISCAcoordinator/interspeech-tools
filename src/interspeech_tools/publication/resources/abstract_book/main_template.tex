@@ -90,6 +90,23 @@
 %%% Some useful info
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
+
+\IfFileExists{auto/best_student.tex}
+{%
+\newpage
+\section{Best student paper award nominees}
+\pagestyle{fancy}
+\input{auto/best_student.tex}
+}{}
+
+\IfFileExists{auto/best_theme.tex}
+{%
+\section{Best theme paper award nominees}
+\pagestyle{fancy}
+\input{auto/best_theme.tex}
+}{}
+
+
 \IfFileExists{auto/keynotes.tex}
 {%
 \newpage

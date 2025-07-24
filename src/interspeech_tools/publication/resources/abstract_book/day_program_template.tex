@@ -1,6 +1,6 @@
 \BLOCK{ for session in sessions }
 \sessionslot{\VAR{session[0].id}}
-            {\VAR{session[0].name.replace("Special Session - ", "") | compact_numbers}}
+            {\VAR{session[0].name | compact_numbers}}
             {\VAR{session[0].start | extract_verbose_date}}
             {\VAR{session[1] | format_timeslot}}
             {\VAR{session[2].name}}

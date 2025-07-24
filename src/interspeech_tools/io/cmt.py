@@ -98,6 +98,7 @@ CMT_AFFILIATION_REGEXP = re.compile(
 """,
     re.VERBOSE,
 )
+MAX_ID_NAME_LENGTH = 8
 
 
 ###############################################################################
@@ -109,6 +110,7 @@ class CMTSerialiser(ISCAObject):
         self.metadata_from_pdf = metadata_from_pdf
         self.ignore_sessions = ignore_sessions
         self._annuary = Annuary()
+        self._id_generator: dict[str, int] = dict()
 
     def _extract_df_information(self, paper_info: pd.Series) -> tuple[Paper, list[Person] | None]:
 
@@ -182,8 +184,9 @@ class CMTSerialiser(ISCAObject):
             #         cur_person = list(candidates)[0]
 
             if cur_person is None:
+                id = self._generate_id(last_name)
                 cur_person = Person(
-                    None,
+                    id,
                     first_name,
                     last_name,
                     email=email,
@@ -218,9 +221,12 @@ class CMTSerialiser(ISCAObject):
 
                 cur_presenter = self._annuary.find_person_by_email(pres_email)
                 if cur_presenter is None:
-                    # FIXME: force unknwon affiliation
-                    cur_presenter = Person(None, pres_firstname, pres_lastname, Affiliation("Unknown"), pres_email)
+                    id = self._generate_id(pres_lastname)
+                    cur_presenter = Person(
+                        id, pres_firstname, pres_lastname, Affiliation("Unknown"), pres_email
+                    )  # FIXME: force unknwon affiliation
                     self._annuary.add(cur_presenter)
+
                 cur_presenter.add_role(Role.PRESENTER)
                 presenters = [cur_presenter]
             else:
@@ -394,8 +400,9 @@ class CMTSerialiser(ISCAObject):
                         else:
                             raise Exception(f'The role ("{r}") is unknown')
 
+                id = self._generate_id(last_name)
                 cur_user = Person(
-                    None,
+                    id,
                     first_name.strip() if first_name is not None else None,
                     last_name.strip(),
                     email=str(user_row["Email"]).strip(),
@@ -449,8 +456,10 @@ class CMTSerialiser(ISCAObject):
                         country=country,
                     )
 
+                    # Create speaker
+                    id = self._generate_id(last_name)
                     speaker = Speaker(
-                        None,
+                        id,
                         first_name.strip() if first_name is not None else None,
                         last_name.strip(),
                         email=str(speaker_row["Email"]).strip(),
@@ -532,8 +541,9 @@ class CMTSerialiser(ISCAObject):
                         else:
                             raise Exception(f'The role ("{r}") is unknown')
 
+                id = self._generate_id(last_name)
                 cur_user = Person(
-                    None,
+                    id,
                     first_name.strip(),
                     last_name.strip(),
                     email=str(user_row["Email"]).strip(),
@@ -1018,8 +1028,11 @@ class CMTSerialiser(ISCAObject):
                     elts = chair.strip().split(" ")
                     first_name = " ".join(elts[:-1])
                     last_name = elts[-1]
-                    # FIXME: for now the email is slightly forced
-                    cur_chair = Person(None, first_name, last_name, "noemail@nodomain.org")
+
+                    id = self._generate_id(last_name)
+                    cur_chair = Person(
+                        id, first_name, last_name, "noemail@nodomain.org"
+                    )  # FIXME: for now the email is slightly forced
                     cur_chair.add_role(Role.CHAIR)
                     chairs.append(cur_chair)
 
@@ -1082,3 +1095,15 @@ class CMTSerialiser(ISCAObject):
 
         with pd.ExcelWriter(output_file, engine="openpyxl", mode="a", if_sheet_exists="replace") as writer:
             df.to_excel(writer, sheet_name="papers", index=False)
+
+    def _generate_id(self, last_name: str) -> str:
+
+        id = last_name.strip().lower().replace(" ", "")[:MAX_ID_NAME_LENGTH]
+        id = "".join(char for char in id if char.isalpha())
+        if id in self._id_generator:
+            self._id_generator[id] += 1
+            id = id + str(self._id_generator[id])
+        else:
+            self._id_generator[id] = 0
+
+        return id

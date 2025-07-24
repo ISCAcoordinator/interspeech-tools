@@ -190,6 +190,7 @@ class CMTSerialiser(ISCAObject):
                     default_affiliation=list_affiliations[0],
                     roles=set([Role.AUTHOR]),
                 )
+                self._annuary.add(cur_person)
             else:
                 cur_person.add_role(Role.AUTHOR)
                 if cur_person.firstname != first_name:
@@ -203,7 +204,6 @@ class CMTSerialiser(ISCAObject):
 
             for affiliation in list_affiliations:
                 cur_person.add_paper_affiliation(str(paper_info["Paper ID"]), affiliation)
-            self._annuary.add(cur_person)
             paper_authors.append(cur_person)
 
         # Extract presenters (TODO: This is a bit too specific, will have to check with Antoine about this)
@@ -299,6 +299,11 @@ class CMTSerialiser(ISCAObject):
         else:
             users_file = input_root_dir / conf_info["input_data"]["users_spreadsheet"]
 
+        if conf_info["input_data"]["speakers_spreadsheet"].startswith("/"):
+            speakers_file = pathlib.Path(conf_info["input_data"]["speakers_spreadsheet"])
+        else:
+            speakers_file = input_root_dir / conf_info["input_data"]["speakers_spreadsheet"]
+
         if conf_info["input_data"]["reviewers_spreadsheet"].startswith("/"):
             reviewers_file = pathlib.Path(conf_info["input_data"]["reviewers_spreadsheet"])
         else:
@@ -312,8 +317,9 @@ class CMTSerialiser(ISCAObject):
         else:
             session_file = input_root_dir / conf_info["input_data"]["sessions_spreadsheet"]
 
-        _ = self.load_users(users_file)
-        _ = self.load_reviewers(reviewers_file)
+        self.load_users(users_file)
+        self.load_reviewers(reviewers_file)
+        self.load_speakers(speakers_file)
         papers, _, presenters = self.load_papers(metadata_file, pdfs_path, updated_pdfs_path)
 
         if self.ignore_sessions:
@@ -329,6 +335,9 @@ class CMTSerialiser(ISCAObject):
             )
 
     def load_users(self, user_spreadsheet_file: pathlib.Path, ignore_role: bool = True) -> Annuary:
+        if self._annuary is None:
+            self._annuary = Annuary()
+
         users = Annuary()
         wb = load_workbook(filename=user_spreadsheet_file)
         for worksheet in wb.sheetnames:
@@ -397,8 +406,70 @@ class CMTSerialiser(ISCAObject):
 
                 users.add(cur_user)
 
-        self._annuary = users
+        self._annuary.update(users)
+
         return users
+
+    def load_speakers(self, speaker_spreadsheet_file: pathlib.Path) -> Annuary:
+        if self._annuary is None:
+            self._annuary = Annuary()
+
+        speakers = Annuary()
+        wb = load_workbook(filename=speaker_spreadsheet_file)
+        for worksheet in wb.sheetnames:
+            df = load_excel(speaker_spreadsheet_file, sheet_name=worksheet)
+
+            for _, speaker_row in df.iterrows():
+                email = str(speaker_row["Email"]).lower().strip()
+                cur_person = self._annuary.find_person_by_email(email)
+                if cur_person is not None:
+                    speaker = Speaker.from_person(cur_person)
+                else:
+
+                    first_name = str(speaker_row["First Name"]).strip()
+                    first_name = first_name.title() if first_name.isupper() else first_name
+
+                    middle_initial = ""
+                    if not pd.isna(speaker_row["Middle Initial (optional)"]):
+                        middle_initial = str(speaker_row["Middle Initial (optional)"]).strip()
+
+                    if pd.isna(speaker_row["Last Name"]) or (str(speaker_row["Last Name"]) == ""):
+                        last_name = first_name.strip()
+                        first_name = None
+                    else:
+                        last_name = str(speaker_row["Last Name"])
+
+                    last_name = last_name.title() if last_name.isupper() else last_name
+                    country = None
+                    if not pd.isna(speaker_row["Country"]):
+                        country = str(speaker_row["Country"]).strip()
+
+                    affiliation = Affiliation(
+                        institute=str(speaker_row["Organization"]).strip(),
+                        country=country,
+                    )
+
+                    speaker = Speaker(
+                        None,
+                        first_name.strip() if first_name is not None else None,
+                        last_name.strip(),
+                        email=str(speaker_row["Email"]).strip(),
+                        roles=set([]),
+                        default_affiliation=affiliation,
+                        middle_initial=middle_initial,
+                    )
+
+                speaker.add_role(Role.PRESENTER)
+                speaker.biography = speaker_row["Biography"] if "Biography" in speaker_row else None
+                speaker.url = speaker_row["Website"] if "Website" in speaker_row else None
+                speaker.photo = (
+                    speaker_spreadsheet_file.parent / speaker_row["Photo Path"]
+                    if ("Photo Path" in speaker_row) and (not pd.isna(speaker_row["Photo Path"]))
+                    else None
+                )
+                speakers.add(speaker)
+        self._annuary.update(speakers, force=True)
+        return speakers
 
     def load_reviewers(self, user_spreadsheet_file: pathlib.Path, ignore_role: bool = True) -> Annuary:
         if self._annuary is None:
@@ -473,6 +544,7 @@ class CMTSerialiser(ISCAObject):
 
                 reviewers.add(cur_user)
 
+        self._annuary.update(reviewers)
         return reviewers
 
     def load_papers(
@@ -600,29 +672,9 @@ class CMTSerialiser(ISCAObject):
         keynotes = dict()
         for _, row in df.iterrows():
             email = str(row["Email"])
-            person = self._annuary.find_person_by_email(email)
-            if person is None:
-                affiliation = Affiliation(row["Organization"], row["Country"])
-                speaker = Speaker(
-                    None,
-                    row["First Name"],
-                    row["Last Name"],
-                    affiliation,
-                    email,
-                    set(),
-                    None,
-                    row["Middle Initial"] if "Middle Initial" in row else None,
-                    row["Bio"] if "Bio" in row else None,
-                    row["Website"] if "Website" in row else None,
-                    pathlib.Path(row["Photo"]) if "Photo" in row else None,
-                )
-                self._annuary.add(speaker)
-            else:
-                speaker = Speaker.from_person(person)
-                speaker.biography = row["Bio"] if "Bio" in row else None
-                speaker.url = row["Website"] if "Website" in row else None
-                speaker.photo = session_summary_file.parent / row["Photo"] if "Photo" in row else None
-                self._annuary.replace(person, speaker)
+            speaker = self._annuary.find_person_by_email(email)
+            if speaker is None:
+                raise Exception(f"The keynote speaker is not part of the annuary: {email}")
 
             # FIXME: duration is hardcoded
             keynote = Keynote(row["Keynote ID"], row["Paper Title"], [speaker], 60, row["Abstract"])
@@ -640,52 +692,15 @@ class CMTSerialiser(ISCAObject):
         for _, row in df.iterrows():
             assert not pd.isna(row["Email"])
             email = str(row["Email"]).lower().strip()
-            presenter = self._annuary.find_person_by_email(email)
+            speaker = self._annuary.find_person_by_email(email)
 
-            if presenter is None:
-                first_name = str(row["First Name"]).strip()
-
-                middle_initial = ""
-                if ("Middle Initial (optional)" in row) and (not pd.isna(row["Middle Initial (optional)"])):
-                    middle_initial = str(row["Middle Initial (optional)"]).strip()
-
-                if pd.isna(row["Last Name"]) or (str(row["Last Name"]) == ""):
-                    last_name = first_name.strip()
-                    first_name = ""
-                else:
-                    last_name = str(row["Last Name"])
-
-                affiliation = Affiliation(
-                    institute=str(row["Organization"]).strip(),
-                    country=str(row["Country"]).strip(),
-                )
-
-                presenter = Speaker(
-                    None,
-                    first_name.strip(),
-                    last_name.strip(),
-                    email=email,
-                    default_affiliation=affiliation,
-                    middle_initial=middle_initial,
-                )
-                presenter.biography = row["Bio"] if "Bio" in row else None
-                presenter.url = row["Website"] if "Website" in row else None
-                presenter.photo = session_summary_file.parent / row["Photo"] if "Photo" in row else None
-
-                self._annuary.add(presenter)
-            else:
-                speaker = Speaker.from_person(presenter)
-                speaker.biography = row["Bio"] if "Bio" in row else None
-                speaker.url = row["Website"] if "Website" in row else None
-                speaker.photo = session_summary_file.parent / row["Photo"] if "Photo" in row else None
-                self._annuary.replace(presenter, speaker)
-                presenter = speaker
-            presenters = [presenter]
+            if speaker is None:
+                raise Exception(f"The survey speaker is not part of the annuary: {email}")
 
             survey = SurveyTalk(
                 row["Survey ID"],
                 title=row["Paper Title"],
-                presenters=list(presenters),
+                presenters=[speaker],
                 duration=40,
                 abstract=row["Abstract"],
             )
@@ -704,7 +719,20 @@ class CMTSerialiser(ISCAObject):
         for _, row in df.iterrows():
             timeslot = timeslots[str(row["Timeslot name*"])]
             room = rooms[str(row["Room name*"])]
-            tutorial = Tutorial(str(row["Tutorial ID"]), str(row["Title"]), [], timeslot.duration, str(row["Description"]), False)
+            presenters = []
+            for cur_presenter in str(row["Organisers"]).split("; "):
+                email = cur_presenter.lower().strip()
+                speaker = self._annuary.find_person_by_email(email)
+                if speaker is None:
+                    raise Exception(f"The tutorial speaker is not part of the annuary: {email}")
+
+                if not isinstance(speaker, Speaker):
+                    raise Exception(f"The speaker {speaker} is not a speaker, but a person (author, reviewer, ..)")
+                presenters.append(speaker)
+
+            tutorial = Tutorial(
+                str(row["Tutorial ID"]), str(row["Title"]), presenters, timeslot.duration, str(row["Description"]), False
+            )
             tutorial_session = TutorialSession(f"session_{tutorial.id}", tutorial.title, timeslot.start, timeslot.end, tutorial)
             tutorials.append((timeslot, room, tutorial_session))
 

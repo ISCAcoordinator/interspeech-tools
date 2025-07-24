@@ -8,7 +8,7 @@ from isca.model.program import Room, Timeslot, Presentation
 from isca.model.person import Person
 
 
-from ...model import Interspeech, TutorialSession
+from ...model import Interspeech, Tutorial, TutorialSession
 
 from .theme import (
     get_session_type,
@@ -61,7 +61,7 @@ class AbstractBookProcessor(ISCAObject):
         # Tutorials
         tutorial_template = self._template_engine.get_template("tutorials_template.tex")
         outfilename = root_output_dir / "tutorials.tex"
-        tutorials = [s for s in self._conf.sessions if isinstance(s, TutorialSession)]
+        tutorials = self._conf.program.select_sessions(lambda t, r, s: isinstance(s, TutorialSession))
         with open(outfilename, "w") as outfile:
             outfile.write(tutorial_template.render(tutorial_sessions=tutorials))
 

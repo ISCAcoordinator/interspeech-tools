@@ -1,6 +1,19 @@
-\BLOCK{ for tutorial_session in tutorial_sessions }
+\BLOCK{ for timeslot, room, tutorial_session in tutorial_sessions }
 \BLOCK{ set tutorial = tutorial_session.tutorial }
 \subsection*{ \VAR{tutorial.title | latexify}}
+
+\VAR{timeslot}
+\textbf{\VAR{tutorial | presenters}}
+
+\bigskip
+
 \VAR{tutorial.description.strip() | latexify}
 
+\subsubsection*{Organiser(s) biography}
+
+\BLOCK{ for presenter in tutorial.presenters }
+\bigskip
+
+\VAR{presenter.biography | latexify}
+\BLOCK{ endfor }
 \BLOCK{ endfor }

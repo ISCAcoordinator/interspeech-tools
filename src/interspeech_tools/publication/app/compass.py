@@ -22,6 +22,8 @@ from ...model import (
     SpecialSession,
     SurveyTalk,
     BlueSkyPresentation,
+    Tutorial,
+    TutorialSession,
 )
 from ..books.jinja_helpers import short_presentation_id
 
@@ -77,11 +79,13 @@ class CompassDataGenerator:
         ShowAndTellSession: "showandtell",
         SpecialSession: "special",
         KeynoteSession: "keynote",
+        TutorialSession: "tutorial",
     }
     SUPPORTED_PRESENTATION_TYPES = {
         OralPresentation: "oral",
         PosterPresentation: "poster",
         Keynote: "keynote",
+        Tutorial: "tutorial",
         ShowAndTellPresentation: "showandtell",
         BlueSkyPresentation: "bluesky",
         SurveyTalk: "survey",
@@ -232,7 +236,7 @@ class CompassDataGenerator:
                 {
                     "id": f"{session_type}_session",
                     "color": color,
-                    "name": session_type,
+                    "name": f"{session_type} (Session)",
                     "configuratorType": "classifier:session_type",
                 }
             )

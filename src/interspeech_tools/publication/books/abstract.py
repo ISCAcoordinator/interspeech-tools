@@ -1,12 +1,13 @@
 import datetime
 import pathlib
+import shutil
 
 from isca.model.core import ISCAObject
 from isca.model.item import Session
 import jinja2
 
 from isca.model.program import KeynoteSession, OralSession, PosterSession, Room, Timeslot, Presentation
-from isca.model.person import Person
+from isca.model.person import Person, Speaker
 
 
 from ...model import Interspeech, ShowAndTellSession, SpecialSession, TutorialSession
@@ -75,6 +76,13 @@ class AbstractBookProcessor(ISCAObject):
                 outfilename = root_output_dir / f"{date}.tex"
                 with open(outfilename, "w") as outfile:
                     outfile.write(day_program_template.render(sessions=sessions))
+
+        # Copy photos
+        for person in self._conf._annuary:
+            if isinstance(person, Speaker):
+                if (person.photo is not None) and person.photo.exists():
+                    self.logger.debug(f"Copy speaker photo {person.photo} to {root_output_dir/person.photo.name}")
+                    shutil.copy(person.photo, root_output_dir / person.photo.name)
 
         # Best student papers
         best_students = self._template_engine.get_template("best_papers.tex.jinja2")

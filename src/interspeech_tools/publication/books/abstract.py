@@ -88,13 +88,13 @@ class AbstractBookProcessor(ISCAObject):
         best_students = self._template_engine.get_template("best_papers.tex.jinja2")
         outfilename = root_output_dir / "best_student.tex"
         with open(outfilename, "w") as outfile:
-            outfile.write(best_students.render(papers=self._conf.best_student_papers_nominees))
+            outfile.write(best_students.render(presentations=self._conf.list_student_award_nominees_presentations()))
 
         # Best theme papers
         best_themes = self._template_engine.get_template("best_papers.tex.jinja2")
         outfilename = root_output_dir / "best_theme.tex"
         with open(outfilename, "w") as outfile:
-            outfile.write(best_themes.render(papers=self._conf.best_theme_papers_nominees))
+            outfile.write(best_themes.render(presentations=self._conf.list_theme_award_nominees_presentations()))
 
         # Tutorials
         tutorial_template = self._template_engine.get_template("tutorials.tex.jinja2")

@@ -2,7 +2,16 @@ import datetime
 
 from isca.model.item import Paper, Session
 from isca.model.person import Person, Annuary
-from isca.model.program import Presentation, PresentationSession, OralPresentation, PosterPresentation, Program
+from isca.model.program import (
+    OralSession,
+    Presentation,
+    PresentationSession,
+    OralPresentation,
+    Program,
+    Timeslot,
+    Room,
+    AnonymousTimeslot,
+)
 from isca.model.event import Conference, Event
 
 
@@ -187,3 +196,38 @@ class Interspeech(Conference):
             paper = self.papers[paper]
 
         return paper in self.best_theme_papers_nominees
+
+    def list_student_award_nominees_presentations(self) -> list[tuple[Presentation, Room, Timeslot]]:
+        assert self.program is not None
+
+        presentations = []
+        for timeslot, room, session in self.program.sessions:
+            if not isinstance(session, PresentationSession):
+                continue
+
+            for presentation in session.presentations:
+                if presentation.presented_paper in self.best_student_papers_nominees:
+                    presentations.append((presentation, room, timeslot))
+
+        presentations = sorted(presentations, key=lambda x: x[0].start if isinstance(x[0], OralSession) else x[2].start)
+        return presentations
+
+    def list_theme_award_nominees_presentations(self) -> list[tuple[Presentation, Room, AnonymousTimeslot]]:
+        assert self.program is not None
+
+        presentations = []
+        for timeslot_session, room, session in self.program.sessions:
+            if not isinstance(session, PresentationSession):
+                continue
+
+            for idx_presentation, presentation in enumerate(session.presentations):
+                if presentation.presented_paper in self.best_theme_papers_nominees:
+                    if isinstance(session, OralSession):
+                        timeslot = session.timeslot_presentation(idx_presentation)
+                    else:
+                        timeslot = timeslot_session
+
+                    presentations.append((presentation, room, timeslot))
+
+        presentations = sorted(presentations, key=lambda x: x[2].start)
+        return presentations

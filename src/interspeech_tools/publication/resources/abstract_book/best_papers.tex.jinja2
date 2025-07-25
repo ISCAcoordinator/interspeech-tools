@@ -1,7 +1,8 @@
-\BLOCK{ for paper in papers }
+\BLOCK{ for presentation, room, timeslot in presentations }
 
-\textbf{\VAR{paper.title}} \\
-\VAR{paper | authors}
+\textbf{\VAR{presentation.title}} \\
+\emph{\VAR{presentation | short_presentation_id} - [\VAR{timeslot | format_timeslot(True)}] - \VAR{room.name}} \\
+\VAR{presentation.presented_paper | authors}
 
 \bigskip
 

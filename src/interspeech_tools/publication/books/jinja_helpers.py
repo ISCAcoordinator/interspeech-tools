@@ -5,7 +5,7 @@ from pyuca import Collator
 
 from isca.model.person import Person
 from isca.model.item import Paper
-from isca.model.program import PresentationSession, Presentation, Timeslot, Keynote
+from isca.model.program import AnonymousTimeslot, OralPresentation, PresentationSession, Presentation, Keynote
 
 from ...model import SurveyTalk, BlueSkyPresentation
 
@@ -110,14 +110,21 @@ def extract_verbose_date(input_time: datetime.datetime) -> str:
     return input_time.strftime("%A %-d %B %Y")
 
 
-def format_timeslot(timeslot: Timeslot) -> str:
-    return timeslot.start.strftime("%H:%M") + "--" + timeslot.end.strftime("%H:%M")
+def format_timeslot(timeslot: AnonymousTimeslot, with_date: bool = False) -> str:
+    timeslot_str = timeslot.start.strftime("%H:%M") + "--" + timeslot.end.strftime("%H:%M")
+    if with_date:
+        timeslot_str = timeslot.start.strftime("%A %-d %B %Y") + " " + timeslot_str
+    return timeslot_str
 
 
 def get_presentation_timeslot(input_session: PresentationSession, presentation_idx: int) -> str:
     start = input_session.start_presentation(presentation_idx)
     end = input_session.end_presentation(presentation_idx)
     return start.strftime("%H:%M") + "--" + end.strftime("%H:%M")
+
+
+def is_presentation_oral(input_presentation: Presentation) -> bool:
+    return isinstance(input_presentation, OralPresentation)
 
 
 def is_presentation_survey(input_presentation: Presentation) -> bool:
@@ -171,6 +178,7 @@ def configure_latex_jinja(template_loader: jinja2.PackageLoader):
     jenv_latex.filters["format_timeslot"] = format_timeslot
     jenv_latex.filters["get_presentation_timeslot"] = get_presentation_timeslot
     jenv_latex.filters["is_survey"] = is_presentation_survey
+    jenv_latex.filters["is_oral"] = is_presentation_oral
     jenv_latex.filters["is_bluesky"] = is_presentation_bluesky
     jenv_latex.filters["is_keynote"] = is_presentation_keynote
 

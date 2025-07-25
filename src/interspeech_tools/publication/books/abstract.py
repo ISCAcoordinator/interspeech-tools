@@ -150,7 +150,27 @@ class AbstractBookProcessor(ISCAObject):
         nb_zones = sum(r.nb_zones for r in rooms)
         rows = []
 
+        #see https://github.com/seblemaguer/interspeech-tools/issues/1 for filtering criterion
+        from collections import defaultdict
+        room_usage = defaultdict(list)
+        timeslot_sessions = {
+            timeslot: self._conf.program.get_timeslot_sessions(timeslot) for timeslot in timeslots
+        }
+        for timeslot, sessions in timeslot_sessions.items():
+            active_rooms = list(sessions.keys()) if sessions else []
+            for room in active_rooms:
+                room_usage[room].append((timeslot, len(active_rooms)))
+        filtered_rooms = []
+        for room in rooms:
+            usage = room_usage.get(room, [])
+            if any(count > 1 for (_, count) in usage):
+                filtered_rooms.append(room)
+
+        rooms = filtered_rooms
+        nb_zones = sum(r.nb_zones for r in rooms)
+
         for timeslot in timeslots:
+
             sessions = self._conf.program.get_timeslot_sessions(timeslot)
             row = {"timeslot_str": timeslot.timeslot_without_date().replace(" ", ""), "elts": []}
 

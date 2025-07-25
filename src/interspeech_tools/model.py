@@ -34,6 +34,7 @@ class Satellite(Event):
 class InterspeechEventType(Enum):
     MEETING = 0
     YOUNG_RESEARCHER = 1
+    CEREMONY = 2
 
     def __str__(self) -> str:
         """Return the string representation of the role

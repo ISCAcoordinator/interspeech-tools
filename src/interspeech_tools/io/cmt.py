@@ -771,6 +771,8 @@ class CMTSerialiser(ISCAObject):
             else:
                 if event_type == "meeting":
                     event_type = InterspeechEventType.MEETING
+                elif event_type == "ceremony":
+                    event_type = InterspeechEventType.CEREMONY
                 elif event_type.startswith("young res"):
                     event_type = InterspeechEventType.YOUNG_RESEARCHER
                 else:

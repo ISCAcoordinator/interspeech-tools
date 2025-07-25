@@ -13,6 +13,7 @@ from isca.model.program import (
     AnonymousTimeslot,
 )
 from isca.model.event import Conference, Event
+from enum import Enum
 
 
 class Satellite(Event):
@@ -27,7 +28,37 @@ class Satellite(Event):
         url: str,
     ):
         super().__init__(id, name, start_date, end_date, location, url)
-        self.description = description
+        self.description: str = description
+
+
+class InterspeechEventType(Enum):
+    MEETING = 0
+    YOUNG_RESEARCHER = 1
+
+    def __str__(self) -> str:
+        """Return the string representation of the role
+
+        Returns
+        -------
+        str
+            the (uppercase) name of the role
+        """
+        return f'{self.name.replace("InterspeechEventType.", "")}'
+
+
+class InterspeechEvent(Session):
+    def __init__(self, id: str, name: str, organiser: str, event_type: InterspeechEventType):
+        super().__init__(id, name)
+        self._organiser: str = organiser
+        self._event_type: InterspeechEventType = event_type
+
+    @property
+    def organiser(self) -> str:
+        return self._organiser
+
+    @property
+    def event_type(self) -> InterspeechEventType:
+        return self._event_type
 
 
 class Tutorial(Presentation):

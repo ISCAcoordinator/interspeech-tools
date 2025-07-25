@@ -23,6 +23,7 @@ from isca.model.program import (
     OralSession,
     PosterSession,
     Room,
+    SocialSession,
     Timeslot,
     TimeslotType,
 )
@@ -30,6 +31,8 @@ from isca.io.utils.helpers import load_excel
 
 from ..model import (
     Interspeech,
+    InterspeechEvent,
+    InterspeechEventType,
     Tutorial,
     TutorialSession,
     BlueSkyPresentation,
@@ -53,6 +56,7 @@ CMT_SESSION_TIMESLOTS_SHEET_NAME = "Timeslots"
 CMT_SESSION_SESSIONS_SHEET_NAME = "Sessions"
 CMT_SESSION_ROOMS_SHEET_NAME = "Rooms"
 CMT_SESSION_KEYNOTES_SHEET_NAME = "Keynotes"
+CMT_SESSION_EVENTS_SHEET_NAME = "Events"
 CMT_SESSION_TUTORIALS_SHEET_NAME = "Tutorials"
 CMT_SESSION_BLUESKY_SHEET_NAME = "BlueSky Papers"
 CMT_SESSION_SURVEY_TALKS_SHEET_NAME = "Survey Talks"
@@ -748,6 +752,34 @@ class CMTSerialiser(ISCAObject):
 
         return tutorials
 
+    def _load_events(
+        self, session_summary_file: pathlib.Path, timeslots: dict[str, Timeslot], rooms: dict[str, Room]
+    ) -> list[tuple[Timeslot, Room, InterspeechEvent]]:
+        df = load_excel(
+            session_summary_file,
+            sheet_name=CMT_SESSION_EVENTS_SHEET_NAME,
+        )
+
+        events = []
+        for _, row in df.iterrows():
+            timeslot = timeslots[str(row["Timeslot name*"])]
+            room = rooms[str(row["Room name*"])]
+            organiser = str(row["Organiser"])
+            event_type = str(row["Event Type"]).lower()
+            if event_type == "social":
+                event_session = SocialSession(str(row["Event ID"]), str(row["Title"]))
+            else:
+                if event_type == "meeting":
+                    event_type = InterspeechEventType.MEETING
+                elif event_type.startswith("young res"):
+                    event_type = InterspeechEventType.YOUNG_RESEARCHER
+                else:
+                    raise Exception(f"This event type is unknown: {event_type}")
+                event_session = InterspeechEvent(str(row["Event ID"]), str(row["Title"]), organiser, event_type)
+            events.append((timeslot, room, event_session))
+
+        return events
+
     def _load_theme_award_nominees(self, session_summary_file: pathlib.Path) -> set[str]:
         df = load_excel(
             session_summary_file,
@@ -832,6 +864,8 @@ class CMTSerialiser(ISCAObject):
                 timeslot_type = TimeslotType.SCIENCE
             elif timeslot_type_str == "tutorial":
                 timeslot_type = TimeslotType.TUTORIAL
+            elif timeslot_type_str == "social":
+                timeslot_type = TimeslotType.SOCIAL
             elif (timeslot_type_str == "general_assembly") or (timeslot_type_str == "ga"):
                 timeslot_type = TimeslotType.GENERAL_ASSEMBLY
             else:
@@ -848,6 +882,12 @@ class CMTSerialiser(ISCAObject):
             dict_timeslots[timeslot_info["Timeslot name"]] = cur_timeslot
 
         program = Program(list(dict_timeslots.values()), list(dict_rooms.values()))
+
+        # Load the events
+        event_informations = self._load_events(session_summary_file, dict_timeslots, dict_rooms)
+        for evt_elts in event_informations:
+            list_sessions.append(evt_elts[2])
+            program.add_session(timeslot=evt_elts[0], room=evt_elts[1], session=evt_elts[2])
 
         # Load the tutorials
         tutorial_informations = self._load_tutorials(session_summary_file, dict_timeslots, dict_rooms)

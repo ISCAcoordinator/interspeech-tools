@@ -13,9 +13,12 @@ from isca.model.program import (
     PosterSession,
     PresentationSession,
     OralSession,
+    SocialSession,
 )
 from ...model import (
     Interspeech,
+    InterspeechEvent,
+    InterspeechEventType,
     ShowAndTellPresentation,
     ShowAndTellSession,
     SpecialPresentation,
@@ -80,6 +83,7 @@ class CompassDataGenerator:
         SpecialSession: "special",
         KeynoteSession: "keynote",
         TutorialSession: "tutorial",
+        SocialSession: "social",
     }
     SUPPORTED_PRESENTATION_TYPES = {
         OralPresentation: "oral",
@@ -241,7 +245,7 @@ class CompassDataGenerator:
                 }
             )
 
-        for _, presentation_type in CompassDataGenerator.SUPPORTED_PRESENTATION_TYPES.items():
+        for _, event_type_value in CompassDataGenerator.SUPPORTED_PRESENTATION_TYPES.items():
             if (
                 (self.conference.theme is not None)
                 and ("colors" in self.conference.theme)
@@ -252,18 +256,45 @@ class CompassDataGenerator:
             color = None
             if (
                 (self.conference.theme is not None)
-                and (presentation_type in self.conference.theme)
-                and ("colors" in self.conference.theme[presentation_type])
-                and ("foreground" in self.conference.theme[presentation_type]["colors"])
+                and (event_type_value in self.conference.theme)
+                and ("colors" in self.conference.theme[event_type_value])
+                and ("foreground" in self.conference.theme[event_type_value]["colors"])
             ):
-                color = str(self.conference.theme[presentation_type]["colors"]["foreground"])
+                color = str(self.conference.theme[event_type_value]["colors"]["foreground"])
 
             list_tags.append(
                 {
-                    "id": f"{presentation_type}_presentation",
+                    "id": f"{event_type_value}_presentation",
                     "color": color,
-                    "name": presentation_type,
+                    "name": event_type_value,
                     "configuratorType": "classifier:presentation_type",
+                }
+            )
+
+        for event_type in InterspeechEventType:
+            event_type_value = str(event_type).lower()
+            if (
+                (self.conference.theme is not None)
+                and ("colors" in self.conference.theme)
+                and ("foreground" in self.conference.theme["colors"])
+            ):
+                color = str(self.conference.theme["colors"]["foreground"])
+
+            color = None
+            if (
+                (self.conference.theme is not None)
+                and (event_type_value in self.conference.theme)
+                and ("colors" in self.conference.theme[event_type_value])
+                and ("foreground" in self.conference.theme[event_type_value]["colors"])
+            ):
+                color = str(self.conference.theme[event_type_value]["colors"]["foreground"])
+
+            list_tags.append(
+                {
+                    "id": f"{event_type_value}",
+                    "color": color,
+                    "name": event_type_value.replace("_", " "),
+                    "configuratorType": "classifier:event_type",
                 }
             )
 
@@ -301,11 +332,45 @@ class CompassDataGenerator:
 
         for session_info in self.conference.program.sessions:
             timeslot, room, session = session_info
+
+            # Non presentation session have a specific use case
             if not isinstance(session, PresentationSession):
-                self._logger.warning(
-                    f"[{session.id}] The session is not a presentation session",
+                self._logger.debug(
+                    f"[{session.id}] The session is not a presentation sessionsession",
                     extra={"session_id": session.id, "session": session},
                 )
+
+                if isinstance(session, SocialSession):
+                    cur_session = {
+                        "id": f"timeslot_{session.id}",
+                        "name": session.name,
+                        "subtitle": session.id,
+                        "orderingName": session.id,
+                        "placeId_1": room.id,
+                        "date": timeslot.start.strftime("%Y-%m-%d"),
+                        "startTime": timeslot.start.strftime("%H:%M"),
+                        "endTime": timeslot.end.strftime("%H:%M"),
+                        "configuratorType": "timeslot:session",
+                        "classifierId_1": "social_session",
+                    }
+                elif isinstance(session, InterspeechEvent):
+                    cur_session = {
+                        "id": f"timeslot_{session.id}",
+                        "name": session.name,
+                        "subtitle": session.id,
+                        "orderingName": session.id,
+                        "info": session.description,
+                        "placeId_1": room.id,
+                        "date": timeslot.start.strftime("%Y-%m-%d"),
+                        "startTime": timeslot.start.strftime("%H:%M"),
+                        "endTime": timeslot.end.strftime("%H:%M"),
+                        "configuratorType": "timeslot:session",
+                        "classifierId_1": str(session.event_type).lower(),
+                    }
+                else:
+                    raise Exception(f"The non presentation session type {type(session)} is not supported")
+
+                list_agenda.append(cur_session)
                 continue
 
             if type(session) not in CompassDataGenerator.SUPPORTED_SESSION_TYPES:

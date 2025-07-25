@@ -775,7 +775,11 @@ class CMTSerialiser(ISCAObject):
                     event_type = InterspeechEventType.YOUNG_RESEARCHER
                 else:
                     raise Exception(f"This event type is unknown: {event_type}")
-                event_session = InterspeechEvent(str(row["Event ID"]), str(row["Title"]), organiser, event_type)
+
+                description = None
+                if not pd.isna(row["Description"]):
+                    description = str(row["Description"])
+                event_session = InterspeechEvent(str(row["Event ID"]), str(row["Title"]), organiser, event_type, description)
             events.append((timeslot, room, event_session))
 
         return events

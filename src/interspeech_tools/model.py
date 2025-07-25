@@ -47,10 +47,11 @@ class InterspeechEventType(Enum):
 
 
 class InterspeechEvent(Session):
-    def __init__(self, id: str, name: str, organiser: str, event_type: InterspeechEventType):
+    def __init__(self, id: str, name: str, organiser: str, event_type: InterspeechEventType, description: str | None = None):
         super().__init__(id, name)
         self._organiser: str = organiser
         self._event_type: InterspeechEventType = event_type
+        self.description = description
 
     @property
     def organiser(self) -> str:

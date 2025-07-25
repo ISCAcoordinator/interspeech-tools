@@ -326,7 +326,7 @@
 %%    #3 The background color of the cell
 %%    #4 The font color
 \newcommand{\cellcontent}[4]{%
-    \cellcolor{#4}{\color{#4}\bf \hyperlink{#1}{#2}}
+    \cellcolor{#3}{\color{#4}\bf \hyperlink{#1}{#2}}
 }
 
 %% Command \sessionslot takes 7 arguments:

@@ -62,6 +62,9 @@ class InterspeechEvent(Session):
     def event_type(self) -> InterspeechEventType:
         return self._event_type
 
+    def __repr__(self) -> str:
+        return f"InterspeechEvent(id={self.id}, name={self.name}, organisers={self.organiser}, event_type={self.event_type})"
+
 
 class Tutorial(Presentation):
     def __init__(self, id: str, title: str, presenters: list[Person], duration: int, description: str, is_invited: bool = False):

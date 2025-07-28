@@ -784,6 +784,7 @@ class CMTSerialiser(ISCAObject):
                 if not pd.isna(row["Description"]):
                     description = str(row["Description"])
                 event_session = InterspeechEvent(str(row["Event ID"]), str(row["Title"]), organiser, event_type, description)
+            self._logger.warning(f"{repr(event_session)} => {repr(room)}")
             events.append((timeslot, room, event_session))
 
         return events

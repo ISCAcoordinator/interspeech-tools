@@ -8,9 +8,9 @@
 \BLOCK{ endfor }
 
 %% FIXME: hardcoded
-\colorlet{LinkColour}{DefaultForegroundColour}
-\colorlet{FooterBackgroundColour}{DefaultForegroundColour}
-\colorlet{FooterForegroundColour}{white}
+\colorlet{LinkColour}{black}
+\colorlet{FooterBackgroundColour}{DefaultBackgroundColour}
+\colorlet{FooterForegroundColour}{DefaultForegroundColour}
 \colorlet{RoomColour}{DefaultForegroundColour}
 \colorlet{RoomCellColour}{gray!25!white}
 
@@ -34,11 +34,9 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 \BLOCK{ for session_type in unknown_session_types }
-\BLOCK{ for scope, _ in default_colors.items() }
-
 %% \VAR{session_type.capitalize()} colour information
+\BLOCK{ for scope, _ in default_colors.items() }
 \colorlet{\VAR{session_type.capitalize()}\VAR{scope.capitalize()}Colour}{Default\VAR{scope.capitalize()}Colour}
-
 \BLOCK{ endfor }
 \BLOCK{ endfor }
 

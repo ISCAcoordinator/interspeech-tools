@@ -10,12 +10,27 @@ from isca.model.program import (
     OralPresentation,
     PosterPresentation,
     Presentation,
+    SocialSession,
 )
-from ...model import Interspeech, SpecialSession, ShowAndTellSession, ShowAndTellPresentation, SpecialPresentation, SurveyTalk
+from ...model import (
+    Interspeech,
+    InterspeechEvent,
+    SpecialSession,
+    ShowAndTellSession,
+    ShowAndTellPresentation,
+    SpecialPresentation,
+    SurveyTalk,
+    TutorialSession,
+)
 
 
-SPECIFIC_SESSION_IDS = {KeynoteSession: "keynote", SpecialSession: "special", ShowAndTellSession: "showandtell"}
-GENERIC_SESSION_IDS = {OralSession: "oral", PosterSession: "poster"}
+SPECIFIC_SESSION_IDS = {
+    KeynoteSession: "keynote",
+    SpecialSession: "special",
+    ShowAndTellSession: "showandtell",
+    TutorialSession: "tutorial",
+}
+GENERIC_SESSION_IDS = {OralSession: "oral", PosterSession: "poster", SocialSession: "social"}
 SPECIFIC_PRESENTATION_IDS = {
     ShowAndTellPresentation: "showandtell",
     SpecialPresentation: "special",
@@ -45,6 +60,9 @@ def get_session_type(input_session: Session) -> str:
 
     if type(input_session) in GENERIC_SESSION_IDS:
         return GENERIC_SESSION_IDS[type(input_session)]
+
+    if isinstance(input_session, InterspeechEvent):
+        return str(input_session.event_type).lower()
 
     logger = logging.getLogger("get_session_type")
     logger.warning(f"{type(input_session)} is unknown, use the default information")

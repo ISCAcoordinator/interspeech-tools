@@ -326,7 +326,11 @@
 %%    #3 The background color of the cell
 %%    #4 The font color
 \newcommand{\cellcontent}[4]{%
-    \cellcolor{#3}{\color{#4}\bf \hyperlink{#1}{#2}}
+    \if\relax\detokenize{#1}\relax
+        \cellcolor{#3}{\color{#4}\bf #2}
+    \else
+        \cellcolor{#3}{\hyperlink{#1}{\bf \color{#4} #1 - #2}}
+    \fi
 }
 
 %% Command \sessionslot takes 7 arguments:

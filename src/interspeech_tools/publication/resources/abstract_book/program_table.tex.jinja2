@@ -1,5 +1,5 @@
-\begin{table}[htb!]
-\begin{tabularx}{\linewidth}{|C{\tabletimecolwidth}|\BLOCK{ for r in rooms }\BLOCK{ for _ in range(r.nb_zones) }C{\tablecolwidth}|\BLOCK{ endfor }\BLOCK{ endfor }} \hline
+{\small
+\begin{tabularx}{1.1\linewidth}{|C{\tabletimecolwidth}|\BLOCK{ for r in rooms }\BLOCK{ for _ in range(r.nb_zones) }Y|\BLOCK{ endfor }\BLOCK{ endfor }} \hline
 
 & \BLOCK{ for r in rooms -}
 \BLOCK{ if r.nb_zones > 1 }
@@ -27,4 +27,6 @@
 \BLOCK{ endfor }
 
 \end{tabularx}
-\end{table}
+}
+\vspace{0.2cm}
+\raggedbottom

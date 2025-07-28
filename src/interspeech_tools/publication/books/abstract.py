@@ -1,3 +1,4 @@
+from collections import defaultdict
 import datetime
 import pathlib
 import shutil
@@ -29,6 +30,8 @@ def is_content_session(input_session: Session) -> bool:
 
 
 class AbstractBookProcessor(ISCAObject):
+    MAX_SESSION_NAME_SIZE_MULTICOL = 20
+
     def __init__(self, conf: Interspeech):
         super().__init__()
         self._conf = conf
@@ -133,78 +136,189 @@ class AbstractBookProcessor(ISCAObject):
         with open(outfilename, "w") as outfile:
             outfile.write(author_template.render(conf=self._conf, authors=self._conf.authors))
 
-    def _generate_programme_table(self, timeslots: list[Timeslot], max_rooms_per_page: int = 10) -> str:
+    def _generate_programme_table(self, timeslots: list[Timeslot], max_zones_per_page: int = 7) -> str:
 
         rooms = self._conf.program.rooms
 
-        # retrieve the room names from the plan column names
         parts = []
-        for firstCol in list(range(0, len(rooms)))[::max_rooms_per_page]:
-            partial_rooms = rooms[firstCol : firstCol + max_rooms_per_page]
+        room_indices = []
+        cur_nb_zones = 0
+        for room_idx, room in enumerate(rooms):
+            if room in self._conf.ignored_rooms:
+                continue
+            room_indices.append(room_idx)
+            for _ in range(0, room.nb_zones):
+                cur_nb_zones += 1
+                if cur_nb_zones > max_zones_per_page:
+                    room_indices.remove(room_idx)
+                    partial_rooms = [rooms[i] for i in room_indices]
+                    table_part = self._generate_programme_table_part(timeslots, partial_rooms)
+                    if table_part is not None:
+                        parts.append(table_part)
+                    room_indices = [room_idx]
+                    cur_nb_zones = room.nb_zones
+                    break
+
+        if room_indices:
+            partial_rooms = [rooms[i] for i in room_indices]
             table_part = self._generate_programme_table_part(timeslots, partial_rooms)
-            parts.append(table_part)
+            if table_part is not None:
+                parts.append(table_part)
 
-        return "\n\n".join(parts)
+        tables = "\n\n".join(parts)
 
-    def _generate_programme_table_part(self, timeslots: list[Timeslot], rooms: list[Room]):
-        nb_zones = sum(r.nb_zones for r in rooms)
-        rows = []
+        # TODO: this is just a place holder for now
+        excluded = "\\vspace{2mm}\\\\"
+        excluded += "+ 14:30--16:30 \\hyperlink{Mon-S1}{Special Session: Assessing and Mitigating AI Bias in Speech Processing Systems (Panel Discussion)} [Wicklow Meeting Room 1] \\\\"
+        excluded += "\\vspace{1mm}"
+        excluded += (
+            "+ 14:30--16:30 \\hyperlink{Mon-SaT}{Show and Tell: Health applications and emotion recognition} [Show and Tell Area]"
+        )
+        content = tables + excluded
+        return content
 
-        #see https://github.com/seblemaguer/interspeech-tools/issues/1 for filtering criterion
-        from collections import defaultdict
+    def _generate_programme_table_part(self, timeslots: list[Timeslot], rooms: list[Room]) -> str | None:
+
+        # Filter rooms
         room_usage = defaultdict(list)
-        timeslot_sessions = {
-            timeslot: self._conf.program.get_timeslot_sessions(timeslot) for timeslot in timeslots
-        }
+        timeslot_sessions = {timeslot: self._conf.program.get_timeslot_sessions(timeslot) for timeslot in timeslots}
         for timeslot, sessions in timeslot_sessions.items():
             active_rooms = list(sessions.keys()) if sessions else []
             for room in active_rooms:
                 room_usage[room].append((timeslot, len(active_rooms)))
-        filtered_rooms = []
+
+        kept_rooms = []
         for room in rooms:
             usage = room_usage.get(room, [])
             if any(count > 1 for (_, count) in usage):
-                filtered_rooms.append(room)
+                kept_rooms.append(room)
 
-        rooms = filtered_rooms
+        rooms = kept_rooms
         nb_zones = sum(r.nb_zones for r in rooms)
 
+        if nb_zones == 0:
+            return None
+
+        rows = []
         for timeslot in timeslots:
+            if timeslot in self._conf.ignored_timeslots:
+                continue
 
             sessions = self._conf.program.get_timeslot_sessions(timeslot)
             row = {"timeslot_str": timeslot.timeslot_without_date().replace(" ", ""), "elts": []}
 
-            if not sessions:
-                row["elts"].append({"type": "multicolumn", "colspan": nb_zones, "content": timeslot.name})
+            no_sessions = True
+            for room in rooms:
+                if (room in sessions) and (room not in self._conf.ignored_rooms):
+                    no_sessions = False
+                    break
+
+            # Save the plenary sessions and the social ones
+            if no_sessions:
+                for room in sessions.keys():
+                    if ((room.type.lower() == "plenary") or (room.type.lower() == "social")) and (
+                        room not in self._conf.ignored_rooms
+                    ):
+                        no_sessions = False
+                        break
+
+            if no_sessions:
+                if str(timeslot.type).lower().endswith("break"):
+                    row["elts"].append(
+                        {
+                            "type": "multicolumn",
+                            "colspan": nb_zones,
+                            "content": {
+                                "id": "",
+                                "name": timeslot.name,
+                                "bg": "BreakBackgroundColour",
+                                "fg": "BreakForegroundColour",
+                            },
+                        }
+                    )
+                else:
+                    continue
             elif len(sessions.keys()) == 1:
-                sessions = sessions[list(sessions.keys())[0]]
-                if len(sessions) > 1:
-                    raise Exception("For now, only one session implies an overall session")
-                session = sessions[0]
-                session_type = get_session_type(session)
-                row["elts"].append(
-                    {
-                        "type": "multicolumn",
-                        "colspan": nb_zones,
-                        "content": {
-                            "id": session.id,
-                            "name": session.name,
-                            "bg": f"{session_type.capitalize()}BackgroundColour",
-                            "fg": f"{session_type.capitalize()}ForegroundColour",
-                        },
-                    }
-                )
+                room = list(sessions.keys())[0]
+                # FIXME: not sure that the type should be hardcoded like that in a string format
+                if (room.type.lower() == "plenary") or (room.type.lower() == "social"):
+                    sessions = sessions[room]
+                    if len(sessions) > 1:
+                        raise Exception("For now, only one session implies an overall session")
+
+                    session = sessions[0]
+                    session_type = get_session_type(session)
+                    row["elts"].append(
+                        {
+                            "type": "multicolumn",
+                            "colspan": nb_zones,
+                            "content": {
+                                "id": session.id if (session_type != "social") else "",
+                                "name": f"{session.name} [{room.name}]",
+                                "bg": f"{session_type.capitalize()}BackgroundColour",
+                                "fg": f"{session_type.capitalize()}ForegroundColour",
+                            },
+                        }
+                    )
+                else:
+                    for room in rooms:
+                        if room not in sessions:
+                            for _ in range(room.nb_zones):
+                                row["elts"].append({"type": "empty"})
+                            continue
+
+                        room_sessions = sessions[room]
+                        if room.nb_zones > 1 and len(room_sessions) == 1:
+                            session = room_sessions[0]
+                            session_type = get_session_type(session)
+                            session_name = session.name.replace("Special Session - ", "")
+                            if len(session_name) > AbstractBookProcessor.MAX_SESSION_NAME_SIZE_MULTICOL:
+                                session_name = session_name[: AbstractBookProcessor.MAX_SESSION_NAME_SIZE_MULTICOL - 3] + "..."
+                            row["elts"].append(
+                                {
+                                    "type": "multicolumn",
+                                    "colspan": room.nb_zones,
+                                    "content": {
+                                        "id": session.id if (session_type != "social") else "",
+                                        "name": session_name,
+                                        "bg": f"{session_type.capitalize()}BackgroundColour",
+                                        "fg": f"{session_type.capitalize()}ForegroundColour",
+                                    },
+                                }
+                            )
+                        else:
+                            for session in room_sessions:
+                                session_type = get_session_type(session)
+                                session_name = session.name.replace("Special Session - ", "")
+                                row["elts"].append(
+                                    {
+                                        "type": "cell",
+                                        "content": {
+                                            "id": session.id if (session_type != "social") else "",
+                                            "name": session_name,
+                                            "bg": f"{session_type.capitalize()}BackgroundColour",
+                                            "fg": f"{session_type.capitalize()}ForegroundColour",
+                                        },
+                                    }
+                                )
+
             else:
+                # FIXME: it is a bit dirty but if no sessions available here, let's just not print the slot :)
                 for room in rooms:
                     if room not in sessions:
-                        row["elts"].append({"type": "empty"})
+                        for _ in range(room.nb_zones):
+                            row["elts"].append({"type": "empty"})
                         continue
 
                     room_sessions = sessions[room]
                     if room.nb_zones > 1 and len(room_sessions) == 1:
                         session = room_sessions[0]
                         session_type = get_session_type(session)
+
                         session_name = session.name.replace("Special Session - ", "")
+                        if len(session_name) > AbstractBookProcessor.MAX_SESSION_NAME_SIZE_MULTICOL:
+                            session_name = session_name[: AbstractBookProcessor.MAX_SESSION_NAME_SIZE_MULTICOL - 3] + "..."
+
                         row["elts"].append(
                             {
                                 "type": "multicolumn",

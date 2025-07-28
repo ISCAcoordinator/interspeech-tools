@@ -749,7 +749,7 @@ class CMTSerialiser(ISCAObject):
             tutorial = Tutorial(
                 str(row["Tutorial ID"]), str(row["Title"]), presenters, timeslot.duration, str(row["Description"]), False
             )
-            tutorial_session = TutorialSession(f"session_{tutorial.id}", tutorial.title, timeslot.start, timeslot.end, tutorial)
+            tutorial_session = TutorialSession(f"{tutorial.id}", tutorial.title, timeslot.start, timeslot.end, tutorial)
             tutorials.append((timeslot, room, tutorial_session))
 
         return tutorials
@@ -850,6 +850,7 @@ class CMTSerialiser(ISCAObject):
                 plenary_room = room
 
         assert plenary_room is not None, "There is no plenary room, which is impossible for Interspeech"
+
         # Now load timeslots
         dict_timeslots = dict()
         df = load_excel(session_summary_file, sheet_name=CMT_SESSION_TIMESLOTS_SHEET_NAME)
@@ -882,7 +883,7 @@ class CMTSerialiser(ISCAObject):
 
             cur_timeslot = Timeslot(
                 timeslot_info["Timeslot name"],
-                timeslot_info["Timeslot name"],
+                timeslot_info["Timeslot string"] if "Timeslot string" in timeslot_info else timeslot_info["Timeslot name"],
                 timeslot_type,
                 start_time,
                 end_time,
@@ -1116,6 +1117,25 @@ class CMTSerialiser(ISCAObject):
         if theme_award_nominees is not None:
             for paper_id in theme_award_nominees:
                 conf.add_theme_award_nominees(paper_id)
+
+        if "ignore_rooms" in conf_info:
+            ignored_rooms = set()
+            ignored_room_names = set(conf_info["ignore_rooms"])
+            if conf.program is not None:
+                for room in conf.program.rooms:
+                    if room.name in ignored_room_names:
+                        ignored_rooms.add(room)
+
+                conf.update_ignored_rooms(ignored_rooms)
+
+        if "ignore_timeslots" in conf_info:
+            ignored_timeslots = set()
+            ignored_timeslot_ids = set(conf_info["ignore_timeslots"])
+            if conf.program is not None:
+                for timeslot in conf.program.timeslots:
+                    if timeslot.id in ignored_timeslot_ids:
+                        ignored_timeslots.add(timeslot)
+                conf.update_ignored_timeslots(ignored_timeslots)
 
         return conf
 

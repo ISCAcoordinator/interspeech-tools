@@ -208,6 +208,14 @@ class Interspeech(Conference):
         )
         self.best_student_papers_nominees: set[Paper] = set()
         self.best_theme_papers_nominees: set[Paper] = set()
+        self.ignored_rooms: set[Room] = set()
+        self.ignored_timeslots: set[Timeslot] = set()
+
+    def update_ignored_rooms(self, rooms: set[Room]):
+        self.ignored_rooms.update(rooms)
+
+    def update_ignored_timeslots(self, timeslots: set[Timeslot]):
+        self.ignored_timeslots.update(timeslots)
 
     def add_student_award_nominees(self, paper: Paper | str):
         if isinstance(paper, str):

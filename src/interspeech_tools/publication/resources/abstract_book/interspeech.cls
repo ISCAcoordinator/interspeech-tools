@@ -15,7 +15,7 @@
 \DeclareOption{noabstract}{\@abstractfalse}
 \DeclareOption*{\PassOptionsToClass{\CurrentOption}{book}}
 \ProcessOptions\relax
-
+\PassOptionsToPackage{table}{xcolor}
 \LoadClass{book}
 
 % TODO: to sort
@@ -52,7 +52,7 @@
 % }
 
 \RequirePackage{setspace}
-    \newlength{\footrectangleheight}
+\newlength{\footrectangleheight}
 
 % Printing version or screen version
 \if@print
@@ -126,7 +126,7 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%% {{{
 
-\RequirePackage[table]{xcolor}
+\RequirePackage{xcolor}
 \RequirePackage[most]{tcolorbox}
 
 \input{theme/colours.tex}

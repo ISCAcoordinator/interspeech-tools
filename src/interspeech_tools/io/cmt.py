@@ -69,6 +69,8 @@ CMT_CHAIR_CONF_SEPARATOR = ","
 CMT_ROLE_SEP = ";"
 CMT_AFFILIATION_SEPARATOR = ";"
 
+CMT_FREE_SLOT_TOKEN = "<FREE>"
+
 CMT_AUTHOR_FULL_INFO_REGEXP = re.compile(r"^([^(]*)[ ]*\((.*)\)")
 CMT_AUTHOR_ELTS_REGEXP = re.compile(
     r"""
@@ -968,8 +970,16 @@ class CMTSerialiser(ISCAObject):
             # Now deal add the papers
             session_paper_ids = [str(id).strip() for id in str(session_info["Papers"]).split(CMT_SESSION_PAPER_SEPARATOR)]
             for paper_idx, paper_id in enumerate(session_paper_ids, 1):
-                if paper_id in dict_papers:
+                paper_id = paper_id.strip()
 
+                if paper_id == CMT_FREE_SLOT_TOKEN:
+                    self.logger.debug(
+                        f"Slot {paper_idx} in the session {session_id} is free",
+                        extra={"session_id": session_id, "session_name": session_name},
+                    )
+                    continue
+
+                if paper_id in dict_papers:
                     cur_paper = dict_papers[paper_id]
                     paper_presenters = None
                     if (dict_presenters is not None) and (paper_id in dict_presenters):

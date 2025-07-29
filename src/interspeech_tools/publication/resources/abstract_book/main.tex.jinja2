@@ -118,25 +118,6 @@
 %%% Some useful info
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-
-\phantomsection
-\addcontentsline{toc}{chapter}{Award nominees}
-\chapter*{Award nominees}
-\IfFileExists{auto/best_student.tex}
-{%
-\section*{Best student paper award nominees}
-\pagestyle{fancy}
-\input{auto/best_student.tex}
-}{}
-
-\IfFileExists{auto/best_theme.tex}
-{%
-\section*{Best theme paper award nominees}
-\pagestyle{fancy}
-\input{auto/best_theme.tex}
-}{}
-
-
 \IfFileExists{auto/keynotes.tex}
 {%
 \phantomsection
@@ -173,6 +154,17 @@
 \input{auto/special_sessions.tex}
 }{}
 
+\IfFileExists{auto/satellite_events.tex}
+{%
+\phantomsection
+\addcontentsline{toc}{chapter}{Satellite Events}
+\chapter*{Satellite Events}
+\pagestyle{fancy}
+\input{auto/satellite_events.tex}
+}{}
+
+
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%% Scientific Review Committee
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -182,6 +174,38 @@
 \chapter*{Scientific Review Committee}%
 \pagestyle{fancy}
 \input{auto/reviewers_index.tex}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%% ???
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\phantomsection
+\addcontentsline{toc}{chapter}{Additional information}
+\chapter*{Award nominees}
+\IfFileExists{auto/best_student.tex}
+{%
+\section*{Best student paper award nominees}
+\pagestyle{fancy}
+\input{auto/best_student.tex}
+}{}
+
+\IfFileExists{auto/best_theme.tex}
+{%
+\section*{Best theme paper award nominees}
+\pagestyle{fancy}
+\input{auto/best_theme.tex}
+}{}
+
+\chapter*{Volunteers}
+\IfFileExists{manual/volunteers.tex}
+             {\input{auto/best_theme.tex}}
+             {}
+
+\chapter*{Travel grants}
+
+
+
 
 
 %% %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

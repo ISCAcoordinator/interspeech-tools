@@ -124,6 +124,12 @@ class AbstractBookProcessor(ISCAObject):
         with open(outfilename, "w") as outfile:
             outfile.write(special_sessions_template.render(sessions=self._conf.sessions))
 
+        # Satellites
+        satellites_template = self._template_engine.get_template("satellite_events.tex.jinja2")
+        outfilename = root_output_dir / "satellite_events.tex"
+        with open(outfilename, "w") as outfile:
+            outfile.write(satellites_template.render(events=self._conf.satellite_events))
+
         # Reviewer index
         reviewer_template = self._template_engine.get_template("reviewers_index.tex.jinja2")
         outfilename = root_output_dir / "reviewers_index.tex"

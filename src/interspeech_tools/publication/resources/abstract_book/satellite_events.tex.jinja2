@@ -1,0 +1,11 @@
+\BLOCK{ for event in events }
+
+\section*{ \VAR{event.id | latexify} - \VAR{event.name | latexify} }
+\underline{\textbf{date}:} \VAR{event.str_dates} \\
+\underline{\textbf{location}:} \VAR{event.location}
+
+\bigskip
+
+\VAR{event.description |latexify}
+
+\BLOCK{ endfor }

@@ -210,6 +210,10 @@ class Interspeech(Conference):
         self.best_theme_papers_nominees: set[Paper] = set()
         self.ignored_rooms: set[Room] = set()
         self.ignored_timeslots: set[Timeslot] = set()
+        self.satellite_events: list[Satellite] = []
+
+    def update_satellite_events(self, satellite_events: list[Satellite]):
+        self.satellite_events += satellite_events
 
     def update_ignored_rooms(self, rooms: set[Room]):
         self.ignored_rooms.update(rooms)

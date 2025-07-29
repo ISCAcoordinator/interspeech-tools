@@ -33,6 +33,7 @@ from ..model import (
     Interspeech,
     InterspeechEvent,
     InterspeechEventType,
+    Satellite,
     Tutorial,
     TutorialSession,
     BlueSkyPresentation,
@@ -329,22 +330,31 @@ class CMTSerialiser(ISCAObject):
         else:
             session_file = input_root_dir / conf_info["input_data"]["sessions_spreadsheet"]
 
+        if conf_info["input_data"]["satellites_spreadsheet"].startswith("/"):
+            satellites_file = pathlib.Path(conf_info["input_data"]["satellites_spreadsheet"])
+        else:
+            satellites_file = input_root_dir / conf_info["input_data"]["satellites_spreadsheet"]
+
         self.load_users(users_file)
         self.load_reviewers(reviewers_file)
         self.load_speakers(speakers_file)
         papers, _, presenters = self.load_papers(metadata_file, pdfs_path, updated_pdfs_path)
 
         if self.ignore_sessions:
-            return self.load_conference(conf_metadata_file, papers=papers, sessions=None)
+            conf = self.load_conference(conf_metadata_file, papers=papers, sessions=None)
         else:
             _, program, student_award_nominees, theme_award_nominees = self.load_sessions(session_file, papers, presenters)
-            return self.load_conference(
+            conf = self.load_conference(
                 conf_metadata_file,
                 program=program,
                 papers=papers,
                 student_award_nominees=student_award_nominees,
                 theme_award_nominees=theme_award_nominees,
             )
+
+        satellites = self.load_satellite_events(satellites_file)
+        conf.update_satellite_events(satellites)
+        return conf
 
     def load_users(self, user_spreadsheet_file: pathlib.Path, ignore_role: bool = True) -> Annuary:
         if self._annuary is None:
@@ -1050,6 +1060,26 @@ class CMTSerialiser(ISCAObject):
         student_nominees_id = self._load_student_award_nominees(session_summary_file)
         theme_nominees_id = self._load_theme_award_nominees(session_summary_file)
         return list_sessions, program, student_nominees_id, theme_nominees_id
+
+    def load_satellite_events(self, satellite_summary_file: pathlib.Path) -> list[Satellite]:
+
+        list_satellite = []
+        wb = load_workbook(filename=satellite_summary_file)
+        for worksheet in wb.sheetnames:
+            df = load_excel(satellite_summary_file, worksheet)  #
+            for _, satellite_info in df.iterrows():
+                event = Satellite(
+                    id=satellite_info["Id"],
+                    name=satellite_info["Title"],
+                    start_date=satellite_info["Start"],
+                    end_date=satellite_info["End"],
+                    location=satellite_info["Location"],
+                    description=satellite_info["Description"],
+                    url=satellite_info["URL"],
+                )
+                list_satellite.append(event)
+
+        return sorted(list_satellite, key=lambda x: str(x.start_date) + "_" + x.id.lower())
 
     def load_conference(
         self,

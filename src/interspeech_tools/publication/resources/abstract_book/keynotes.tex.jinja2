@@ -1,14 +1,14 @@
 \BLOCK{ for session in sessions }
   \BLOCK{ for presentation in session.presentations }
     \BLOCK{ if presentation | is_keynote }
-    \BLOCK{ set presenter = presentation.presenters[0] }
-\subsection*{ \VAR{presentation.title | latexify}}
+\BLOCK{ set presenter = presentation.presenters[0] }
+\pagetarget{\VAR{session.id}}{\section*{ \VAR{presentation.title | latexify}}}
 \VAR{presenter.str_with_flatten_affiliations(None, short=True, markers=False) | latexify}
 
-\subsubsection*{Abstract}
+\subsection*{Abstract}
 \VAR{presentation.abstract | latexify}
 
-\subsubsection*{Biography}
+\subsection*{Biography}
 \BLOCK{ if presenter.photo is not none }
 \begin{wrapfigure}{l}{0.25\textwidth}
     \includegraphics[width=0.25\textwidth]{auto/\VAR{presenter.photo.name}}

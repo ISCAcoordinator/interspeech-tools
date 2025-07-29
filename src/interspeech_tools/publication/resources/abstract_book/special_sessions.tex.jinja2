@@ -1,6 +1,6 @@
 \BLOCK{ for session in sessions }
     \BLOCK{ if (session | type_session) == "special" }
-\subsection*{ \VAR{session.name | latexify}}
+\pagetarget{\VAR{session.id}}{\section*{ \VAR{session.name | latexify}}}
 \VAR{session.description | latexify}
     \BLOCK{ endif }
 \BLOCK{ endfor }

@@ -64,7 +64,7 @@
     % \parindent 0pt \parfillskip 0pt \leftskip 0cm % \rightskip 1cm
 
     % Stylize the section
-    \etocsetstyle {section}
+    \etocsetstyle {chapter}
     {}
     {\leavevmode\leftskip 0cm\relax}
     {%
@@ -94,60 +94,9 @@
 %%% Some useful info
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
+\phantomsection
+\addcontentsline{toc}{chapter}{Program overview}%
 
-\IfFileExists{auto/best_student.tex}
-{%
-\newpage
-\section{Best student paper award nominees}
-\pagestyle{fancy}
-\input{auto/best_student.tex}
-}{}
-
-\IfFileExists{auto/best_theme.tex}
-{%
-\section{Best theme paper award nominees}
-\pagestyle{fancy}
-\input{auto/best_theme.tex}
-}{}
-
-
-\IfFileExists{auto/keynotes.tex}
-{%
-\newpage
-\section{Keynote speakers}
-\pagestyle{fancy}
-\input{auto/keynotes.tex}
-}{}
-
-\IfFileExists{auto/tutorials.tex}
-{%
-\newpage
-\section{Tutorials}
-\pagestyle{fancy}
-\input{auto/tutorials.tex}
-}{}
-
-\IfFileExists{auto/surveys.tex}
-{%}
-\newpage
-\section{Survey talks}
-\pagestyle{fancy}
-\input{auto/surveys.tex}
-}{}
-
-\IfFileExists{auto/special_sessions.tex}
-{%}
-\newpage
-\section{Special Sessions}
-\pagestyle{fancy}
-\input{auto/special_sessions.tex}
-}{}
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%%% Actual program
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-\newpage
 \pagestyle{plain}
 {
 \def\arraystretch{1.6}%
@@ -165,35 +114,100 @@
 }
 \clearpage
 
-% \phantomsection
-% \addcontentsline{toc}{section}{Program Schedule}%
-% \pagestyle{fancy}
-% \BLOCK{ for date in content_dates }
-%     \dayschedule{\VAR{date | extract_verbose_date}}{auto/\VAR{date | extract_date}.tex}
-% \BLOCK{ endfor }
-% \clearpage
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%% Some useful info
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-% %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% %%% Scientific Review Committee
-% %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-% % \phantomsection
-% % \addcontentsline{toc}{section}{Scientific Review Committee}%
-% \section{Scientific Review Committee}%
-% \pagestyle{fancy}
-% \input{auto/reviewers_index.tex}
-% \clearpage
+\phantomsection
+\addcontentsline{toc}{chapter}{Award nominees}
+\chapter*{Award nominees}
+\IfFileExists{auto/best_student.tex}
+{%
+\section*{Best student paper award nominees}
+\pagestyle{fancy}
+\input{auto/best_student.tex}
+}{}
 
-% %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% %%% Author index part
-% %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\IfFileExists{auto/best_theme.tex}
+{%
+\section*{Best theme paper award nominees}
+\pagestyle{fancy}
+\input{auto/best_theme.tex}
+}{}
 
-% \section{Author Index}
-% \pagestyle{fancy}
-% \input{auto/authors_index.tex}
 
-% \IfFileExists{theme/back_cover.pdf}
-% {\includepdf[pages=1,pagecommand={\thispagestyle{plain}}]{theme/back_cover}}
-% {}
+\IfFileExists{auto/keynotes.tex}
+{%
+\phantomsection
+\addcontentsline{toc}{chapter}{Keynote speakers}
+\chapter*{Keynote speakers}
+\pagestyle{fancy}
+\input{auto/keynotes.tex}
+}{}
+
+\IfFileExists{auto/tutorials.tex}
+{%
+\phantomsection
+\addcontentsline{toc}{chapter}{Tutorials}
+\chapter*{Tutorials}
+\pagestyle{fancy}
+\input{auto/tutorials.tex}
+}{}
+
+\IfFileExists{auto/surveys.tex}
+{%
+\phantomsection
+\addcontentsline{toc}{chapter}{Survey Talks}
+\chapter*{Survey talks}
+\pagestyle{fancy}
+\input{auto/surveys.tex}
+}{}
+
+\IfFileExists{auto/special_sessions.tex}
+{%
+\phantomsection
+\addcontentsline{toc}{chapter}{Special Sessions}
+\chapter*{Special Sessions}
+\pagestyle{fancy}
+\input{auto/special_sessions.tex}
+}{}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%% Scientific Review Committee
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\phantomsection
+\addcontentsline{toc}{chapter}{Scientific Review Committee}
+\chapter*{Scientific Review Committee}%
+\pagestyle{fancy}
+\input{auto/reviewers_index.tex}
+
+
+%% %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% %%% Actual program
+%% %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%% \clearpage
+%% \phantomsection
+%% \addcontentsline{toc}{chapter}{Program Schedule}%
+%% \pagestyle{fancy}
+%% \BLOCK{ for date in content_dates }
+%%     \dayschedule{\VAR{date | extract_verbose_date}}{auto/\VAR{date | extract_date}.tex}
+%% \BLOCK{ endfor }
+
+%% %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% %%% Author index part
+%% %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%% \phantomsection
+%% \addcontentsline{toc}{chapter}{Author Index}%
+%% \chapter*{Author Index}
+%% \pagestyle{fancy}
+%% \input{auto/authors_index.tex}
+
+%% \IfFileExists{theme/back_cover.pdf}
+%% {\includepdf[pages=1,pagecommand={\thispagestyle{plain}}]{theme/back_cover}}
+%% {}
 
 \end{document}

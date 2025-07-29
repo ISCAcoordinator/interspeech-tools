@@ -292,7 +292,10 @@
 
 % Redefine the section headers
 \RequirePackage{titlesec}
-\titleformat*{\section}{\normalfont\Huge\bfseries\color{LinkColour}}
+\titleformat{\chapter}[display]{\normalfont\huge\bfseries}{}{}{}{}
+\titlespacing{\chapter}{0pt}{0pt}{0pt}
+
+\titleformat*{\section}{\normalfont\LARGE\bfseries\color{LinkColour}}
 
 \newcommand{\colorsection}[1]{%
   \sectionbox[default]{\parbox{\dimexpr\linewidth-4\fboxsep}{\color{DefaultForegroundColour} #1}}

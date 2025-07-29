@@ -2,7 +2,7 @@
   \BLOCK{ for presentation in session.presentations }
     \BLOCK{ if presentation | is_survey }
     \BLOCK{ set presenter = presentation.presenters[0] }
-\subsection*{ \VAR{presentation.title | latexify}}
+\section*{ \VAR{presentation.title | latexify}}
 \VAR{presenter.str_with_flatten_affiliations(None, short=True, markers=False) | latexify}
 
 % \BLOCK{ if presenter.photo is not none }
@@ -11,10 +11,10 @@
 % \end{wrapfigure}
 % \BLOCK{ endif }
 
-\subsubsection*{Abstract}
+\subsection*{Abstract}
 \VAR{presentation.abstract.strip() | latexify}
 
-\subsubsection*{Biography}
+\subsection*{Biography}
 \VAR{presenter.biography.strip() | latexify}
 
     \bigskip

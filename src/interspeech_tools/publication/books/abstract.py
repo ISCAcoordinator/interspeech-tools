@@ -16,7 +16,7 @@ from ...model import Interspeech, InterspeechEvent, ShowAndTellSession, SpecialS
 from .theme import (
     get_session_type,
 )
-from .jinja_helpers import configure_latex_jinja
+from .jinja_helpers import configure_latex_jinja, format_timeslot
 
 
 def is_content_session(input_session: Session) -> bool:
@@ -143,9 +143,24 @@ class AbstractBookProcessor(ISCAObject):
         parts = []
         room_indices = []
         cur_nb_zones = 0
+        ignored_sessions = []
+
+        # Add the ignored timeslots sessions
+        timeslot_sessions = {timeslot: self._conf.program.get_timeslot_sessions(timeslot) for timeslot in timeslots}
+        for timeslot, room_session in timeslot_sessions.items():
+            if timeslot in self._conf.ignored_timeslots:
+                for room, sessions in room_session.items():
+                    for session in sessions:
+                        ignored_sessions.append([timeslot, room, session])
+
         for room_idx, room in enumerate(rooms):
             if room in self._conf.ignored_rooms:
+                for timeslot, room_session in timeslot_sessions.items():
+                    if room in room_session:
+                        for session in room_session[room]:
+                            ignored_sessions.append([timeslot, room, session])
                 continue
+
             room_indices.append(room_idx)
             for _ in range(0, room.nb_zones):
                 cur_nb_zones += 1
@@ -168,12 +183,16 @@ class AbstractBookProcessor(ISCAObject):
         tables = "\n\n".join(parts)
 
         # TODO: this is just a place holder for now
-        excluded = "\\vspace{2mm}\\\\"
-        excluded += "+ 14:30--16:30 \\hyperlink{Mon-S1}{Special Session: Assessing and Mitigating AI Bias in Speech Processing Systems (Panel Discussion)} [Wicklow Meeting Room 1] \\\\"
-        excluded += "\\vspace{1mm}"
-        excluded += (
-            "+ 14:30--16:30 \\hyperlink{Mon-SaT}{Show and Tell: Health applications and emotion recognition} [Show and Tell Area]"
-        )
+        excluded = "\\vspace{2mm}\\\\ \n"
+        excluded_sessions = []
+        for timeslot, room, session in ignored_sessions:
+            session_type = get_session_type(session)
+            session_id = session.id if (not isinstance(session, InterspeechEvent)) and (session_type != "social") else ""
+            excluded_session = (
+                f"\\noindent + {format_timeslot(timeslot)} \\hyperlink{{{session_id}}}{{{session.name}}} [{room.name}]"
+            )
+            excluded_sessions.append(excluded_session)
+        excluded += "\\\\ \n \\vspace{1mm} \\\\ \n".join(excluded_sessions)
         content = tables + excluded
         return content
 

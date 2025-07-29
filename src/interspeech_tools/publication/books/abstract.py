@@ -11,7 +11,7 @@ from isca.model.program import KeynoteSession, OralSession, PosterSession, Room,
 from isca.model.person import Person, Speaker
 
 
-from ...model import Interspeech, ShowAndTellSession, SpecialSession, TutorialSession
+from ...model import Interspeech, InterspeechEvent, ShowAndTellSession, SpecialSession, TutorialSession
 
 from .theme import (
     get_session_type,
@@ -248,12 +248,14 @@ class AbstractBookProcessor(ISCAObject):
 
                     session = sessions[0]
                     session_type = get_session_type(session)
+                    session_id = session.id if (not isinstance(session, InterspeechEvent)) and (session_type != "social") else ""
+
                     row["elts"].append(
                         {
                             "type": "multicolumn",
                             "colspan": nb_zones,
                             "content": {
-                                "id": session.id if (session_type != "social") else "",
+                                "id": session_id,
                                 "name": f"{session.name} [{room.name}]",
                                 "bg": f"{session_type.capitalize()}BackgroundColour",
                                 "fg": f"{session_type.capitalize()}ForegroundColour",
@@ -271,15 +273,21 @@ class AbstractBookProcessor(ISCAObject):
                         if room.nb_zones > 1 and len(room_sessions) == 1:
                             session = room_sessions[0]
                             session_type = get_session_type(session)
+
                             session_name = session.name.replace("Special Session - ", "")
                             if len(session_name) > AbstractBookProcessor.MAX_SESSION_NAME_SIZE_MULTICOL:
                                 session_name = session_name[: AbstractBookProcessor.MAX_SESSION_NAME_SIZE_MULTICOL - 3] + "..."
+
+                            session_id = (
+                                session.id if (not isinstance(session, InterspeechEvent)) and (session_type != "social") else ""
+                            )
+
                             row["elts"].append(
                                 {
                                     "type": "multicolumn",
                                     "colspan": room.nb_zones,
                                     "content": {
-                                        "id": session.id if (session_type != "social") else "",
+                                        "id": session_id,
                                         "name": session_name,
                                         "bg": f"{session_type.capitalize()}BackgroundColour",
                                         "fg": f"{session_type.capitalize()}ForegroundColour",
@@ -290,11 +298,17 @@ class AbstractBookProcessor(ISCAObject):
                             for session in room_sessions:
                                 session_type = get_session_type(session)
                                 session_name = session.name.replace("Special Session - ", "")
+                                session_id = (
+                                    session.id
+                                    if (not isinstance(session, InterspeechEvent)) and (session_type != "social")
+                                    else ""
+                                )
+
                                 row["elts"].append(
                                     {
                                         "type": "cell",
                                         "content": {
-                                            "id": session.id if (session_type != "social") else "",
+                                            "id": session_id,
                                             "name": session_name,
                                             "bg": f"{session_type.capitalize()}BackgroundColour",
                                             "fg": f"{session_type.capitalize()}ForegroundColour",
@@ -319,12 +333,16 @@ class AbstractBookProcessor(ISCAObject):
                         if len(session_name) > AbstractBookProcessor.MAX_SESSION_NAME_SIZE_MULTICOL:
                             session_name = session_name[: AbstractBookProcessor.MAX_SESSION_NAME_SIZE_MULTICOL - 3] + "..."
 
+                        session_id = (
+                            session.id if (not isinstance(session, InterspeechEvent)) and (session_type != "social") else ""
+                        )
+
                         row["elts"].append(
                             {
                                 "type": "multicolumn",
                                 "colspan": room.nb_zones,
                                 "content": {
-                                    "id": session.id,
+                                    "id": session_id,
                                     "name": session_name,
                                     "bg": f"{session_type.capitalize()}BackgroundColour",
                                     "fg": f"{session_type.capitalize()}ForegroundColour",
@@ -335,11 +353,15 @@ class AbstractBookProcessor(ISCAObject):
                         for session in room_sessions:
                             session_type = get_session_type(session)
                             session_name = session.name.replace("Special Session - ", "")
+                            session_id = (
+                                session.id if (not isinstance(session, InterspeechEvent)) and (session_type != "social") else ""
+                            )
+
                             row["elts"].append(
                                 {
                                     "type": "cell",
                                     "content": {
-                                        "id": session.id,
+                                        "id": session_id,
                                         "name": session_name,
                                         "bg": f"{session_type.capitalize()}BackgroundColour",
                                         "fg": f"{session_type.capitalize()}ForegroundColour",

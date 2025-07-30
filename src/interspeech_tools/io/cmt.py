@@ -287,6 +287,12 @@ class CMTSerialiser(ISCAObject):
         with open(conf_metadata_file) as f_in:
             conf_info = yaml.load(f_in.read())
 
+        if "alternative_emails" in conf_info:
+            for reference_email, alternative_emails in conf_info["alternative_emails"].items():
+                for alternative_email in alternative_emails:
+                    self._annuary.add_alternative_email(reference_email, alternative_email)
+
+        # Load data
         if conf_info["input_data"]["root_dir"].startswith("/"):
             input_root_dir = conf_info["input_data"]["root_dir"]
         else:
@@ -360,12 +366,24 @@ class CMTSerialiser(ISCAObject):
         if self._annuary is None:
             self._annuary = Annuary()
 
-        users = Annuary()
+        users = Annuary(alternative_emails=self._annuary.alternative_emails)
         wb = load_workbook(filename=user_spreadsheet_file)
         for worksheet in wb.sheetnames:
             df = load_excel(user_spreadsheet_file, sheet_name=worksheet)
 
+            df["Email"] = [e.lower().strip() for e in df["Email"]]
             for _, user_row in df.iterrows():
+                email = str(user_row["Email"]).strip().lower()
+                if users.is_an_alternative_email(email):
+                    reference_email = users.get_reference_email(email)
+                    if reference_email in df["Email"]:
+                        self.logger.info(
+                            f"We do not load user <{email}> as it will be loaded later using the reference email <{reference_email}>"
+                        )
+                        continue
+                    else:
+                        email = reference_email
+
                 first_name = str(user_row["# First Name"]).strip()
                 first_name = first_name.title() if first_name.isupper() else first_name
 
@@ -421,7 +439,7 @@ class CMTSerialiser(ISCAObject):
                     id,
                     first_name.strip() if first_name is not None else None,
                     last_name.strip(),
-                    email=str(user_row["Email"]).strip(),
+                    email=email,
                     roles=roles,
                     default_affiliation=affiliation,
                     middle_initial=middle_initial,
@@ -429,7 +447,7 @@ class CMTSerialiser(ISCAObject):
 
                 users.add(cur_user)
 
-        self._annuary.update(users)
+        self._annuary.update(users, ignore_alternative=True)
 
         return users
 
@@ -700,7 +718,7 @@ class CMTSerialiser(ISCAObject):
         keynote_chairs = dict()
         keynotes = dict()
         for _, row in df.iterrows():
-            email = str(row["Email"])
+            email = str(row["Email"]).lower().strip()
             speaker = self._annuary.find_person_by_email(email)
             if speaker is None:
                 raise Exception(f"The keynote speaker is not part of the annuary: {email}")
@@ -714,6 +732,7 @@ class CMTSerialiser(ISCAObject):
                 for chair_email in row["Session Chairs"].split(CMT_AUTHOR_SEP):
                     chair_email = chair_email.strip().lower()
                     chair = self._annuary.find_person_by_email(chair_email)
+
                     if chair is None:
                         self.logger.error(
                             f"[{keynote.id}] The session chair <{chair_email}> is not part of the annuary so it is ignored for now",
@@ -969,6 +988,7 @@ class CMTSerialiser(ISCAObject):
                 for chair_email in session_info["Session Chairs"].split(CMT_AUTHOR_SEP):
                     chair_email = chair_email.strip().lower()
                     chair = self._annuary.find_person_by_email(chair_email)
+
                     if chair is None:
                         self.logger.error(
                             f"[{session_id}] The session chair <{chair_email}> is not part of the annuary so it is ignored for now",

@@ -689,12 +689,15 @@ class CMTSerialiser(ISCAObject):
             bs_paper_ids.add(str(bs_row["Paper ID"]))
         return bs_paper_ids
 
-    def _load_keynotes(self, session_summary_file: pathlib.Path, papers: dict[str, Paper] | None = None) -> dict[str, Keynote]:
+    def _load_keynotes(
+        self, session_summary_file: pathlib.Path, papers: dict[str, Paper] | None = None
+    ) -> tuple[dict[str, Keynote], dict[str, list[Person]]]:
         df = load_excel(
             session_summary_file,
             sheet_name=CMT_SESSION_KEYNOTES_SHEET_NAME,
         )
 
+        keynote_chairs = dict()
         keynotes = dict()
         for _, row in df.iterrows():
             email = str(row["Email"])
@@ -706,7 +709,21 @@ class CMTSerialiser(ISCAObject):
             keynote = Keynote(row["Keynote ID"], row["Paper Title"], [speaker], 60, row["Abstract"])
             keynotes[keynote.id] = keynote
 
-        return keynotes
+            if ("Session Chairs" in row) and (not pd.isna(row["Session Chairs"])):
+                chairs = []
+                for chair_email in row["Session Chairs"].split(CMT_AUTHOR_SEP):
+                    chair_email = chair_email.strip().lower()
+                    chair = self._annuary.find_person_by_email(chair_email)
+                    if chair is None:
+                        self.logger.error(
+                            f"[{keynote.id}] The session chair <{chair_email}> is not part of the annuary so it is ignored for now",
+                            extra={"keynote_id": keynote.id},
+                        )
+                    else:
+                        chair.add_role(Role.SESSION_CHAIR)
+                        chairs.append(chair)
+                keynote_chairs[keynote.id] = chairs
+        return keynotes, keynote_chairs
 
     def _load_survey_talks(self, session_summary_file: pathlib.Path) -> dict[str, SurveyTalk]:
         df = load_excel(
@@ -916,8 +933,8 @@ class CMTSerialiser(ISCAObject):
             program.add_session(timeslot=tuto_elts[0], room=tuto_elts[1], session=tuto_elts[2])
 
         # Load the keynotes
-        keynotes = self._load_keynotes(session_summary_file)
-        for _, keynote in keynotes.items():
+        keynotes, keynote_chairs = self._load_keynotes(session_summary_file)
+        for keynote_id, keynote in keynotes.items():
             if keynote.presenters is None:
                 raise Exception(f"[{keynote.id}] The keynote doesn't have speaker")
             title = ", ".join([p.name for p in keynote.presenters]) + ": " + keynote.title
@@ -926,11 +943,7 @@ class CMTSerialiser(ISCAObject):
                 raise Exception("The timeslot should be defined and have the same id than the keynote")
 
             session = KeynoteSession(
-                keynote.id,
-                title,
-                timeslot.start,
-                timeslot.end,
-                presentations=[keynote],
+                keynote.id, title, timeslot.start, timeslot.end, presentations=[keynote], chairs=keynote_chairs[keynote_id]
             )
             list_sessions.append(session)
             program.add_session(timeslot, plenary_room, session)
@@ -945,9 +958,25 @@ class CMTSerialiser(ISCAObject):
             if pd.isna(session_info["Session name"]):
                 continue
 
+            # Prepare basic information
             session_id = str(session_info["Session name"])
             session_id = re.sub(r"Area([0-9])-", r"Area0\1-", session_id)
             session_name = str(session_info["Session title"])
+
+            # Get chairs
+            chairs = []
+            if ("Session Chairs" in session_info) and (not pd.isna(session_info["Session Chairs"])):
+                for chair_email in session_info["Session Chairs"].split(CMT_AUTHOR_SEP):
+                    chair_email = chair_email.strip().lower()
+                    chair = self._annuary.find_person_by_email(chair_email)
+                    if chair is None:
+                        self.logger.error(
+                            f"[{session_id}] The session chair <{chair_email}> is not part of the annuary so it is ignored for now",
+                            extra={"session_id": session_id, "session_name": session_name},
+                        )
+                    else:
+                        chair.add_role(Role.SESSION_CHAIR)
+                        chairs.append(chair)
 
             # Create the sessions
             cur_time_slot = dict_timeslots[session_info["Timeslot name*"]]
@@ -955,11 +984,11 @@ class CMTSerialiser(ISCAObject):
 
             session_type = str(session_info["Session type"])
             if session_type.lower() == "oral":
-                cur_session = OralSession(session_id, session_name, cur_time_slot.start, cur_time_slot.end)
+                cur_session = OralSession(session_id, session_name, cur_time_slot.start, cur_time_slot.end, chairs=chairs)
             elif session_type.lower() == "poster":
-                cur_session = PosterSession(session_id, session_name, cur_time_slot.start, cur_time_slot.end)
+                cur_session = PosterSession(session_id, session_name, cur_time_slot.start, cur_time_slot.end, chairs=chairs)
             elif session_type.lower() == "show and tell":
-                cur_session = ShowAndTellSession(session_id, session_name, cur_time_slot.start, cur_time_slot.end)
+                cur_session = ShowAndTellSession(session_id, session_name, cur_time_slot.start, cur_time_slot.end, chairs=chairs)
             elif session_type.lower() == "special":
                 if ("Description" not in session_info) or (pd.isna(session_info["Description"])):
                     description = "<TO FILL>"
@@ -970,7 +999,7 @@ class CMTSerialiser(ISCAObject):
                     description = str(session_info["Description"])
                 session_name = session_name.replace("Special Session - ", "")
                 cur_session = SpecialSession(
-                    session_id, session_name, cur_time_slot.start, cur_time_slot.end, description=description
+                    session_id, session_name, cur_time_slot.start, cur_time_slot.end, description=description, chairs=chairs
                 )
             else:
                 self.logger.error(

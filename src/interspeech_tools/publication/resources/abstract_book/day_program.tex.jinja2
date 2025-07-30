@@ -5,7 +5,7 @@
             {\VAR{session[1] | format_timeslot}}
             {\VAR{session[2].name}}
             {\VAR{session[0] | type_session}}
-            {}
+            {\VAR{session[0] | chairs}}
 
   \BLOCK{ for presentation in session[0].presentations }
     \BLOCK{ if presentation | is_survey }

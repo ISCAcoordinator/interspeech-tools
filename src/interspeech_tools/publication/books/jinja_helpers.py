@@ -74,6 +74,15 @@ def get_latexified_authors(input_paper: Paper | Presentation) -> str:
     return latexify(", ".join(list_authors))
 
 
+def get_latexified_chairs(input_session: PresentationSession) -> str:
+    list_chairs = []
+
+    for cur_chair in input_session.chairs:
+        list_chairs.append(cur_chair.name)
+
+    return latexify(", ".join(list_chairs))
+
+
 def get_latexified_presenters(input_presentation: Presentation) -> str:
     list_presenters = []
     if input_presentation.presenters is not None:
@@ -167,6 +176,7 @@ def configure_latex_jinja(template_loader: jinja2.PackageLoader):
     jenv_latex.filters["sort_authors"] = sort_by_last_name
     jenv_latex.filters["sort_reviewers"] = sort_by_name
     jenv_latex.filters["sort_presenters"] = sort_by_name
+    jenv_latex.filters["chairs"] = get_latexified_chairs
     jenv_latex.filters["authors"] = get_latexified_authors
     jenv_latex.filters["presenters"] = get_latexified_presenters
     jenv_latex.filters["validation_authors"] = get_latexified_validation_authors

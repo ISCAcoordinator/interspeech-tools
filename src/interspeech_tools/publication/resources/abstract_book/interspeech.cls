@@ -362,14 +362,24 @@
             {\large \faCalendar\  #3 \hspace{1mm} \faClockO~{#4}}
             \ifx&#7&%
             \else
-            	\\
+            	\vspace{3mm}
+
             	{\large \textbf{\underline{Session chairs :}}}
+
+                \vspace{2mm}
+
             	{\large \textbf{#7}}
             \fi
         \end{center}
     \end{minipage}
-    \vspace{0.4cm}
-    % \rule{\linewidth}{1.5pt}
+
+    \vspace{1mm}
+
+    \begin{center}
+        \rule{0.5\linewidth}{0.75pt}
+    \end{center}
+
+    \vspace{1mm}
 }
 
 

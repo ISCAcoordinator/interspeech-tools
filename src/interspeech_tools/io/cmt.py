@@ -894,12 +894,12 @@ class CMTSerialiser(ISCAObject):
                 nb_zones = int(room_info["Nb Zones"])
 
             room = Room(
-                str(room_info["Room name"]).replace(" ", "_"),
+                str(room_info["Room ID"]),
                 str(room_info["Room name"]),
                 str(room_info["Room type"]).lower(),
                 nb_zones,
             )
-            dict_rooms[room.name] = room
+            dict_rooms[room.id] = room
             if room.type == "plenary":
                 if plenary_room is not None:
                     raise Exception(f"There is already a plenary room {plenary_room}, can't have another one: {room}")
@@ -948,18 +948,6 @@ class CMTSerialiser(ISCAObject):
             dict_timeslots[timeslot_info["Timeslot name"]] = cur_timeslot
 
         program = Program(list(dict_timeslots.values()), list(dict_rooms.values()))
-
-        # Load the events
-        event_informations = self._load_events(session_summary_file, dict_timeslots, dict_rooms)
-        for evt_elts in event_informations:
-            list_sessions.append(evt_elts[2])
-            program.add_session(timeslot=evt_elts[0], room=evt_elts[1], session=evt_elts[2])
-
-        # Load the tutorials
-        tutorial_informations = self._load_tutorials(session_summary_file, dict_timeslots, dict_rooms)
-        for tuto_elts in tutorial_informations:
-            list_sessions.append(tuto_elts[2])
-            program.add_session(timeslot=tuto_elts[0], room=tuto_elts[1], session=tuto_elts[2])
 
         # Load the keynotes
         keynotes, keynote_chairs = self._load_keynotes(session_summary_file)
@@ -1021,10 +1009,8 @@ class CMTSerialiser(ISCAObject):
                 cur_session = ShowAndTellSession(session_id, session_name, cur_time_slot.start, cur_time_slot.end, chairs=chairs)
             elif session_type.lower() == "special":
                 if ("Description" not in session_info) or (pd.isna(session_info["Description"])):
-                    description = "<TO FILL>"
-                    self.logger.warning(
-                        f'The description for the special session "{session_id}" is missing, for now replaced with a filler'
-                    )
+                    self.logger.warning(f'The description for the special session "{session_id}" is missing')
+                    description = None
                 else:
                     description = str(session_info["Description"])
                 session_name = session_name.replace("Special Session - ", "")
@@ -1115,6 +1101,18 @@ class CMTSerialiser(ISCAObject):
             self.logger.debug(f"{session_id} has been loaded", extra={"session_id": session_id, "session_obj": cur_session})
             program.add_session(cur_time_slot, cur_room, cur_session)
             list_sessions.append(cur_session)
+
+        # Load the events
+        event_informations = self._load_events(session_summary_file, dict_timeslots, dict_rooms)
+        for evt_elts in event_informations:
+            list_sessions.append(evt_elts[2])
+            program.add_session(timeslot=evt_elts[0], room=evt_elts[1], session=evt_elts[2])
+
+        # Load the tutorials
+        tutorial_informations = self._load_tutorials(session_summary_file, dict_timeslots, dict_rooms)
+        for tuto_elts in tutorial_informations:
+            list_sessions.append(tuto_elts[2])
+            program.add_session(timeslot=tuto_elts[0], room=tuto_elts[1], session=tuto_elts[2])
 
         student_nominees_id = self._load_student_award_nominees(session_summary_file)
         theme_nominees_id = self._load_theme_award_nominees(session_summary_file)

@@ -17,6 +17,8 @@
 \usepackage{enumitem}
 \usepackage[breakall]{truncate}
 
+\usepackage{csquotes}
+
 \usepackage{wrapfig}
 \usepackage{tabularx}
 \newcolumntype{Y}{>{\centering\arraybackslash}X}
@@ -87,17 +89,67 @@
 
     \tableofcontents
     \endgroup
+    \clearpage
 }
 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%% ???
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
+\IfFileExists{manual/isca_letter.tex}
+{{%
+    \parskip=5pt
+    \parindent=15pt
+    \input{manual/isca_letter.tex}
+}}
+{}
+
+\IfFileExists{manual/chairs_letter.tex}
+             {\input{manual/chairs_letter.tex}}
+             {}
+
+\IfFileExists{manual/tpc_letter.tex}
+             {\input{manual/tpc_letter.tex}}
+             {}
+
+\phantomsection
+\addcontentsline{toc}{chapter}{General Information}
+\chapter*{General Information}
+
+\IfFileExists{auto/best_student.tex}
+{%
+\section*{Best student paper award nominees}
+\pagestyle{fancy}
+\input{auto/best_student.tex}
+}{}
+
+\IfFileExists{auto/best_theme.tex}
+{%
+\section*{Best theme paper award nominees}
+\pagestyle{fancy}
+\input{auto/best_theme.tex}
+}{}
+
+\clearpage
+\section*{Volunteers}
+\IfFileExists{manual/volunteers.tex}
+             {\input{manual/volunteers.tex}}
+             {}
+
+\section*{Travel grants}
+\IfFileExists{manual/travel_grants.tex}
+             {\input{manual/travel_grants.tex}}
+             {}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%% Some useful info
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 \phantomsection
-\addcontentsline{toc}{chapter}{Program overview}%
+\addcontentsline{toc}{chapter}{Programme overview}%
 
-\pagestyle{plain}
+\pagestyle{onlyfoot}
 {
 \def\arraystretch{1.6}%
 \linespread{0.8}
@@ -173,63 +225,30 @@
 \pagestyle{fancy}
 \input{auto/reviewers_index.tex}
 
+% %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% %%% Actual program
+% %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%%% ???
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% \clearpage
+% \phantomsection
+% \addcontentsline{toc}{chapter}{Program Schedule}%
+% \pagestyle{fancy}
+% \BLOCK{ for date in content_dates }
+%     \dayschedule{\VAR{date | extract_verbose_date}}{auto/\VAR{date | extract_date}.tex}
+% \BLOCK{ endfor }
 
-\phantomsection
-\addcontentsline{toc}{chapter}{Additional information}
-\chapter*{Award nominees}
-\IfFileExists{auto/best_student.tex}
-{%
-\section*{Best student paper award nominees}
-\pagestyle{fancy}
-\input{auto/best_student.tex}
-}{}
+% %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% %%% Author index part
+% %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-\IfFileExists{auto/best_theme.tex}
-{%
-\section*{Best theme paper award nominees}
-\pagestyle{fancy}
-\input{auto/best_theme.tex}
-}{}
+% \phantomsection
+% \addcontentsline{toc}{chapter}{Author Index}%
+% \chapter*{Author Index}
+% \pagestyle{fancy}
+% \input{auto/authors_index.tex}
 
-\chapter*{Volunteers}
-\IfFileExists{manual/volunteers.tex}
-             {\input{auto/best_theme.tex}}
-             {}
-
-\chapter*{Travel grants}
-
-
-
-
-
-%% %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%% %%% Actual program
-%% %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-%% \clearpage
-%% \phantomsection
-%% \addcontentsline{toc}{chapter}{Program Schedule}%
-%% \pagestyle{fancy}
-%% \BLOCK{ for date in content_dates }
-%%     \dayschedule{\VAR{date | extract_verbose_date}}{auto/\VAR{date | extract_date}.tex}
-%% \BLOCK{ endfor }
-
-%% %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%% %%% Author index part
-%% %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-%% \phantomsection
-%% \addcontentsline{toc}{chapter}{Author Index}%
-%% \chapter*{Author Index}
-%% \pagestyle{fancy}
-%% \input{auto/authors_index.tex}
-
-%% \IfFileExists{theme/back_cover.pdf}
-%% {\includepdf[pages=1,pagecommand={\thispagestyle{plain}}]{theme/back_cover}}
-%% {}
+% \IfFileExists{theme/back_cover.pdf}
+% {\includepdf[pages=1,pagecommand={\thispagestyle{plain}}]{theme/back_cover}}
+% {}
 
 \end{document}

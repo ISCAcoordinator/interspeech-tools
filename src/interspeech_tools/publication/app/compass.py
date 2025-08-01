@@ -59,7 +59,6 @@ class CompassDataGenerator:
         "email",
         "firstName",
         "lastName",
-        "classifierId_",
     ]
     PLACE_COLUMNS = [
         "id",
@@ -96,7 +95,7 @@ class CompassDataGenerator:
         SpecialPresentation: "special",
     }
 
-    def __init__(self, conference: Interspeech, size_split: int = 1000):
+    def __init__(self, conference: Interspeech, size_split: int = -1):
         self._logger = logging.getLogger(self.__class__.__name__)
         self.conference = conference
         self.size_split = size_split
@@ -114,7 +113,7 @@ class CompassDataGenerator:
         list_place = []
         for cur_room in self.conference.rooms:
             # Initialise the new session
-            cur_place = {"id": cur_room.id, "name": cur_room.name, "configuratorType": "place:room"}
+            cur_place = {"id": cur_room.id.replace(" ", "_"), "name": cur_room.name, "configuratorType": "place:room"}
             list_place.append(cur_place)
 
         df_place = pd.DataFrame(list_place)
@@ -139,7 +138,7 @@ class CompassDataGenerator:
             elif author.middle_initial is not None:
                 firstname += " " + author.middle_initial
 
-            affiliations = set([a.institute for aff_list in list(author.paper_affiliations.values()) for a in aff_list])
+            affiliations = author.str_affiliations(short=True)
             cur_person = {
                 "id": author.id,
                 "email": author.email,
@@ -147,7 +146,7 @@ class CompassDataGenerator:
                 "orderingName": author.str_sorting_by_last_name(),
                 "firstName": firstname,
                 "lastName": author.lastname,
-                "subtitle": "; ".join(affiliations),
+                "subtitle": affiliations,
                 "configuratorType": "person:person",
             }
 
@@ -157,6 +156,39 @@ class CompassDataGenerator:
             # Entry is done
             list_persons.append(cur_person)
             seen_ids.add(author.id)
+
+        # List chairs
+        for session in self.conference.sessions:
+            if not isinstance(session, PresentationSession):
+                continue
+            for chair in session.chairs:
+
+                if chair.id in seen_ids:
+                    continue
+
+                firstname = chair.firstname
+                if firstname is None:
+                    firstname = " "  # FIXME: this should not be valid
+                elif chair.middle_initial is not None:
+                    firstname += " " + chair.middle_initial
+
+                affiliations = chair.str_affiliations(short=True)
+                cur_person = {
+                    "id": chair.id,
+                    "email": chair.email,
+                    "name": chair.name,
+                    "orderingName": chair.str_sorting_by_last_name(),
+                    "firstName": firstname,
+                    "lastName": chair.lastname,
+                    "subtitle": affiliations,
+                    "configuratorType": "person:person",
+                }
+
+                if isinstance(chair, Speaker):
+                    cur_person["info"] = chair.biography
+
+                list_persons.append(cur_person)
+                seen_ids.add(chair.id)
 
         # List presenters
         for session in self.conference.sessions:
@@ -177,9 +209,7 @@ class CompassDataGenerator:
                     elif presenter.middle_initial is not None:
                         firstname += " " + presenter.middle_initial
 
-                    affiliations = set(
-                        [a.institute for aff_list in list(presenter.paper_affiliations.values()) for a in aff_list]
-                    )
+                    affiliations = presenter.str_affiliations(short=True)
                     cur_person = {
                         "id": presenter.id,
                         "email": presenter.email,
@@ -187,7 +217,7 @@ class CompassDataGenerator:
                         "orderingName": presenter.str_sorting_by_last_name(),
                         "firstName": firstname,
                         "lastName": presenter.lastname,
-                        "subtitle": "; ".join(affiliations),
+                        "subtitle": affiliations,
                         "configuratorType": "person:person",
                     }
 
@@ -206,15 +236,18 @@ class CompassDataGenerator:
         df_persons.sort_values(by=["lastName", "firstName"], inplace=True)
 
         # Split and save
-        nb_persons = df_persons.index.shape[0]
-        nb_slices = nb_persons // self.size_split
-        for i_slice in range(0, nb_slices):
-            cur_file = output_person_file.parent / (output_person_file.stem + f"_{i_slice+1}" + output_person_file.suffix)
-            df_persons.iloc[i_slice * self.size_split : (i_slice + 1) * self.size_split].to_excel(cur_file, index=False)
+        if self.size_split > 0:
+            nb_persons = df_persons.index.shape[0]
+            nb_slices = nb_persons // self.size_split
+            for i_slice in range(0, nb_slices):
+                cur_file = output_person_file.parent / (output_person_file.stem + f"_{i_slice+1}" + output_person_file.suffix)
+                df_persons.iloc[i_slice * self.size_split : (i_slice + 1) * self.size_split].to_excel(cur_file, index=False)
 
-        i_slice = nb_slices
-        cur_file = output_person_file.parent / (output_person_file.stem + f"_{i_slice+1}" + output_person_file.suffix)
-        df_persons.iloc[i_slice * self.size_split : (i_slice + 1) * nb_persons].to_excel(cur_file, index=False)
+            i_slice = nb_slices
+            cur_file = output_person_file.parent / (output_person_file.stem + f"_{i_slice+1}" + output_person_file.suffix)
+            df_persons.iloc[i_slice * self.size_split : (i_slice + 1) * nb_persons].to_excel(cur_file, index=False)
+        else:
+            df_persons.to_excel(output_person_file, index=False)
 
     def _generate_app_tags(self, output_tag_file: pathlib.Path) -> None:
 
@@ -336,7 +369,7 @@ class CompassDataGenerator:
             # Non presentation session have a specific use case
             if not isinstance(session, PresentationSession):
                 self._logger.debug(
-                    f"[{session.id}] The session is not a presentation sessionsession",
+                    f"[{session.id}] The session is not a presentation session",
                     extra={"session_id": session.id, "session": session},
                 )
 
@@ -346,7 +379,7 @@ class CompassDataGenerator:
                         "name": session.name,
                         "subtitle": session.id,
                         "orderingName": session.id,
-                        "placeId_1": room.id,
+                        "placeId_1": room.id.replace(" ", "_"),
                         "date": timeslot.start.strftime("%Y-%m-%d"),
                         "startTime": timeslot.start.strftime("%H:%M"),
                         "endTime": timeslot.end.strftime("%H:%M"),
@@ -355,12 +388,12 @@ class CompassDataGenerator:
                     }
                 elif isinstance(session, InterspeechEvent):
                     cur_session = {
-                        "id": f"timeslot_{session.id}",
+                        "id": f"timeslot_{session.id}_session",
                         "name": session.name,
                         "subtitle": session.id,
                         "orderingName": session.id,
                         "info": session.description,
-                        "placeId_1": room.id,
+                        "placeId_1": room.id.replace(" ", "_"),
                         "date": timeslot.start.strftime("%Y-%m-%d"),
                         "startTime": timeslot.start.strftime("%H:%M"),
                         "endTime": timeslot.end.strftime("%H:%M"),
@@ -383,7 +416,7 @@ class CompassDataGenerator:
                 "name": session.name,
                 "subtitle": session.id,
                 "orderingName": session.id,
-                "placeId_1": room.id,
+                "placeId_1": room.id.replace(" ", "_"),
                 "date": timeslot.start.strftime("%Y-%m-%d"),
                 "startTime": timeslot.start.strftime("%H:%M"),
                 "endTime": timeslot.end.strftime("%H:%M"),
@@ -391,10 +424,20 @@ class CompassDataGenerator:
                 "classifierId_1": f"{session_type}_session",
             }
 
+            # FIXME: this is a ugly patch!
+            # if not (isinstance(session, OralSession) or isinstance(session, PosterSession)):
+            if not ((type(session) is OralSession) or (type(session) is PosterSession) or (type(session) is ShowAndTellSession)):
+                cur_session["id"] = cur_session["id"] + "_session"
+                print(cur_session)
+
             # Add session chairs
             if session.chairs is not None:
                 for chair_idx, chair in enumerate(session.chairs):
-                    cur_session[f"roleId_role:chair_{chair_idx}"] = chair.id
+                    cur_session[f"roleId_role:chair_{chair_idx+1}"] = chair.id
+
+            # If special session add description
+            if isinstance(session, SpecialSession) and (session.description is not None):
+                cur_session["info"] = "<p>" + session.description.replace("\n\n", "</p>\n<p>") + "</p>"
 
             list_agenda.append(cur_session)
 

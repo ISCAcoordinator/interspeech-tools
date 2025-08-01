@@ -72,35 +72,26 @@ CMT_AFFILIATION_SEPARATOR = ";"
 
 CMT_FREE_SLOT_TOKEN = "<FREE>"
 
-CMT_AUTHOR_FULL_INFO_REGEXP = re.compile(r"^([^(]*)[ ]*\((.*)\)")
+CMT_AUTHOR_FULL_INFO_REGEXP = re.compile(r"^([^(]*)\s*\((.*)\)\s*")
 CMT_AUTHOR_ELTS_REGEXP = re.compile(
     r"""
     ^\s*
-    (?:([^{}]+)\s+)?
-    (?:\[([^{}]+)\]\s+)?
+    (?:([^{}]+)\s*)?
+    (?:\[([^{}]+)\]\s*)?
     \{(.+)\}
     \s*$
 """,
     re.VERBOSE,
 )
-CMT_NEW_PRESENTER_REGEXP = re.compile(
-    r"""
-    ^\s*
-    (.+)
-    \s*
-    \{([^}]+)\}
-    \s*
-    <([^ ]+)>
-    \s*$
-    """,
-    re.VERBOSE,
-)
+
+
+CMT_NEW_PRESENTER_FULL_INFO_REGEXP = re.compile(r"^([^(]*)\s*(?:\((.*)\)\s*)?[<]([^>]+)[>]\s*$")
 CMT_AFFILIATION_REGEXP = re.compile(
     r"""
     ^\s*
-    (?:\{([^{}]+)\},\s*)?      # Optional part 1 inside {}
-    ([^{}]+?)                  # Required part 2 (no braces)
-    (?:,\s*\{([^{}]+)\})?      # Optional part 3 inside {}
+    (?:\{([^}]+)\},\s*)?
+    ([^{]+)\s*
+    (?:,\s*\{([^}]+)\})?
     \s*$
 """,
     re.VERBOSE,
@@ -162,6 +153,9 @@ class CMTSerialiser(ISCAObject):
                 last_name = author_elts[-1]
                 first_name = " ".join(author_elts[:-1])
 
+            first_name = first_name.strip() if first_name is not None else None
+            last_name = last_name.strip()
+
             # FIXME: As for now, we dunno how to extract the affiliation component, just consider an institute
             list_affiliations = list()
             affiliations = [s.strip() for s in match_author_affiliations.group(2).split(CMT_AFFILIATION_SEPARATOR)]
@@ -205,7 +199,7 @@ class CMTSerialiser(ISCAObject):
                 cur_person.add_role(Role.AUTHOR)
                 if cur_person.firstname != first_name:
                     self.logger.debug(
-                        f"[{paper_id}] Change the name of {email} from {cur_person.name} to {first_name} {last_name}"
+                        f"[{paper_id}] Change the name of {email} from {cur_person.name} to {first_name} {{{last_name}}}"
                     )
 
                 # NOTE: The information from the PDF are likely more reliable
@@ -219,18 +213,39 @@ class CMTSerialiser(ISCAObject):
         # Extract presenters (TODO: This is a bit too specific, will have to check with Antoine about this)
         presenters = None
         if ("Q7 (New presenter)" in paper_info) and (not pd.isna(paper_info["Q7 (New presenter)"])):
-            m = CMT_NEW_PRESENTER_REGEXP.match(paper_info["Q7 (New presenter)"])
-            if m:
+            m_full = CMT_NEW_PRESENTER_FULL_INFO_REGEXP.match(paper_info["Q7 (New presenter)"])
+            if m_full:
                 self.logger.error(f"Adding alternative presenter \"{paper_info['Q7 (New presenter)']}\" to paper {paper_id}")
-                pres_firstname = m.group(1)
-                pres_lastname = m.group(2)
-                pres_email = m.group(3).lower().strip()
+
+                pres_email = m_full.group(3).lower().strip()
 
                 cur_presenter = self._annuary.find_person_by_email(pres_email)
                 if cur_presenter is None:
+
+                    m_identity = CMT_AUTHOR_ELTS_REGEXP.match(m_full.group(1))
+                    pres_firstname = m_identity.group(1)
+                    middle_initial = m_identity.group(2)
+                    pres_lastname = m_identity.group(3)
+
+                    if m_full.group(2) is None:
+                        raise Exception(f"The presenter \"{paper_info['Q7 (New presenter)']}\" does nor respect the format")
+
+                    affiliations = []
+                    for aff_str in m_full.group(2).split(CMT_AFFILIATION_SEPARATOR):
+                        aff_str = aff_str.strip()
+                        m_affiliation = CMT_AFFILIATION_REGEXP.match(aff_str)
+                        affiliation = Affiliation(m_affiliation.group(2), m_affiliation.group(3), m_affiliation.group(1))
+                        affiliations.append(affiliation)
+
                     id = self._generate_id(pres_lastname)
                     cur_presenter = Person(
-                        id, pres_firstname, pres_lastname, Affiliation("Unknown"), pres_email
+                        id,
+                        pres_firstname,
+                        pres_lastname,
+                        affiliations[0],
+                        pres_email,
+                        middle_initial=middle_initial,
+                        paper_affiliations={str(paper_id): affiliations},
                     )  # FIXME: force unknwon affiliation
                     self._annuary.add(cur_presenter)
 
@@ -363,8 +378,6 @@ class CMTSerialiser(ISCAObject):
         return conf
 
     def load_users(self, user_spreadsheet_file: pathlib.Path, ignore_role: bool = True) -> Annuary:
-        if self._annuary is None:
-            self._annuary = Annuary()
 
         users = Annuary(alternative_emails=self._annuary.alternative_emails)
         wb = load_workbook(filename=user_spreadsheet_file)
@@ -452,10 +465,8 @@ class CMTSerialiser(ISCAObject):
         return users
 
     def load_speakers(self, speaker_spreadsheet_file: pathlib.Path) -> Annuary:
-        if self._annuary is None:
-            self._annuary = Annuary()
 
-        speakers = Annuary()
+        speakers = Annuary(alternative_emails=self._annuary.alternative_emails)
         wb = load_workbook(filename=speaker_spreadsheet_file)
         for worksheet in wb.sheetnames:
             df = load_excel(speaker_spreadsheet_file, sheet_name=worksheet)
@@ -464,6 +475,8 @@ class CMTSerialiser(ISCAObject):
                 email = str(speaker_row["Email"]).lower().strip()
                 cur_person = self._annuary.find_person_by_email(email)
                 if cur_person is not None:
+                    if email == "":
+                        raise Exception(cur_person)
                     speaker = Speaker.from_person(cur_person)
                 else:
 
@@ -515,10 +528,7 @@ class CMTSerialiser(ISCAObject):
         return speakers
 
     def load_reviewers(self, user_spreadsheet_file: pathlib.Path, ignore_role: bool = True) -> Annuary:
-        if self._annuary is None:
-            self._annuary = Annuary()
-
-        reviewers = Annuary()
+        reviewers = Annuary(alternative_emails=self._annuary.alternative_emails)
         wb = load_workbook(filename=user_spreadsheet_file)
         for worksheet in wb.sheetnames:
             df = load_excel(user_spreadsheet_file, sheet_name=worksheet)

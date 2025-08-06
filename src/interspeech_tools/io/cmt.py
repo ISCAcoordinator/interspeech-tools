@@ -1001,6 +1001,7 @@ class CMTSerialiser(ISCAObject):
             cur_room = dict_rooms[session_info["Room name*"]]  # FIXME: why this "*"?
 
             session_type = str(session_info["Session type"])
+            presentation_type = str(session_info["Presentation type"])
             if session_type.lower() == "oral":
                 cur_session = OralSession(session_id, session_name, cur_time_slot.start, cur_time_slot.end, chairs=chairs)
             elif session_type.lower() == "poster":
@@ -1078,13 +1079,31 @@ class CMTSerialiser(ISCAObject):
                             cur_paper,
                         )
                     elif isinstance(cur_session, SpecialSession):
-                        cur_presentation = SpecialPresentation(
-                            f"{session_id}-{paper_idx:02d}",
-                            cur_paper.title,
-                            paper_presenters,
-                            cur_paper.abstract,
-                            cur_paper,
-                        )
+                        if presentation_type.lower() == "poster":
+                            cur_presentation = PosterPresentation(
+                                f"{session_id}-{paper_idx:02d}",
+                                cur_paper.title,
+                                paper_presenters,
+                                cur_paper.abstract,
+                                cur_paper,
+                            )
+                        elif presentation_type.lower() == "oral":
+                            cur_presentation = OralPresentation(
+                                f"{session_id}-{paper_idx:02d}",
+                                cur_paper.title,
+                                paper_presenters,
+                                20,  # FIXME: this is hardcoded
+                                cur_paper.abstract,
+                                cur_paper,
+                            )
+                        else:
+                            cur_presentation = SpecialPresentation(
+                                f"{session_id}-{paper_idx:02d}",
+                                cur_paper.title,
+                                paper_presenters,
+                                cur_paper.abstract,
+                                cur_paper,
+                            )
                     else:
                         raise Exception(f"Should not have happnened, {type(cur_session)} is not known")
                 elif paper_id in survey_talks:

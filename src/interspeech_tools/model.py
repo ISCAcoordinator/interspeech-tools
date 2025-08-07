@@ -249,22 +249,22 @@ class Interspeech(Conference):
         assert self.program is not None
 
         presentations = []
-        for timeslot, room, session in self.program.sessions:
+        for session, timeslot, room, zone_idx in self.program.sessions:
             if not isinstance(session, PresentationSession):
                 continue
 
             for presentation in session.presentations:
                 if presentation.presented_paper in self.best_student_papers_nominees:
-                    presentations.append((presentation, room, timeslot))
+                    presentations.append((presentation, room, timeslot, zone_idx))
 
-        presentations = sorted(presentations, key=lambda x: x[0].start if isinstance(x[0], OralSession) else x[2].start)
+        presentations = sorted(presentations, key=lambda x: (x[0].start if isinstance(x[0], OralSession) else x[2].start, x[3]))
         return presentations
 
     def list_theme_award_nominees_presentations(self) -> list[tuple[Presentation, Room, AnonymousTimeslot]]:
         assert self.program is not None
 
         presentations = []
-        for timeslot_session, room, session in self.program.sessions:
+        for session, timeslot_session, room, zone_idx in self.program.sessions:
             if not isinstance(session, PresentationSession):
                 continue
 
@@ -275,7 +275,7 @@ class Interspeech(Conference):
                     else:
                         timeslot = timeslot_session
 
-                    presentations.append((presentation, room, timeslot))
+                    presentations.append((presentation, room, timeslot, zone_idx))
 
-        presentations = sorted(presentations, key=lambda x: x[2].start)
+        presentations = sorted(presentations, key=lambda x: (x[2].start, x[3]))
         return presentations

@@ -138,7 +138,7 @@
 
 \fancypagestyle{fancy}{%
   \fancyhf{} % clear all header and footer fields
-  \fancyhead[LE]{
+  \fancyhead[LO]{
       \begin{tikzpicture}[overlay, remember picture]%
           \node[anchor=north, inner sep=0,outer sep=0] at (current page.north){
               \IfFileExists{theme/standard_header_left.pdf}
@@ -147,7 +147,7 @@
           };
       \end{tikzpicture}
   }
-  \fancyhead[LO]{
+  \fancyhead[LE]{
       \begin{tikzpicture}[overlay, remember picture]%
           \node[anchor=north, inner sep=0,outer sep=0] at (current page.north){
               \IfFileExists{theme/standard_header_right.pdf}
@@ -294,6 +294,7 @@
 \RequirePackage{titlesec}
 \titleformat{\chapter}[display]{\normalfont\huge\bfseries}{}{}{}{}
 \titlespacing{\chapter}{0pt}{0pt}{0pt}
+\assignpagestyle{\chapter}{fancy}
 
 \titleformat*{\section}{\normalfont\LARGE\bfseries\color{LinkColour}}
 

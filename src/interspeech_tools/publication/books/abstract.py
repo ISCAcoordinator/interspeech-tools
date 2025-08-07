@@ -75,10 +75,35 @@ class AbstractBookProcessor(ISCAObject):
             # Generate the program content
             if sessions:
                 content_dates.append(date)
+
+                # Reorganise the sessions to find the duplicate places
+                rendering_sessions = []
+                for session, timeslot, room, z_idx in sessions:
+                    if (len(rendering_sessions) >= 1) and (rendering_sessions[-1][0] == session):
+                        if room not in rendering_sessions[-1][-1]:
+                            rendering_sessions[-1][-1][room] = []
+                        rendering_sessions[-1][-1][room].append(room.zones[z_idx])
+                    else:
+                        rendering_sessions.append([session, timeslot, {room: [room.zones[z_idx]]}])
+
+                # Render the place as strings
+                for i_session, session in enumerate(rendering_sessions):
+                    areas = session[-1]
+                    places = []
+                    for room, zones in areas.items():
+                        if room.nb_zones == 1:
+                            places.append(room.name)
+                        else:
+                            cur_place = room.name + " - " + ",".join(zones)
+                            places.append(cur_place)
+
+                    session[-1] = "; ".join(places)
+                    rendering_sessions[i_session] = session
+
                 day_program_template = self._template_engine.get_template("day_program.tex.jinja2")
                 outfilename = root_output_dir / f"{date}.tex"
                 with open(outfilename, "w") as outfile:
-                    outfile.write(day_program_template.render(sessions=sessions))
+                    outfile.write(day_program_template.render(sessions=rendering_sessions))
 
         # Copy photos
         for person in self._conf._annuary:
@@ -102,27 +127,29 @@ class AbstractBookProcessor(ISCAObject):
         # Tutorials
         tutorial_template = self._template_engine.get_template("tutorials.tex.jinja2")
         outfilename = root_output_dir / "tutorials.tex"
-        tutorials = self._conf.program.select_sessions(lambda t, r, s: isinstance(s, TutorialSession))
+        tutorials = self._conf.program.select_sessions(lambda s, t, r, z: isinstance(s, TutorialSession))
         with open(outfilename, "w") as outfile:
             outfile.write(tutorial_template.render(tutorial_sessions=tutorials))
 
         # Keynotes
         keynote_template = self._template_engine.get_template("keynotes.tex.jinja2")
+        keynote_sessions = self._conf.program.select_sessions(lambda s, t, r, z: isinstance(s, KeynoteSession))
         outfilename = root_output_dir / "keynotes.tex"
         with open(outfilename, "w") as outfile:
-            outfile.write(keynote_template.render(sessions=self._conf.sessions))
+            outfile.write(keynote_template.render(sessions=keynote_sessions))
 
         # Surveys
         surveys_template = self._template_engine.get_template("surveys.tex.jinja2")
         outfilename = root_output_dir / "surveys.tex"
         with open(outfilename, "w") as outfile:
-            outfile.write(surveys_template.render(sessions=self._conf.sessions))
+            outfile.write(surveys_template.render(sessions=self._conf.program.sessions))
 
         # Special Sessions
         special_sessions_template = self._template_engine.get_template("special_sessions.tex.jinja2")
         outfilename = root_output_dir / "special_sessions.tex"
+        special_sessions = self._conf.program.select_sessions(lambda s, t, r, z: isinstance(s, SpecialSession))
         with open(outfilename, "w") as outfile:
-            outfile.write(special_sessions_template.render(sessions=self._conf.sessions))
+            outfile.write(special_sessions_template.render(sessions=special_sessions))
 
         # Satellites
         satellites_template = self._template_engine.get_template("satellite_events.tex.jinja2")
@@ -156,15 +183,15 @@ class AbstractBookProcessor(ISCAObject):
         for timeslot, room_session in timeslot_sessions.items():
             if timeslot in self._conf.ignored_timeslots:
                 for room, sessions in room_session.items():
-                    for session in sessions:
-                        ignored_sessions.append([timeslot, room, session])
+                    for zone_idx, session in sessions.items():
+                        ignored_sessions.append([session, timeslot, room, zone_idx])
 
         for room_idx, room in enumerate(rooms):
             if room in self._conf.ignored_rooms:
                 for timeslot, room_session in timeslot_sessions.items():
                     if room in room_session:
-                        for session in room_session[room]:
-                            ignored_sessions.append([timeslot, room, session])
+                        for zone_idx, session in room_session[room].items():
+                            ignored_sessions.append([session, timeslot, room, zone_idx])
                 continue
 
             room_indices.append(room_idx)
@@ -191,7 +218,7 @@ class AbstractBookProcessor(ISCAObject):
         # TODO: this is just a place holder for now
         excluded = "\\vspace{2mm}\\\\ \n"
         excluded_sessions = []
-        for timeslot, room, session in ignored_sessions:
+        for session, timeslot, room, zone_idx in ignored_sessions:
             session_type = get_session_type(session)
             session_id = session.id if (not isinstance(session, InterspeechEvent)) and (session_type != "social") else ""
             excluded_session = (
@@ -232,13 +259,13 @@ class AbstractBookProcessor(ISCAObject):
             sessions = self._conf.program.get_timeslot_sessions(timeslot)
             row = {"timeslot_str": timeslot.timeslot_without_date().replace(" ", ""), "elts": []}
 
+            #
             no_sessions = True
             for room in rooms:
                 if (room in sessions) and (room not in self._conf.ignored_rooms):
                     no_sessions = False
                     break
 
-            # Save the plenary sessions and the social ones
             if no_sessions:
                 for room in sessions.keys():
                     if ((room.type.lower() == "plenary") or (room.type.lower() == "social")) and (
@@ -261,66 +288,58 @@ class AbstractBookProcessor(ISCAObject):
                             },
                         }
                     )
-                else:
-                    continue
-            elif len(sessions.keys()) == 1:
-                room = list(sessions.keys())[0]
-                # FIXME: not sure that the type should be hardcoded like that in a string format
-                if (room.type.lower() == "plenary") or (room.type.lower() == "social"):
-                    sessions = sessions[room]
-                    if len(sessions) > 1:
-                        raise Exception("For now, only one session implies an overall session")
+                    rows.append(row)
+                continue
 
-                    session = sessions[0]
-                    session_type = get_session_type(session)
-                    session_id = session.id if (not isinstance(session, InterspeechEvent)) and (session_type != "social") else ""
+            # Overarching session (FIXME: room type in string => should be set into a enum type)
+            room = list(sessions.keys())[0]
+            if (len(sessions.keys()) == 1) and ((room.type.lower() == "plenary") or (room.type.lower() == "social")):
+                sessions = sessions[room]
+                if len(sessions) > 1:
+                    raise Exception("Plenary room & social room do not support more than one zone")
 
-                    row["elts"].append(
-                        {
-                            "type": "multicolumn",
-                            "colspan": nb_zones,
-                            "content": {
-                                "id": session_id,
-                                "name": f"{session.name} [{room.name}]",
-                                "bg": f"{session_type.capitalize()}BackgroundColour",
-                                "fg": f"{session_type.capitalize()}ForegroundColour",
-                            },
-                        }
-                    )
-                else:
-                    for room in rooms:
-                        if room not in sessions:
-                            for _ in range(room.nb_zones):
-                                row["elts"].append({"type": "empty"})
-                            continue
+                session = sessions[list(sessions.keys())[0]]
+                session_type = get_session_type(session)
+                session_id = session.id if (not isinstance(session, InterspeechEvent)) and (session_type != "social") else ""
 
-                        room_sessions = sessions[room]
-                        if room.nb_zones > 1 and len(room_sessions) == 1:
-                            session = room_sessions[0]
-                            session_type = get_session_type(session)
+                row["elts"].append(
+                    {
+                        "type": "multicolumn",
+                        "colspan": nb_zones,
+                        "content": {
+                            "id": session_id,
+                            "name": f"{session.name} [{room.name}]",
+                            "bg": f"{session_type.replace('_', ' ').title().replace(' ', '')}BackgroundColour",
+                            "fg": f"{session_type.replace('_', ' ').title().replace(' ', '')}ForegroundColour",
+                        },
+                    }
+                )
+                rows.append(row)
+                continue
 
-                            session_name = session.name.replace("Special Session - ", "")
-                            if len(session_name) > AbstractBookProcessor.MAX_SESSION_NAME_SIZE_MULTICOL:
-                                session_name = session_name[: AbstractBookProcessor.MAX_SESSION_NAME_SIZE_MULTICOL - 3] + "..."
+            # Standard session
+            else:
+                # Flatten room and zones:
+                flatten_rooms_zones = [(room, zone) for room in rooms for zone in range(room.nb_zones)]
 
-                            session_id = (
-                                session.id if (not isinstance(session, InterspeechEvent)) and (session_type != "social") else ""
-                            )
+                buffer_session = None
+                for i_area, (room, zone) in enumerate(flatten_rooms_zones):
+                    session = None
+                    if (room in sessions) and (zone in sessions[room]):
+                        session = sessions[room][zone]
 
-                            row["elts"].append(
-                                {
-                                    "type": "multicolumn",
-                                    "colspan": room.nb_zones,
-                                    "content": {
-                                        "id": session_id,
-                                        "name": session_name,
-                                        "bg": f"{session_type.capitalize()}BackgroundColour",
-                                        "fg": f"{session_type.capitalize()}ForegroundColour",
-                                    },
-                                }
-                            )
-                        else:
-                            for session in room_sessions:
+                    # If we are currently part of a sliding session, just keep/update it in the buffer
+                    if ((i_area + 1) < len(flatten_rooms_zones)) and (session is not None):
+                        next_zone = flatten_rooms_zones[i_area + 1]
+                        next_session = None
+                        if (next_zone[0] in sessions) and (next_zone[1] in sessions[room]):
+                            next_session = sessions[next_zone[0]][next_zone[1]]
+
+                        if (next_session is not None) and (session.id == next_session.id):
+                            if buffer_session is not None:
+                                buffer_session["colspan"] += 1
+                                raise Exception("ok?")
+                            else:
                                 session_type = get_session_type(session)
                                 session_name = session.name.replace("Special Session - ", "")
                                 session_id = (
@@ -328,54 +347,40 @@ class AbstractBookProcessor(ISCAObject):
                                     if (not isinstance(session, InterspeechEvent)) and (session_type != "social")
                                     else ""
                                 )
+                                buffer_session = {
+                                    "colspan": 1,
+                                    "session_id": session_id,
+                                    "session_name": session_name,
+                                    "color_id": session_type.replace("_", " ").title().replace(" ", ""),
+                                }
 
-                                row["elts"].append(
-                                    {
-                                        "type": "cell",
-                                        "content": {
-                                            "id": session_id,
-                                            "name": session_name,
-                                            "bg": f"{session_type.capitalize()}BackgroundColour",
-                                            "fg": f"{session_type.capitalize()}ForegroundColour",
-                                        },
-                                    }
-                                )
+                            continue
 
-            else:
-                # FIXME: it is a bit dirty but if no sessions available here, let's just not print the slot :)
-                for room in rooms:
-                    if room not in sessions:
-                        for _ in range(room.nb_zones):
-                            row["elts"].append({"type": "empty"})
-                        continue
-
-                    room_sessions = sessions[room]
-                    if room.nb_zones > 1 and len(room_sessions) == 1:
-                        session = room_sessions[0]
-                        session_type = get_session_type(session)
-
-                        session_name = session.name.replace("Special Session - ", "")
+                    # If there was a buffered session, add it to the table
+                    if buffer_session is not None:
+                        session_name = buffer_session["session_name"]
                         if len(session_name) > AbstractBookProcessor.MAX_SESSION_NAME_SIZE_MULTICOL:
                             session_name = session_name[: AbstractBookProcessor.MAX_SESSION_NAME_SIZE_MULTICOL - 3] + "..."
-
-                        session_id = (
-                            session.id if (not isinstance(session, InterspeechEvent)) and (session_type != "social") else ""
-                        )
 
                         row["elts"].append(
                             {
                                 "type": "multicolumn",
-                                "colspan": room.nb_zones,
+                                "colspan": buffer_session["colspan"] + 1,
                                 "content": {
-                                    "id": session_id,
+                                    "id": buffer_session["session_id"],
                                     "name": session_name,
-                                    "bg": f"{session_type.capitalize()}BackgroundColour",
-                                    "fg": f"{session_type.capitalize()}ForegroundColour",
+                                    "bg": f"{buffer_session['color_id']}BackgroundColour",
+                                    "fg": f"{buffer_session['color_id']}ForegroundColour",
                                 },
                             }
                         )
+
+                        buffer_session = None
                     else:
-                        for session in room_sessions:
+                        # Now focus on the actual zone
+                        if session is None:
+                            row["elts"].append({"type": "empty"})
+                        else:
                             session_type = get_session_type(session)
                             session_name = session.name.replace("Special Session - ", "")
                             session_id = (
@@ -388,13 +393,30 @@ class AbstractBookProcessor(ISCAObject):
                                     "content": {
                                         "id": session_id,
                                         "name": session_name,
-                                        "bg": f"{session_type.capitalize()}BackgroundColour",
-                                        "fg": f"{session_type.capitalize()}ForegroundColour",
+                                        "bg": f"{session_type.replace('_', ' ').title().replace(' ', '')}BackgroundColour",
+                                        "fg": f"{session_type.replace('_', ' ').title().replace(' ', '')}ForegroundColour",
                                     },
                                 }
                             )
 
-            rows.append(row)
+                if buffer_session is not None:
+                    session_name = buffer_session["session_name"]
+                    if len(session_name) > AbstractBookProcessor.MAX_SESSION_NAME_SIZE_MULTICOL:
+                        session_name = session_name[: AbstractBookProcessor.MAX_SESSION_NAME_SIZE_MULTICOL - 3] + "..."
+
+                    row["elts"].append(
+                        {
+                            "type": "multicolumn",
+                            "colspan": buffer_session["colspan"],
+                            "content": {
+                                "id": buffer_session["session_id"],
+                                "name": session_name,
+                                "bg": f"{buffer_session['color_id']}BackgroundColour",
+                                "fg": f"{buffer_session['color_id']}ForegroundColour",
+                            },
+                        }
+                    )
+                rows.append(row)
 
         # Render the template
         template = self._template_engine.get_template("program_table.tex.jinja2")

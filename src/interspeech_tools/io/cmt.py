@@ -215,7 +215,7 @@ class CMTSerialiser(ISCAObject):
         if ("Q7 (New presenter)" in paper_info) and (not pd.isna(paper_info["Q7 (New presenter)"])):
             m_full = CMT_NEW_PRESENTER_FULL_INFO_REGEXP.match(paper_info["Q7 (New presenter)"])
             if m_full:
-                self.logger.error(f"Adding alternative presenter \"{paper_info['Q7 (New presenter)']}\" to paper {paper_id}")
+                self.logger.info(f"Adding alternative presenter \"{paper_info['Q7 (New presenter)']}\" to paper {paper_id}")
 
                 pres_email = m_full.group(3).lower().strip()
 
@@ -265,7 +265,7 @@ class CMTSerialiser(ISCAObject):
             cur_presenter.add_role(Role.PRESENTER)
             presenters = [cur_presenter]
         else:
-            self.logger.debug(
+            self.logger.warning(
                 f"[{paper_id}] doesn't have a presenter",
                 extra={"paper_id": str(paper_info["Paper ID"]), "paper_serie": paper_info},
             )
@@ -890,14 +890,29 @@ class CMTSerialiser(ISCAObject):
                 capacity = int(capacity)
 
             nb_zones = 1
-            if ("Nb Zones" in room_info) and (not pd.isna(room_info["Nb Zones"])):
+            zones = None
+            if (
+                ("Zones" in room_info)
+                and (not pd.isna(room_info["Zones"]))
+                and ("Nb Zones" in room_info)
+                and (not pd.isna(room_info["Nb Zones"]))
+            ):
+                raise Exception(
+                    f"[{room_info['Room ID']}] Can't define a map of zones and also impose the number of zones simultaneously"
+                )
+            elif ("Nb Zones" in room_info) and (not pd.isna(room_info["Nb Zones"])):
                 nb_zones = int(room_info["Nb Zones"])
+                zones = None
+            elif ("Zones" in room_info) and (not pd.isna(room_info["Zones"])):
+                zones = [z.strip() for z in str(room_info["Zones"]).split(",")]
+                nb_zones = None
 
             room = Room(
                 str(room_info["Room ID"]),
                 str(room_info["Room name"]),
                 str(room_info["Room type"]).lower(),
-                nb_zones,
+                nb_zones=nb_zones,
+                zones=zones,
             )
             dict_rooms[room.id] = room
             if room.type == "plenary":
@@ -1118,7 +1133,18 @@ class CMTSerialiser(ISCAObject):
                 cur_session.add_presentation(cur_presentation)
 
             self.logger.debug(f"{session_id} has been loaded", extra={"session_id": session_id, "session_obj": cur_session})
-            program.add_session(cur_time_slot, cur_room, cur_session)
+
+            if ("Zone" not in session_info) or pd.isna(session_info["Zone"]):
+                program.add_session(cur_time_slot, cur_room, cur_session)
+            else:
+                if not ("," in str(session_info["Zone"])):
+                    zones = [session_info["Zone"]]
+                else:
+                    zones = [s.strip() for s in str(session_info["Zone"]).split(",")]
+
+                for zone in zones:
+                    program.add_session(cur_time_slot, cur_room, cur_session, zone)
+
             list_sessions.append(cur_session)
 
         # Load the events

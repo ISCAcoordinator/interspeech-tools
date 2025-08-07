@@ -1,9 +1,8 @@
-\BLOCK{ for presentation, room, timeslot in presentations }
+\BLOCK{ for presentation, room, timeslot, zone_idx in presentations }
 
-\textbf{\VAR{presentation.title}} \\
-\emph{\VAR{presentation | short_presentation_id} - [\VAR{timeslot | format_timeslot(True)}] - \VAR{room.name}} \\
-\VAR{presentation.presented_paper | authors}
-
+\textbf{\VAR{presentation | short_presentation_id} - \VAR{presentation.title}} \\
+\VAR{presentation.presented_paper | authors}\\
+\emph{\faCalendar~\VAR{timeslot.start | extract_verbose_date}\ \faClockO~\VAR{timeslot | format_timeslot(False)} - \faMapMarker~\VAR{room.name} \BLOCK{- if (room.nb_zones > 1)}- \VAR{room.zones[zone_idx]} \BLOCK{- endif } }
 \bigskip
 
 \BLOCK{ endfor }

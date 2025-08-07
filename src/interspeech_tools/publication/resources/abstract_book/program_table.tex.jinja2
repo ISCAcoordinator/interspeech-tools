@@ -1,6 +1,7 @@
 {\small
 \begin{tabularx}{1.1\linewidth}{|C{\tabletimecolwidth}|\BLOCK{ for r in rooms }\BLOCK{ for _ in range(r.nb_zones) }Y|\BLOCK{ endfor }\BLOCK{ endfor }} \hline
 
+% Rooms
 & \BLOCK{ for r in rooms -}
 \BLOCK{ if r.nb_zones > 1 }
   \multicolumn{\VAR{r.nb_zones}}{c|}{\cellcolor{RoomCellColour} \textbf{\VAR{r.name}}}
@@ -10,6 +11,22 @@
 \BLOCK{- if not loop.last } & \BLOCK{ endif }
 \BLOCK{- endfor } \\ \hline
 
+% Zones
+\BLOCK{ if nb_zones > (rooms | length) }
+& \BLOCK{- for r in rooms }
+\BLOCK{- set islast = loop.last }
+\BLOCK{- if (r.nb_zones == 1) }
+\BLOCK{- if (not islast)} & \BLOCK{ endif }
+\BLOCK{- else }
+\BLOCK{- for i_zone in range(r.nb_zones) }
+\cellcolor{RoomCellColour!50} \textbf{\VAR{r.zones[i_zone]}}
+\BLOCK{- if (not islast) or (not loop.last) } & \BLOCK{ endif }
+\BLOCK{- endfor }
+\BLOCK{- endif }
+\BLOCK{- endfor } \\ \hline
+\BLOCK{ endif }
+
+% Content
 \BLOCK{ for row in rows }
   \VAR{row.timeslot_str} &
   \BLOCK{- for elt in row.elts }
@@ -28,5 +45,5 @@
 
 \end{tabularx}
 }
-\vspace{0.5cm}
+\vspace{0.25cm}
 \raggedbottom

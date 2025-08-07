@@ -4,6 +4,7 @@
 % \setmainfont{Latin Modern Roman}
 \setmainfont{Charis SIL}
 \setsansfont{Charis SIL}
+% \newfontfamily\textcal[Ligatures=TeX]{Tangerine}
 
 \usepackage{ragged2e}
 \usepackage{hyphenat}
@@ -21,10 +22,11 @@
 
 \usepackage{wrapfig}
 \usepackage{tabularx}
+\newcolumntype{P}[1]{>{\RaggedRight\arraybackslash}p{#1}}
 \newcolumntype{Y}{>{\centering\arraybackslash}X}
 \renewcommand\tabularxcolumn[1]{m{#1}}
 \def\tabletimecolwidth{2.5cm}
-
+\definecolor{RowGray}{gray}{0.95} % FIXME: move this somewhere else
 
 \title{Interspeech 2025 - Validation}
 \author{ }
@@ -38,9 +40,10 @@
 \begin{document}
 
 \IfFileExists{theme/cover.pdf}
-{\includepdf[pages=1,pagecommand={\thispagestyle{plain}}]{theme/cover}}
+{\includepdf[pages=1,pagecommand={\thispagestyle{empty}}]{theme/cover}}
 {\maketitle{}}
 
+\pagestyle{plain}
 % \rmfamily
 
 \setlist{noitemsep,topsep=2pt,parsep=2pt,partopsep=0pt,leftmargin=1em}
@@ -48,16 +51,14 @@
 \def\emailtruncatelength{2cm}
 \def\titletruncatelength{4cm}
 
-\pagestyle{fancy}
-
 
 {
-    % % We defined the background picture design by the graphic designer
-    % \AddToShipoutPictureBG*{%
-    %     \AtPageLowerLeft{%
-    %         \includegraphics[width=\paperwidth,height=\paperheight]{content-elements/online/toc_background.pdf}%
-    %     }%
-    % }%
+    % We defined the background picture design by the graphic designer
+    \AddToShipoutPictureBG*{%
+        \AtPageLowerLeft{%
+            \includegraphics[width=\paperwidth,height=\paperheight]{theme/toc_background.pdf}%
+        }%
+    }%
 
     \setcounter{secnumdepth}{0}
     \setcounter{tocdepth}{1}
@@ -81,7 +82,11 @@
 
     % Stylize the title
     \etocsettocstyle{%
-        %\bfseries\fontsize{50}{60}\selectfont Content%
+        % \makebox[9.5cm][R]{%
+        %     \begin{center}
+        %         \bfseries\fontsize{50}{60}\selectfont Content%
+        %     \end{center}
+        % }
         ~ % NOTE: needed to ensure vspace is taken into account
         \par\vspace{2cm}\hfill\rule{10cm}{1.5pt}%
         \par%\vspace{0.5cm}%
@@ -93,78 +98,120 @@
 }
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%%% ???
+%%% Letters
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\setcounter{page}{1} %% FIXME: this is really bad!
+\pagestyle{fancy}
 
 
 \IfFileExists{manual/isca_letter.tex}
 {{%
+    \chapter*{Welcome message from the ISCA President}
     \parskip=5pt
     \parindent=15pt
     \input{manual/isca_letter.tex}
+    \clearpage
 }}
 {}
 
 \IfFileExists{manual/chairs_letter.tex}
-             {\input{manual/chairs_letter.tex}}
-             {}
+{{%
+    \chapter*{Welcome message from the General Chairs}
+    \parskip=5pt
+    \parindent=15pt
+    \input{manual/chairs_letter.tex}
+    \clearpage
+}}
+{}
 
 \IfFileExists{manual/tpc_letter.tex}
-             {\input{manual/tpc_letter.tex}}
-             {}
+{{%
+    \chapter*{Welcome message from the Technical Program Chairs}
+    \parskip=5pt
+    \parindent=15pt
+    \input{manual/tpc_letter.tex}
+    \clearpage
+}}
+{}
 
 \phantomsection
 \addcontentsline{toc}{chapter}{General Information}
 \chapter*{General Information}
 
+\raggedcolumns
+\begin{multicols*}{2}
+
+\IfFileExists{manual/organising_committee.tex}
+{%
+\section*{Organising Committee}
+\input{manual/organising_committee.tex}
+\columnbreak
+}{}
+
+\IfFileExists{manual/area_chairs.tex}
+{%
+\section*{Area Chairs}
+\input{manual/area_chairs.tex}
+\columnbreak
+}{}
+
+\IfFileExists{manual/volunteers.tex}
+{%
+    \section*{Volunteers}
+    \input{manual/volunteers.tex}
+}
+{}
+\end{multicols*}
+
+
 \IfFileExists{auto/best_student.tex}
 {%
 \section*{Best student paper award nominees}
-\pagestyle{fancy}
 \input{auto/best_student.tex}
 }{}
 
 \IfFileExists{auto/best_theme.tex}
 {%
 \section*{Best theme paper award nominees}
-\pagestyle{fancy}
 \input{auto/best_theme.tex}
 }{}
-
-\clearpage
-\section*{Volunteers}
-\IfFileExists{manual/volunteers.tex}
-             {\input{manual/volunteers.tex}}
-             {}
 
 \section*{Travel grants}
 \IfFileExists{manual/travel_grants.tex}
              {\input{manual/travel_grants.tex}}
              {}
 
+
+\IfFileExists{manual/sponsors.pdf}
+{%
+% \section*{Organising Committee}
+\includepdf[pages=1,pagecommand={\thispagestyle{fancy}}]{manual/sponsors}
+}{}
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%% Some useful info
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-\phantomsection
-\addcontentsline{toc}{chapter}{Programme overview}%
-
 \pagestyle{onlyfoot}
 {
-\def\arraystretch{1.6}%
-\linespread{0.8}
-\sffamily
+    \begin{landscape}
+        \phantomsection
+        \addcontentsline{toc}{chapter}{Programme overview}%
+        \chapter*{Program Overview}
+        \def\arraystretch{1.6}%
+        \linespread{0.8}
+        \sffamily
 \BLOCK{ for date in dates }
-  \begin{landscape}
     \section*{\VAR{date | extract_verbose_date}}
     \input{auto/\VAR{date | extract_date}_table.tex}
-  \end{landscape}
-  \newpage
+    \clearpage
 \BLOCK{ endfor }
 \rmfamily
 \linespread{1}
+  \end{landscape}
 }
-\clearpage
+
+\pagestyle{fancy}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%% Some useful info
@@ -175,7 +222,6 @@
 \phantomsection
 \addcontentsline{toc}{chapter}{Keynote speakers}
 \chapter*{Keynote speakers}
-\pagestyle{fancy}
 \input{auto/keynotes.tex}
 }{}
 
@@ -184,7 +230,6 @@
 \phantomsection
 \addcontentsline{toc}{chapter}{Tutorials}
 \chapter*{Tutorials}
-\pagestyle{fancy}
 \input{auto/tutorials.tex}
 }{}
 
@@ -193,7 +238,6 @@
 \phantomsection
 \addcontentsline{toc}{chapter}{Survey Talks}
 \chapter*{Survey talks}
-\pagestyle{fancy}
 \input{auto/surveys.tex}
 }{}
 
@@ -202,7 +246,6 @@
 \phantomsection
 \addcontentsline{toc}{chapter}{Special Sessions}
 \chapter*{Special Sessions}
-\pagestyle{fancy}
 \input{auto/special_sessions.tex}
 }{}
 
@@ -211,7 +254,6 @@
 \phantomsection
 \addcontentsline{toc}{chapter}{Satellite Events}
 \chapter*{Satellite Events}
-\pagestyle{fancy}
 \input{auto/satellite_events.tex}
 }{}
 
@@ -222,7 +264,6 @@
 \phantomsection
 \addcontentsline{toc}{chapter}{Scientific Review Committee}
 \chapter*{Scientific Review Committee}%
-\pagestyle{fancy}
 \input{auto/reviewers_index.tex}
 
 % %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

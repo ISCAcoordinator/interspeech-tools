@@ -1,14 +1,14 @@
-\BLOCK{ for timeslot, room, tutorial_session in tutorial_sessions }
+\BLOCK{ for tutorial_session, timeslot, room, zone_idx in tutorial_sessions }
 \BLOCK{ set tutorial = tutorial_session.tutorial }
 \pagetarget{\VAR{tutorial_session.id}}{\section*{ \VAR{tutorial.title | latexify}}}
-
-\VAR{timeslot}
 \textbf{\VAR{tutorial | presenters}}
 
-\bigskip
+\begin{center}
+{\large \faCalendar\ \VAR{timeslot.start | extract_verbose_date} \hspace{1mm} \faClockO~{\VAR{timeslot | format_timeslot}}\ -\ \faMapMarker\ \textbf{\VAR{room.name} \BLOCK{- if (room.nb_zones > 1)} - \VAR{room.zones[zone_idx]} \BLOCK{- endif }}}
+\end{center}
+
 
 \VAR{tutorial.description.strip() | latexify}
-
 
 \subsection*{Organisers}
 \BLOCK{ for presenter in tutorial.presenters }

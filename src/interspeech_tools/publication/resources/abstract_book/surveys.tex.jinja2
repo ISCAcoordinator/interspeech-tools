@@ -1,14 +1,23 @@
-\BLOCK{ for session in sessions }
+\BLOCK{ for session, timeslot, room, zone_idx in sessions }
   \BLOCK{ for presentation in session.presentations }
     \BLOCK{ if presentation | is_survey }
     \BLOCK{ set presenter = presentation.presenters[0] }
 \section*{ \VAR{presentation.title | latexify}}
+
+\begin{center}
+{\large \faCalendar\ \VAR{timeslot.start | extract_verbose_date} \hspace{1mm} \faClockO~{\VAR{timeslot | format_timeslot}}\ -\ \faMapMarker\ \textbf{\VAR{room.name} \BLOCK{- if (room.nb_zones > 1)} - \VAR{room.zones[zone_idx]} \BLOCK{- endif }}}
+\end{center}
+
 \VAR{presenter.str_with_flatten_affiliations(None, short=True, markers=False) | latexify}
 
 % \BLOCK{ if presenter.photo is not none }
-% \begin{wrapfigure}[6]{L}{0.25\textwidth}
-%     \includegraphics[width=0.25\textwidth]{auto/\VAR{presenter.photo.name}}
-% \end{wrapfigure}
+% \begin{minipage}{0.2\textwidth}
+%     \begin{center}
+%     \includegraphics[width=\textwidth]{auto/\VAR{presenter.photo.name}}
+%     \end{center}
+% \end{minipage}
+% \hfill
+% \begin{minipage}{0.7\textwidth}
 % \BLOCK{ endif }
 
 \subsection*{Abstract}
@@ -17,7 +26,9 @@
 \subsection*{Biography}
 \VAR{presenter.biography.strip() | latexify}
 
-    \bigskip
+% \BLOCK{ if presenter.photo is not none }
+% \end{minipage}
+\BLOCK{ endif }
     \BLOCK{ endif }
   \BLOCK{ endfor }
 \BLOCK{ endfor }

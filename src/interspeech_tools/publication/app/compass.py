@@ -112,9 +112,15 @@ class CompassDataGenerator:
 
         list_place = []
         for cur_room in self.conference.rooms:
-            # Initialise the new session
-            cur_place = {"id": cur_room.id.replace(" ", "_"), "name": cur_room.name, "configuratorType": "place:room"}
-            list_place.append(cur_place)
+            if cur_room.nb_zones == 1:
+                # Initialise the new session
+                cur_place = {"id": cur_room.id.replace(" ", "_"), "name": cur_room.name, "configuratorType": "place:room"}
+                list_place.append(cur_place)
+            else:
+                for zone in cur_room.zones:
+                    zone_id = cur_room.id.replace(" ", "_") + "_" + zone.lower()
+                    cur_place = {"id": zone_id, "name": cur_room.name + " - " + zone, "configuratorType": "place:room"}
+                    list_place.append(cur_place)
 
         df_place = pd.DataFrame(list_place)
         for col_to_add in CompassDataGenerator.PLACE_COLUMNS:
@@ -363,9 +369,22 @@ class CompassDataGenerator:
         if self.conference.program is None:
             raise Exception("The program is not defined, so the agenda can't be generated")
 
-        for session_info in self.conference.program.sessions:
-            timeslot, room, session = session_info
+        # Reorganise sessions
+        processed_sessions = []
+        for session, timeslot, room, zone_idx in self.conference.program.sessions:
+            zone = None
+            if room.nb_zones > 1:
+                place_id = room.name
+            else:
+                zone = room.zones[zone_idx]
+                place_id = room.id.replace(" ", "_") + "_" + zone.replace(" ", "_")
 
+            if (len(processed_sessions) > 0) and (processed_sessions[-1][0] == session):
+                processed_sessions[-1][-1].append(place_id)
+            else:
+                processed_sessions.append([session, timeslot, [place_id]])
+
+        for session, timeslot, places in processed_sessions:
             # Non presentation session have a specific use case
             if not isinstance(session, PresentationSession):
                 self._logger.debug(
@@ -379,13 +398,15 @@ class CompassDataGenerator:
                         "name": session.name,
                         "subtitle": session.id,
                         "orderingName": session.id,
-                        "placeId_1": room.id.replace(" ", "_"),
                         "date": timeslot.start.strftime("%Y-%m-%d"),
                         "startTime": timeslot.start.strftime("%H:%M"),
                         "endTime": timeslot.end.strftime("%H:%M"),
                         "configuratorType": "timeslot:session",
                         "classifierId_1": "social_session",
                     }
+                    for i_place, place_id in enumerate(places, 1):
+                        cur_session[f"placeId_{i_place}"] = place_id
+
                 elif isinstance(session, InterspeechEvent):
                     cur_session = {
                         "id": f"timeslot_{session.id}_session",
@@ -393,13 +414,14 @@ class CompassDataGenerator:
                         "subtitle": session.id,
                         "orderingName": session.id,
                         "info": session.description,
-                        "placeId_1": room.id.replace(" ", "_"),
                         "date": timeslot.start.strftime("%Y-%m-%d"),
                         "startTime": timeslot.start.strftime("%H:%M"),
                         "endTime": timeslot.end.strftime("%H:%M"),
                         "configuratorType": "timeslot:session",
                         "classifierId_1": str(session.event_type).lower(),
                     }
+                    for i_place, place_id in enumerate(places, 1):
+                        cur_session[f"placeId_{i_place}"] = place_id
                 else:
                     raise Exception(f"The non presentation session type {type(session)} is not supported")
 
@@ -416,19 +438,19 @@ class CompassDataGenerator:
                 "name": session.name,
                 "subtitle": session.id,
                 "orderingName": session.id,
-                "placeId_1": room.id.replace(" ", "_"),
                 "date": timeslot.start.strftime("%Y-%m-%d"),
                 "startTime": timeslot.start.strftime("%H:%M"),
                 "endTime": timeslot.end.strftime("%H:%M"),
                 "configuratorType": "timeslot:session",
                 "classifierId_1": f"{session_type}_session",
             }
+            for i_place, place_id in enumerate(places, 1):
+                cur_session[f"placeId_{i_place}"] = place_id
 
             # FIXME: this is a ugly patch!
             # if not (isinstance(session, OralSession) or isinstance(session, PosterSession)):
             if not ((type(session) is OralSession) or (type(session) is PosterSession) or (type(session) is ShowAndTellSession)):
                 cur_session["id"] = cur_session["id"] + "_session"
-                print(cur_session)
 
             # Add session chairs
             if session.chairs is not None:

@@ -21,10 +21,10 @@
 
 \BLOCK{ for session_type, color_info in known_session_types.items() }
 
-%% \VAR{session_type.capitalize()} colour information
+%% \VAR{session_type.replace('_', ' ').title().replace(' ', '')} colour information
 \BLOCK{ for scope, html_code in color_info.items() }
-\definecolor{\VAR{session_type.capitalize()}\VAR{scope.capitalize()}Colour}{HTML}{\VAR{html_code}}
-\colorlet{\VAR{session_type.capitalize()}\VAR{scope.capitalize()}Colour}{\VAR{session_type.capitalize()}\VAR{scope.capitalize()}Colour}
+\definecolor{\VAR{session_type.replace('_', ' ').title().replace(' ', '')}\VAR{scope.capitalize()}Colour}{HTML}{\VAR{html_code}}
+\colorlet{\VAR{session_type.replace('_', ' ').title().replace(' ', '')}\VAR{scope.capitalize()}Colour}{\VAR{session_type.replace('_', ' ').title().replace(' ', '')}\VAR{scope.capitalize()}Colour}
 \BLOCK{ endfor }
 
 \BLOCK{ endfor }
@@ -34,9 +34,9 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 \BLOCK{ for session_type in unknown_session_types }
-%% \VAR{session_type.capitalize()} colour information
+%% \VAR{session_type.replace('_', ' ').title().replace(' ', '')} colour information
 \BLOCK{ for scope, _ in default_colors.items() }
-\colorlet{\VAR{session_type.capitalize()}\VAR{scope.capitalize()}Colour}{Default\VAR{scope.capitalize()}Colour}
+\colorlet{\VAR{session_type.replace('_', ' ').title().replace(' ', '')}\VAR{scope.capitalize()}Colour}{Default\VAR{scope.capitalize()}Colour}
 \BLOCK{ endfor }
 \BLOCK{ endfor }
 
@@ -47,9 +47,9 @@
 \tcbset{
     default/.style={colframe=DefaultForegroundColour, colback=DefaultBackgroundColour},
     \BLOCK{ for session_type, _ in known_session_types.items() }
-    \VAR{session_type}/.style={{colframe=\VAR{session_type.capitalize()}ForegroundColour, colback=\VAR{session_type.capitalize()}BackgroundColour}},
+    \VAR{session_type}/.style={{colframe=\VAR{session_type.replace('_', ' ').title().replace(' ', '')}ForegroundColour, colback=\VAR{session_type.replace('_', ' ').title().replace(' ', '')}BackgroundColour}},
     \BLOCK{ endfor }
     \BLOCK{ for session_type in unknown_session_types }
-    \VAR{session_type}/.style={{colframe=\VAR{session_type.capitalize()}ForegroundColour, colback=\VAR{session_type.capitalize()}BackgroundColour}},
+    \VAR{session_type}/.style={{colframe=\VAR{session_type.replace('_', ' ').title().replace(' ', '')}ForegroundColour, colback=\VAR{session_type.replace('_', ' ').title().replace(' ', '')}BackgroundColour}},
     \BLOCK{ endfor }
 }

@@ -1,9 +1,13 @@
-\BLOCK{ for session in sessions }
-  \BLOCK{ for presentation in session.presentations }
+\BLOCK{ for session, timeslot, room, zone in sessions }
+\BLOCK{ for presentation in session.presentations }
     \BLOCK{ if presentation | is_keynote }
 \BLOCK{ set presenter = presentation.presenters[0] }
 \pagetarget{\VAR{session.id}}{\section*{ \VAR{presentation.title | latexify}}}
 \VAR{presenter.str_with_flatten_affiliations(None, short=True, markers=False) | latexify}
+
+\begin{center}
+{\large \faCalendar\ \VAR{timeslot.start | extract_verbose_date} \hspace{1mm} \faClockO~{\VAR{timeslot | format_timeslot}}\ -\ \faMapMarker\ \textbf{\VAR{room.name} \BLOCK{- if (room.nb_zones > 1)} - \VAR{room.zones[zone_idx]} \BLOCK{- endif }}}
+\end{center}
 
 \subsection*{Abstract}
 \VAR{presentation.abstract | latexify}

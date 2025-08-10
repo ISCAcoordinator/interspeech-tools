@@ -223,6 +223,7 @@ class CMTSerialiser(ISCAObject):
                 if cur_presenter is None:
 
                     m_identity = CMT_AUTHOR_ELTS_REGEXP.match(m_full.group(1))
+                    assert m_identity is not None, f"The format of the author is not valid for: {m_full.group(1)}"
                     pres_firstname = m_identity.group(1)
                     middle_initial = m_identity.group(2)
                     pres_lastname = m_identity.group(3)
@@ -234,6 +235,7 @@ class CMTSerialiser(ISCAObject):
                     for aff_str in m_full.group(2).split(CMT_AFFILIATION_SEPARATOR):
                         aff_str = aff_str.strip()
                         m_affiliation = CMT_AFFILIATION_REGEXP.match(aff_str)
+                        assert m_affiliation is not None, f"The format of the affiliation is not valid for: {aff_str}"
                         affiliation = Affiliation(m_affiliation.group(2), m_affiliation.group(3), m_affiliation.group(1))
                         affiliations.append(affiliation)
 
@@ -618,11 +620,14 @@ class CMTSerialiser(ISCAObject):
             failed_papers = 0
             word_papers = 0
             no_pdf = 0
+
+            # Else go through not
             for _, paper_info in df.iterrows():
                 paper_id = paper_info["Paper ID"]
 
                 # Ignore withdrawn papers
-                if ("Withdrawn" in paper_info) and (paper_info["Withdrawn"]):
+                withdrawn = paper_info.get("Withdrawn", False)
+                if withdrawn:
                     self.logger.info(f"[{paper_id}] The paper is withdrawn")
                     continue
 
@@ -649,7 +654,7 @@ class CMTSerialiser(ISCAObject):
                         if (pdf_path is not None) and pdf_path.exists():
                             title, authors = load_pdf_information(pdf_path)
                             cur_paper.title = title
-                            cur_paper.authors = authors  # TODO: for now it is not linked to any email
+                            cur_paper.replace_authors(authors)  # TODO: for now it is not linked to any email
 
                             self.logger.debug(
                                 f"[{paper_id}] Metadata extracted from the PDF {pdf_path}",
@@ -717,9 +722,7 @@ class CMTSerialiser(ISCAObject):
             bs_paper_ids.add(str(bs_row["Paper ID"]))
         return bs_paper_ids
 
-    def _load_keynotes(
-        self, session_summary_file: pathlib.Path, papers: dict[str, Paper] | None = None
-    ) -> tuple[dict[str, Keynote], dict[str, list[Person]]]:
+    def _load_keynotes(self, session_summary_file: pathlib.Path) -> tuple[dict[str, Keynote], dict[str, list[Person]]]:
         df = load_excel(
             session_summary_file,
             sheet_name=CMT_SESSION_KEYNOTES_SHEET_NAME,
@@ -1285,7 +1288,7 @@ class CMTSerialiser(ISCAObject):
 
                 # TODO: add affiliations
                 list_aff = [str(author.default_affiliation)]
-                for aff, paper_id in author.paper_affiliations.items():
+                for aff in author.paper_affiliations[paper_id]:
                     list_aff.append(str(aff))
                 author_str += f"({CMT_AFFILIATION_SEPARATOR.join(list_aff)})"
 

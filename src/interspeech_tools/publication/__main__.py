@@ -138,7 +138,6 @@ def main():
     args = arg_parser.parse_args()
     configure_logger(args)
 
-    # Call the appropriate command
     if args.subcommand:
         args.func(args)
     else:

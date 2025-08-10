@@ -39,7 +39,7 @@ Issues = "https://github.com/seblemaguer/interspeech_tools/issues"
 git = "https://github.com/seblemaguer/interspeech_tools.git"
 
 [project.scripts]
-is_pub="interspeech_tools.publication.main:main"
+is_pub="interspeech_tools.publication.__main__:main"
 
 [tool.black]
 line-length = 130

@@ -53,6 +53,7 @@
 
 
 {
+    \hypersetup{linkcolor=DefaultForegroundColour}%
     % We defined the background picture design by the graphic designer
     \AddToShipoutPictureBG*{%
         \AtPageLowerLeft{%
@@ -61,7 +62,7 @@
     }%
 
     \setcounter{secnumdepth}{0}
-    \setcounter{tocdepth}{1}
+    \setcounter{tocdepth}{0}
 
     \begingroup
     % \parindent 0pt \parfillskip 0pt \leftskip 0cm % \rightskip 1cm
@@ -71,6 +72,7 @@
     {}
     {\leavevmode\leftskip 0cm\relax}
     {%
+        \color{DefaultForegroundColour}
         \hfill\bfseries\Large%
         \makebox[9.5cm][r]{%
             \etocname
@@ -80,15 +82,13 @@
         \par\hfill\rule{10cm}{1.5pt}\par%\vspace{0.5cm}
     }{\bigskip}
 
-    % Stylize the title
+    % Stylize the title (FIXME: a lot of things are hardcoded there)
     \etocsettocstyle{%
-        % \makebox[9.5cm][R]{%
-        %     \begin{center}
-        %         \bfseries\fontsize{50}{60}\selectfont Content%
-        %     \end{center}
-        % }
+        \vspace*{2cm}
+        \hfill\makebox[9.5cm][c]{\textcolor{DefaultForegroundColour}{\bfseries\fontsize{50}{60}\selectfont Content}}%
+        \vspace{1cm}%
         ~ % NOTE: needed to ensure vspace is taken into account
-        \par\vspace{2cm}\hfill\rule{10cm}{1.5pt}%
+        \par\hfill\textcolor{DefaultForegroundColour}{\rule{10cm}{1.5pt}}%
         \par%\vspace{0.5cm}%
     }{}
 

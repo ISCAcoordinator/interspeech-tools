@@ -13,6 +13,7 @@ from isca.model.program import (
     SocialSession,
 )
 from ...model import (
+    BlueSkyPresentation,
     Interspeech,
     InterspeechEvent,
     SpecialSession,
@@ -35,6 +36,7 @@ SPECIFIC_PRESENTATION_IDS = {
     ShowAndTellPresentation: "showandtell",
     SpecialPresentation: "special",
     SurveyTalk: "survey",
+    BlueSkyPresentation: "bluesky",
 }
 GENERIC_PRESENTATION_IDS = {
     OralPresentation: "oral",
@@ -84,8 +86,8 @@ def generate_theme_file(conf: Interspeech, output_file: pathlib.Path, template_e
     for scope, html_code in conf.theme["colors"].items():
         default_colors[scope] = html_code.replace("#", "")
 
-    unknown_session_types = list()
-    known_session_types = dict()
+    unknown_types = list()
+    known_types = dict()
     for elt, elt_info in conf.theme.items():
         # Ignore the default key
         if elt in ("colors", "font", "footer"):
@@ -93,26 +95,34 @@ def generate_theme_file(conf: Interspeech, output_file: pathlib.Path, template_e
 
         #
         if "colors" not in elt_info:
-            unknown_session_types.append(elt)
+            unknown_types.append(elt)
         else:
-            known_session_types[elt] = dict()
+            known_types[elt] = dict()
             for scope, html_code in elt_info["colors"].items():
-                known_session_types[elt][scope] = html_code.replace("#", "")
+                known_types[elt][scope] = html_code.replace("#", "")
 
     session_types = set()
     for session in conf.sessions:
         session_types.add(get_session_type(session))
 
     for session_type in session_types:
-        if session_type not in known_session_types:
-            unknown_session_types.append(session_type)
+        if session_type not in known_types:
+            unknown_types.append(session_type)
+
+    presentation_types = set()
+    for presentation_type in SPECIFIC_PRESENTATION_IDS.values():
+        presentation_types.add(presentation_type)
+
+    for presentation_type in presentation_types:
+        if presentation_type not in known_types:
+            unknown_types.append(presentation_type)
 
     day_program_template = template_engine.get_template("colour.tex.jinja2")
     with open(output_file, "w") as outfile:
         outfile.write(
             day_program_template.render(
                 default_colors=default_colors,
-                known_session_types=known_session_types,
-                unknown_session_types=unknown_session_types,
+                known_types=known_types,
+                unknown_types=unknown_types,
             )
         )

@@ -19,12 +19,12 @@
 %% Colours not defined in the configuration
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-\BLOCK{ for session_type, color_info in known_session_types.items() }
+\BLOCK{ for cur_type, color_info in known_types.items() }
 
-%% \VAR{session_type.replace('_', ' ').title().replace(' ', '')} colour information
+%% \VAR{cur_type.replace('_', ' ').title().replace(' ', '')} colour information
 \BLOCK{ for scope, html_code in color_info.items() }
-\definecolor{\VAR{session_type.replace('_', ' ').title().replace(' ', '')}\VAR{scope.capitalize()}Colour}{HTML}{\VAR{html_code}}
-\colorlet{\VAR{session_type.replace('_', ' ').title().replace(' ', '')}\VAR{scope.capitalize()}Colour}{\VAR{session_type.replace('_', ' ').title().replace(' ', '')}\VAR{scope.capitalize()}Colour}
+\definecolor{\VAR{cur_type.replace('_', ' ').title().replace(' ', '')}\VAR{scope.capitalize()}Colour}{HTML}{\VAR{html_code}}
+\colorlet{\VAR{cur_type.replace('_', ' ').title().replace(' ', '')}\VAR{scope.capitalize()}Colour}{\VAR{cur_type.replace('_', ' ').title().replace(' ', '')}\VAR{scope.capitalize()}Colour}
 \BLOCK{ endfor }
 
 \BLOCK{ endfor }
@@ -33,10 +33,10 @@
 %% Colours not defined in the configuration (so defaulting)
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-\BLOCK{ for session_type in unknown_session_types }
-%% \VAR{session_type.replace('_', ' ').title().replace(' ', '')} colour information
+\BLOCK{ for cur_type in unknown_types }
+%% \VAR{cur_type.replace('_', ' ').title().replace(' ', '')} colour information
 \BLOCK{ for scope, _ in default_colors.items() }
-\colorlet{\VAR{session_type.replace('_', ' ').title().replace(' ', '')}\VAR{scope.capitalize()}Colour}{Default\VAR{scope.capitalize()}Colour}
+\colorlet{\VAR{cur_type.replace('_', ' ').title().replace(' ', '')}\VAR{scope.capitalize()}Colour}{Default\VAR{scope.capitalize()}Colour}
 \BLOCK{ endfor }
 \BLOCK{ endfor }
 
@@ -46,10 +46,10 @@
 
 \tcbset{
     default/.style={colframe=DefaultForegroundColour, colback=DefaultBackgroundColour},
-    \BLOCK{ for session_type, _ in known_session_types.items() }
-    \VAR{session_type}/.style={{colframe=\VAR{session_type.replace('_', ' ').title().replace(' ', '')}ForegroundColour, colback=\VAR{session_type.replace('_', ' ').title().replace(' ', '')}BackgroundColour}},
+    \BLOCK{ for cur_type, _ in known_types.items() }
+    \VAR{cur_type}/.style={{colframe=\VAR{cur_type.replace('_', ' ').title().replace(' ', '')}ForegroundColour, colback=\VAR{cur_type.replace('_', ' ').title().replace(' ', '')}BackgroundColour}},
     \BLOCK{ endfor }
-    \BLOCK{ for session_type in unknown_session_types }
-    \VAR{session_type}/.style={{colframe=\VAR{session_type.replace('_', ' ').title().replace(' ', '')}ForegroundColour, colback=\VAR{session_type.replace('_', ' ').title().replace(' ', '')}BackgroundColour}},
+    \BLOCK{ for cur_type in unknown_types }
+    \VAR{cur_type}/.style={{colframe=\VAR{cur_type.replace('_', ' ').title().replace(' ', '')}ForegroundColour, colback=\VAR{cur_type.replace('_', ' ').title().replace(' ', '')}BackgroundColour}},
     \BLOCK{ endfor }
 }

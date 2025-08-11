@@ -3,9 +3,9 @@
 \BLOCK{ for author in (authors | sort_authors) }
     \BLOCK{ for presentation in (author | list_presentations) }
         \BLOCK{ if loop.index == 1 }
-            {\footnotesize \VAR{author.lastname | latexify}, \VAR{author.firstname | latexify}\dotfill \authorpaperbox{\hyperlink{\VAR{presentation | short_presentation_id}}{\VAR{presentation | short_presentation_id}} \hfill [\pageref*{\VAR{presentation | short_presentation_id}}]}} \newline
+            {\footnotesize \VAR{author.lastname | latexify}, \VAR{author.firstname | latexify}\dotfill \authorpaperbox{\hyperlink{\VAR{presentation | short_presentation_id}}{\color{DefaultForegroundColour} \VAR{presentation | short_presentation_id} \hfill [\pageref*{\VAR{presentation | short_presentation_id}}]}}} \newline
         \BLOCK{ else }
-            {\footnotesize~\hfill\authorpaperbox{\hyperlink{\VAR{presentation | short_presentation_id}}{\VAR{presentation | short_presentation_id}} \hfill [\pageref*{\VAR{presentation | short_presentation_id}}]}} \newline
+            {\footnotesize~\hfill\authorpaperbox{\hyperlink{\VAR{presentation | short_presentation_id}}{\color{DefaultForegroundColour} \VAR{presentation | short_presentation_id} \hfill [\pageref*{\VAR{presentation | short_presentation_id}}]}}} \newline
         \BLOCK{ endif }
     \BLOCK{ endfor }
 \BLOCK{ endfor }

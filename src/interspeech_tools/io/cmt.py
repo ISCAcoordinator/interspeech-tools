@@ -480,6 +480,18 @@ class CMTSerialiser(ISCAObject):
                     if email == "":
                         raise Exception(cur_person)
                     speaker = Speaker.from_person(cur_person)
+
+                    # Affiliation is better in this spreadsheet
+                    country = None
+                    if not pd.isna(speaker_row["Country"]):
+                        country = str(speaker_row["Country"]).strip()
+
+                    affiliation = Affiliation(
+                        institute=str(speaker_row["Organization"]).strip(),
+                        country=country,
+                    )
+                    speaker.default_affiliation = affiliation
+
                 else:
 
                     first_name = str(speaker_row["First Name"]).strip()

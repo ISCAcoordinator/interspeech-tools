@@ -47,9 +47,9 @@
 \tcbset{
     default/.style={colframe=DefaultForegroundColour, colback=DefaultBackgroundColour},
     \BLOCK{ for cur_type, _ in known_types.items() }
-    \VAR{cur_type}/.style={{colframe=\VAR{cur_type.replace('_', ' ').title().replace(' ', '')}ForegroundColour, colback=\VAR{cur_type.replace('_', ' ').title().replace(' ', '')}BackgroundColour}},
+    \VAR{cur_type}/.style={{coltext=\VAR{cur_type.replace('_', ' ').title().replace(' ', '')}ForegroundColour, , colframe=\VAR{cur_type.replace('_', ' ').title().replace(' ', '')}ForegroundColour, colback=\VAR{cur_type.replace('_', ' ').title().replace(' ', '')}BackgroundColour}},
     \BLOCK{ endfor }
     \BLOCK{ for cur_type in unknown_types }
-    \VAR{cur_type}/.style={{colframe=\VAR{cur_type.replace('_', ' ').title().replace(' ', '')}ForegroundColour, colback=\VAR{cur_type.replace('_', ' ').title().replace(' ', '')}BackgroundColour}},
+    \VAR{cur_type}/.style={{coltext=\VAR{cur_type.replace('_', ' ').title().replace(' ', '')}ForegroundColour, colframe=\VAR{cur_type.replace('_', ' ').title().replace(' ', '')}ForegroundColour, colback=\VAR{cur_type.replace('_', ' ').title().replace(' ', '')}BackgroundColour}},
     \BLOCK{ endfor }
 }

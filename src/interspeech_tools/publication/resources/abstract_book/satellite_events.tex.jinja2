@@ -1,11 +1,13 @@
 \BLOCK{ for event in events }
-
+\begin{minipage}[t]{\linewidth}
 \section*{ \VAR{event.id | latexify} - \VAR{event.name | latexify} }
-\underline{\textbf{date}:} \VAR{event.str_dates} \\
-\underline{\textbf{location}:} \VAR{event.location}
+
+\begin{center}
+{\large \faCalendar\ \VAR{event.str_dates} \faMapMarker\ \VAR{event.location}}
+\end{center}
+
+\par \VAR{event.description |latexify}
+\end{minipage}
 
 \bigskip
-
-\VAR{event.description |latexify}
-
 \BLOCK{ endfor }

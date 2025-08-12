@@ -1,4 +1,13 @@
 \BLOCK{ for session, timeslot, place in sessions }
+\BLOCK{ if (session |type_session) == "keynote"}
+\keynotesessionslot{\VAR{session.id}}
+            {\VAR{session.name | compact_numbers}}
+            {\VAR{session.start | extract_verbose_date}}
+            {\VAR{timeslot | format_timeslot}}
+            {\VAR{place}}
+            {\VAR{session | type_session}}
+            {\VAR{session | chairs}}
+\BLOCK{ else }
 \sessionslot{\VAR{session.id}}
             {\VAR{session.name | compact_numbers}}
             {\VAR{session.start | extract_verbose_date}}
@@ -6,6 +15,8 @@
             {\VAR{place}}
             {\VAR{session | type_session}}
             {\VAR{session | chairs}}
+\BLOCK{ endif }
+
 
   \BLOCK{ for presentation in session.presentations }
     \BLOCK{ if presentation | is_survey }

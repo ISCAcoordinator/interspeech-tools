@@ -1,6 +1,6 @@
 \BLOCK{ for session, timeslot, room, zone_idx in sessions }
 
-\pagetarget{\VAR{session.id}}{\section*{ \VAR{session.name | latexify}}}
+\section*{ \VAR{session.name | latexify}}
 
 \begin{center}
 {\large \faCalendar\ \VAR{timeslot.start | extract_verbose_date} \hspace{1mm} \faClockO~{\VAR{timeslot | format_timeslot}}\ -\ \faMapMarker\ \textbf{\VAR{room.name} \BLOCK{- if (room.nb_zones > 1)} - \VAR{room.zones[zone_idx]} \BLOCK{- endif }}}

@@ -1,8 +1,14 @@
 \BLOCK{ for presentation, room, timeslot, zone_idx in presentations }
 
+\begin{minipage}[t]{\linewidth}
 \textbf{\VAR{presentation | short_presentation_id} - \VAR{presentation.title}} \\
-\VAR{presentation.presented_paper | authors}\\
+\VAR{presentation.presented_paper | authors}
+
+\vspace{0.1cm}
+
 \emph{\faCalendar~\VAR{timeslot.start | extract_verbose_date}\ \faClockO~\VAR{timeslot | format_timeslot(False)} - \faMapMarker~\VAR{room.name} \BLOCK{- if (room.nb_zones > 1)}- \VAR{room.zones[zone_idx]} \BLOCK{- endif } }
-\bigskip
+\end{minipage}
+
+\vspace{0.5cm}
 
 \BLOCK{ endfor }

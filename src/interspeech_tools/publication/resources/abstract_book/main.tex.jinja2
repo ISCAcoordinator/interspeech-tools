@@ -1,10 +1,20 @@
-\documentclass[twoside, abstract]{\VAR{classname}}
+\documentclass[twoside, abstract, openany]{\VAR{classname}}
 
-\usepackage{fontspec} % <--- enables Unicode fonts with LuaLaTeX or XeLaTeX
-% \setmainfont{Latin Modern Roman}
+\usepackage{fontspec}
+\usepackage{polyglossia}
+
+\setmainlanguage{english}
+\setotherlanguage{greek}
+
 \setmainfont{Charis SIL}
 \setsansfont{Charis SIL}
-% \newfontfamily\textcal[Ligatures=TeX]{Tangerine}
+\newfontfamily\greekfont{Charis SIL}
+\newfontfamily\greekfontsf{Charis SIL}
+
+\IfFileExists{./Tangerine.ttf}
+{\newfontfamily\textcal[Path=./, Ligatures=TeX, Scale=2]{Tangerine.ttf}}
+{}
+
 
 \usepackage{ragged2e}
 \usepackage{hyphenat}
@@ -134,6 +144,10 @@
 }}
 {}
 
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%% General information
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \phantomsection
 \addcontentsline{toc}{chapter}{General Information}
 \chapter*{General Information}
@@ -167,12 +181,14 @@
 \IfFileExists{auto/best_student.tex}
 {%
 \section*{Best student paper award nominees}
+\raggedbottom
 \input{auto/best_student.tex}
 }{}
 
 \IfFileExists{auto/best_theme.tex}
 {%
 \section*{Best theme paper award nominees}
+\raggedbottom
 \input{auto/best_theme.tex}
 }{}
 
@@ -188,8 +204,14 @@
 \includepdf[pages=1,pagecommand={\thispagestyle{fancy}}]{manual/sponsors}
 }{}
 
+\IfFileExists{manual/exhibitors.pdf}
+{%
+% \section*{Organising Committee}
+\includepdf[pages=1,pagecommand={\thispagestyle{fancy}}]{manual/exhibitors}
+}{}
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%%% Some useful info
+%%% Programme overview
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 \pagestyle{onlyfoot}
@@ -198,6 +220,7 @@
         \phantomsection
         \addcontentsline{toc}{chapter}{Programme overview}%
         \chapter*{Program Overview}
+        \thispagestyle{onlyfoot}
         \def\arraystretch{1.6}%
         \linespread{0.8}
         \sffamily
@@ -214,7 +237,7 @@
 \pagestyle{fancy}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%%% Some useful info
+%%% Main components
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 \IfFileExists{auto/keynotes.tex}
@@ -222,6 +245,7 @@
 \phantomsection
 \addcontentsline{toc}{chapter}{Keynote speakers}
 \chapter*{Keynote speakers}
+\raggedbottom
 \input{auto/keynotes.tex}
 }{}
 
@@ -230,6 +254,7 @@
 \phantomsection
 \addcontentsline{toc}{chapter}{Tutorials}
 \chapter*{Tutorials}
+\raggedbottom
 \input{auto/tutorials.tex}
 }{}
 
@@ -238,6 +263,7 @@
 \phantomsection
 \addcontentsline{toc}{chapter}{Survey Talks}
 \chapter*{Survey talks}
+\raggedbottom
 \input{auto/surveys.tex}
 }{}
 
@@ -246,6 +272,7 @@
 \phantomsection
 \addcontentsline{toc}{chapter}{Special Sessions}
 \chapter*{Special Sessions}
+\raggedbottom
 \input{auto/special_sessions.tex}
 }{}
 
@@ -254,7 +281,16 @@
 \phantomsection
 \addcontentsline{toc}{chapter}{Satellite Events}
 \chapter*{Satellite Events}
+\raggedbottom
 \input{auto/satellite_events.tex}
+}{}
+
+
+\IfFileExists{manual/public_events.tex}
+{%
+\chapter*{Public Events}
+\raggedbottom
+\input{manual/public_events.tex}
 }{}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -270,26 +306,37 @@
 % %%% Actual program
 % %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-% \clearpage
-% \phantomsection
-% \addcontentsline{toc}{chapter}{Program Schedule}%
-% \pagestyle{fancy}
-% \BLOCK{ for date in content_dates }
-%     \dayschedule{\VAR{date | extract_verbose_date}}{auto/\VAR{date | extract_date}.tex}
-% \BLOCK{ endfor }
+\titleformat{name=\subsection}[block]
+{\Large\bfseries}
+{}
+{0pt}
+{\colorsection}
 
-% %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% %%% Author index part
-% %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\clearpage
+\phantomsection
+\addcontentsline{toc}{chapter}{Program Schedule}%
+\pagestyle{fancy}
+\BLOCK{ for date in content_dates }
+    \dayschedule{\VAR{date | extract_verbose_date}}{auto/\VAR{date | extract_date}.tex}
+\BLOCK{ endfor }
 
-% \phantomsection
-% \addcontentsline{toc}{chapter}{Author Index}%
-% \chapter*{Author Index}
-% \pagestyle{fancy}
-% \input{auto/authors_index.tex}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%% Author index part
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-% \IfFileExists{theme/back_cover.pdf}
-% {\includepdf[pages=1,pagecommand={\thispagestyle{plain}}]{theme/back_cover}}
-% {}
+\phantomsection
+\addcontentsline{toc}{chapter}{Author Index}%
+\chapter*{Author Index}
+\pagestyle{fancy}
+\input{auto/authors_index.tex}
+
+\IfFileExists{manual/pre_back_cover.tex}
+{\input{manual/pre_back_cover.tex}}
+{}
+
+
+\IfFileExists{theme/back_cover.pdf}
+{\includepdf[pages=1,pagecommand={\thispagestyle{plain}}]{theme/back_cover}}
+{}
 
 \end{document}

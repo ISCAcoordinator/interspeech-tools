@@ -230,8 +230,8 @@
     enhanced,
     box align=base,
     nobeforeafter,
-    colframe=DefaultForegroundColour,
-    colback=DefaultBackgroundColour,
+    colframe=SurveyForegroundColour,
+    colback=SurveyBackgroundColour,
     size=small,
     left=2pt,
     right=2pt,
@@ -246,8 +246,8 @@
     enhanced,
     box align=base,
     nobeforeafter,
-    colframe=DefaultForegroundColour,
-    colback=DefaultBackgroundColour,
+    colframe=BlueskyForegroundColour,
+    colback=BlueskyBackgroundColour,
     size=small,
     left=2pt,
     right=2pt,
@@ -292,20 +292,21 @@
 
 % Redefine the section headers
 \RequirePackage{titlesec}
-\titleformat{\chapter}[display]{\normalfont\huge\bfseries}{}{}{}{}
-\titlespacing{\chapter}{0pt}{0pt}{0pt}
+\titleformat{\chapter}
+  {\normalfont\Huge\selectfont\bfseries\color{DefaultBackgroundColour}}
+  {}
+  {1em}
+  {}
+  %[\hrule]
+\titlespacing{\chapter}{0pt}{0pt}{1cm}
 \assignpagestyle{\chapter}{fancy}
 
-\titleformat*{\section}{\normalfont\LARGE\bfseries\color{LinkColour}}
+\titleformat*{\section}{\normalfont\LARGE\bfseries}% \color{DefaultBackgroundColour}}
+\titleformat*{\subsection}{\normalfont\large\bfseries\color{DefaultBackgroundColour}}
 
 \newcommand{\colorsection}[1]{%
   \sectionbox[default]{\parbox{\dimexpr\linewidth-4\fboxsep}{\color{DefaultForegroundColour} #1}}
 }
-\titleformat{name=\subsection}[block]
-  {\Large\bfseries}
-  {}
-  {0pt}
-  {\colorsection}
 
 %%% }}}
 
@@ -348,7 +349,53 @@
 \newcommand{\sessionslot}[7]{
 	\vspace{0.5cm}
     \begin{minipage}{\linewidth} % NOTE: the use of minipage prevents the break of the page/col. between the session info.
-        \pagetarget{#1}{}\subsection[\texorpdfstring{{\color{black}[#4]} #1 - #2}{#1 - #2}]{
+        \pagetarget{#1}{\subsection[\texorpdfstring{{#4} #1 - #2}{#1 - #2}]{
+            \begin{center}
+                #1 \\
+                \vspace{0.2cm}
+                #2
+            \end{center}
+        }}
+        \vspace{-0.4cm}
+        \begin{center}
+            {\large \mode{#6} \hspace{1mm} \faMapMarker\ \textbf{#5}}
+            \vspace{1mm}
+
+            {\large \faCalendar\  #3 \hspace{1mm} \faClockO~{#4}}
+            \ifx&#7&%
+            \else
+            	\vspace{3mm}
+
+            	{\large \textbf{\underline{Session chairs :}}}
+
+                \vspace{2mm}
+
+            	{\large \textbf{#7}}
+            \fi
+        \end{center}
+    \end{minipage}
+
+    \vspace{1mm}
+
+    \begin{center}
+        \rule{0.5\linewidth}{0.75pt}
+    \end{center}
+
+    \vspace{1mm}
+}
+
+%% Command \sessionslot takes 7 arguments:
+%%    #1 the ID of the session
+%%    #2 the title of the session
+%%    #3 the date
+%%    #4 the time slot
+%%    #5 the location
+%%    #6 the mode of the slot (Oral, Special, ....
+%%    #7 chairs
+\newcommand{\keynotesessionslot}[7]{
+	\vspace{0.5cm}
+    \begin{minipage}{\linewidth} % NOTE: the use of minipage prevents the break of the page/col. between the session info.
+     \subsection[\texorpdfstring{{#4} #1 - #2}{#1 - #2}]{
             \begin{center}
                 #1 \\
                 \vspace{0.2cm}
@@ -382,7 +429,6 @@
 
     \vspace{1mm}
 }
-
 
 %% Command \presentation takes 5 arguments:
 %%    #1 The type of presentation
@@ -455,7 +501,7 @@
 %%    #1 the day formatted in the way the user of the class want
 %%    #2 the latex file containing the schedule of the day
 \newcommand{\dayschedule}[2]{
-    \section*{#1}
+    \section{#1}
     \setcounter{tocdepth}{2}
     \etocsetlocaltop.toc{section}
     \localtableofcontents

@@ -206,6 +206,14 @@ class CMTSerialiser(ISCAObject):
                 cur_person.firstname = first_name
                 cur_person.lastname = last_name
 
+            # Send a warning if the person name is suspicious
+            if (
+                ((cur_person.firstname is not None) and (cur_person.firstname.isupper() or cur_person.firstname.islower()))
+                or cur_person.lastname.isupper()
+                or cur_person.lastname.islower()
+            ):
+                self.logger.warning(f"[{paper_id}] The current person as an invalid name: {cur_person}")
+
             for affiliation in list_affiliations:
                 cur_person.add_paper_affiliation(str(paper_info["Paper ID"]), affiliation)
             paper_authors.append(cur_person)
@@ -827,7 +835,7 @@ class CMTSerialiser(ISCAObject):
 
     def _load_events(
         self, session_summary_file: pathlib.Path, timeslots: dict[str, Timeslot], rooms: dict[str, Room]
-    ) -> list[tuple[Timeslot, Room, InterspeechEvent]]:
+    ) -> list[tuple[Timeslot, Room, list[str] | None, InterspeechEvent]]:
         df = load_excel(
             session_summary_file,
             sheet_name=CMT_SESSION_EVENTS_SHEET_NAME,
@@ -837,6 +845,13 @@ class CMTSerialiser(ISCAObject):
         for _, row in df.iterrows():
             timeslot = timeslots[str(row["Timeslot name*"])]
             room = rooms[str(row["Room name*"])]
+            zones = None
+            if ("Zone" in row) and (not pd.isna(row["Zone"])):
+                if not ("," in str(row["Zone"])):
+                    zones = [row["Zone"]]
+                else:
+                    zones = [s.strip() for s in str(row["Zone"]).split(",")]
+
             organiser = str(row["Organiser"])
             event_type = str(row["Event Type"]).lower()
             if event_type == "social":
@@ -856,7 +871,7 @@ class CMTSerialiser(ISCAObject):
                     description = str(row["Description"])
                 event_session = InterspeechEvent(str(row["Event ID"]), str(row["Title"]), organiser, event_type, description)
             self._logger.warning(f"{repr(event_session)} => {repr(room)}")
-            events.append((timeslot, room, event_session))
+            events.append((timeslot, room, zones, event_session))
 
         return events
 
@@ -1165,8 +1180,12 @@ class CMTSerialiser(ISCAObject):
         # Load the events
         event_informations = self._load_events(session_summary_file, dict_timeslots, dict_rooms)
         for evt_elts in event_informations:
-            list_sessions.append(evt_elts[2])
-            program.add_session(timeslot=evt_elts[0], room=evt_elts[1], session=evt_elts[2])
+            list_sessions.append(evt_elts[3])
+            if evt_elts[2] is not None:
+                for zone in evt_elts[2]:
+                    program.add_session(timeslot=evt_elts[0], room=evt_elts[1], session=evt_elts[3], zone=zone)
+            else:
+                program.add_session(timeslot=evt_elts[0], room=evt_elts[1], session=evt_elts[3])
 
         # Load the tutorials
         tutorial_informations = self._load_tutorials(session_summary_file, dict_timeslots, dict_rooms)

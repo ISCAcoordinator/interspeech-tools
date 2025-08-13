@@ -13,6 +13,7 @@ def add_subparsers(subparsers):
     )
 
     # Add options
+    parser.add_argument("-b", "--booklet", type=str, default=None, help="The booklet to add to the archive")
     parser.add_argument("-f", "--format", type=str, default="cmt", help="The format of the input formation")
 
     # Add arguments
@@ -35,5 +36,9 @@ def main(args: argparse.Namespace):
         raise NotImplementedError(f"The format {args.format} is not supported")
     conf = serialiser.load(conf_path)
 
+    booklet_path = None
+    if args.booklet is not None:
+        booklet_path = pathlib.Path(args.booklet)
+
     archive_generator = ArchiveInputSerialiser()
-    archive_generator.dump(conf, output_root_dir)
+    archive_generator.dump(conf, output_root_dir, booklet_path=booklet_path)

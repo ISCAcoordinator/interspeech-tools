@@ -24,6 +24,7 @@
        {\VAR{presentation.title | latexify}}
        {\VAR{presentation | presenters}}
        {\VAR{session | get_presentation_timeslot(loop.index-1)}}
+       {\VAR{presentation.abstract.strip() | latexify}}
 
     \BLOCK{ elif presentation | is_bluesky }
 

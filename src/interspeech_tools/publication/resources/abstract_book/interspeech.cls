@@ -453,12 +453,13 @@
     \fi
 }
 
-%% Command \survey takes 4 arguments:
+%% Command \survey takes 5 arguments:
 %%    #1 the ID of the presentation in the session
 %%    #2 the title
 %%    #3 the presenter
 %%    #4 the time slot allocated to the presentation
-\newcommand{\survey}[4]{
+%%    #5 the abstract
+\newcommand{\survey}[5]{
 %    \surveytalk{\textbf{#1} \hspace{1mm} \resizebox{!}{3mm}{\faClockO} #4}{
     \surveytalk{\resizebox{!}{3mm}{\faClockO} #4}{
         \begin{minipage}{0.97\linewidth}
@@ -466,6 +467,13 @@
             \vspace{1mm}
 
             \noindent{\textit{#3}}
+
+            \if@abstract
+                %
+                \bigskip
+                %
+                \par\noindent #5
+            \fi
         \end{minipage}
     }
     \bigskip

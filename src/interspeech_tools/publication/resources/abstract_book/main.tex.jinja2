@@ -1,4 +1,4 @@
-\documentclass[twoside, abstract, openany]{\VAR{classname}}
+\documentclass[twoside, abstract, openany\BLOCK{if draft},draft\BLOCK{endif}]{\VAR{classname}}
 
 \usepackage{fontspec}
 \usepackage{polyglossia}
@@ -67,7 +67,7 @@
     % We defined the background picture design by the graphic designer
     \AddToShipoutPictureBG*{%
         \AtPageLowerLeft{%
-            \includegraphics[width=\paperwidth,height=\paperheight]{theme/toc_background.pdf}%
+            % \includegraphics[width=\paperwidth,height=\paperheight]{theme/toc_background.pdf} % FIXME: needs to be reintroduced properly!
         }%
     }%
 
@@ -200,14 +200,8 @@
 
 \IfFileExists{manual/sponsors.pdf}
 {%
-% \section*{Organising Committee}
 \includepdf[pages=1,pagecommand={\thispagestyle{fancy}}]{manual/sponsors}
-}{}
-
-\IfFileExists{manual/exhibitors.pdf}
-{%
-% \section*{Organising Committee}
-\includepdf[pages=1,pagecommand={\thispagestyle{fancy}}]{manual/exhibitors}
+\includepdf[pages=2,pagecommand={\thispagestyle{fancy}}]{manual/sponsors}
 }{}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

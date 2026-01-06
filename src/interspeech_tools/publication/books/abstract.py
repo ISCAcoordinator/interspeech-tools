@@ -51,7 +51,7 @@ class AbstractBookProcessor(ISCAObject):
 
         self._template_engine.filters["list_presentations"] = list_presentations
 
-    def process(self, root_output_dir: pathlib.Path) -> None:
+    def process(self, root_output_dir: pathlib.Path, draft: bool = False) -> None:
 
         root_output_dir.mkdir(exist_ok=True, parents=True)
 
@@ -103,7 +103,7 @@ class AbstractBookProcessor(ISCAObject):
                 day_program_template = self._template_engine.get_template("day_program.tex.jinja2")
                 outfilename = root_output_dir / f"{date}.tex"
                 with open(outfilename, "w") as outfile:
-                    outfile.write(day_program_template.render(sessions=rendering_sessions))
+                    outfile.write(day_program_template.render(sessions=rendering_sessions, draft=draft))
 
         # Copy photos
         for person in self._conf._annuary:
@@ -116,58 +116,58 @@ class AbstractBookProcessor(ISCAObject):
         best_students = self._template_engine.get_template("best_papers.tex.jinja2")
         outfilename = root_output_dir / "best_student.tex"
         with open(outfilename, "w") as outfile:
-            outfile.write(best_students.render(presentations=self._conf.list_student_award_nominees_presentations()))
+            outfile.write(best_students.render(presentations=self._conf.list_student_award_nominees_presentations(), draft=draft))
 
         # Best theme papers
         best_themes = self._template_engine.get_template("best_papers.tex.jinja2")
         outfilename = root_output_dir / "best_theme.tex"
         with open(outfilename, "w") as outfile:
-            outfile.write(best_themes.render(presentations=self._conf.list_theme_award_nominees_presentations()))
+            outfile.write(best_themes.render(presentations=self._conf.list_theme_award_nominees_presentations(), draft=draft))
 
         # Tutorials
         tutorial_template = self._template_engine.get_template("tutorials.tex.jinja2")
         outfilename = root_output_dir / "tutorials.tex"
         tutorials = self._conf.program.select_sessions(lambda s, t, r, z: isinstance(s, TutorialSession))
         with open(outfilename, "w") as outfile:
-            outfile.write(tutorial_template.render(tutorial_sessions=tutorials))
+            outfile.write(tutorial_template.render(tutorial_sessions=tutorials, draft=draft))
 
         # Keynotes
         keynote_template = self._template_engine.get_template("keynotes.tex.jinja2")
         keynote_sessions = self._conf.program.select_sessions(lambda s, t, r, z: isinstance(s, KeynoteSession))
         outfilename = root_output_dir / "keynotes.tex"
         with open(outfilename, "w") as outfile:
-            outfile.write(keynote_template.render(sessions=keynote_sessions))
+            outfile.write(keynote_template.render(sessions=keynote_sessions, draft=draft))
 
         # Surveys
         surveys_template = self._template_engine.get_template("surveys.tex.jinja2")
         outfilename = root_output_dir / "surveys.tex"
         with open(outfilename, "w") as outfile:
-            outfile.write(surveys_template.render(sessions=self._conf.program.sessions))
+            outfile.write(surveys_template.render(sessions=self._conf.program.sessions, draft=draft))
 
         # Special Sessions
         special_sessions_template = self._template_engine.get_template("special_sessions.tex.jinja2")
         outfilename = root_output_dir / "special_sessions.tex"
         special_sessions = self._conf.program.select_sessions(lambda s, t, r, z: isinstance(s, SpecialSession))
         with open(outfilename, "w") as outfile:
-            outfile.write(special_sessions_template.render(sessions=special_sessions))
+            outfile.write(special_sessions_template.render(sessions=special_sessions, draft=draft))
 
         # Satellites
         satellites_template = self._template_engine.get_template("satellite_events.tex.jinja2")
         outfilename = root_output_dir / "satellite_events.tex"
         with open(outfilename, "w") as outfile:
-            outfile.write(satellites_template.render(events=self._conf.satellite_events))
+            outfile.write(satellites_template.render(events=self._conf.satellite_events, draft=draft))
 
         # Reviewer index
         reviewer_template = self._template_engine.get_template("reviewers_index.tex.jinja2")
         outfilename = root_output_dir / "reviewers_index.tex"
         with open(outfilename, "w") as outfile:
-            outfile.write(reviewer_template.render(reviewers=self._conf.reviewers))
+            outfile.write(reviewer_template.render(reviewers=self._conf.reviewers, draft=draft))
 
         # Author index
         author_template = self._template_engine.get_template("authors_index.tex.jinja2")
         outfilename = root_output_dir / "authors_index.tex"
         with open(outfilename, "w") as outfile:
-            outfile.write(author_template.render(conf=self._conf, authors=self._conf.authors))
+            outfile.write(author_template.render(conf=self._conf, authors=self._conf.authors, draft=draft))
 
     def _generate_programme_table(self, timeslots: list[Timeslot], max_zones_per_page: int = 7) -> str:
 
@@ -422,7 +422,7 @@ class AbstractBookProcessor(ISCAObject):
         template = self._template_engine.get_template("program_table.tex.jinja2")
         return template.render(nb_zones=nb_zones, rooms=rooms, rows=rows)
 
-    def generate_entry_point(self, output_file: pathlib.Path):
+    def generate_entry_point(self, output_file: pathlib.Path, draft: bool = False):
         validation_main_template = self._template_engine.get_template("main.tex.jinja2")
         dates = []
 
@@ -444,4 +444,6 @@ class AbstractBookProcessor(ISCAObject):
                 content_dates.append(date)
 
         with open(output_file, "w") as f:
-            f.write(validation_main_template.render(classname="interspeech", dates=dates, content_dates=content_dates))
+            f.write(
+                validation_main_template.render(classname="interspeech", dates=dates, content_dates=content_dates, draft=draft)
+            )

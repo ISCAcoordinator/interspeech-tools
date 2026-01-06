@@ -29,6 +29,7 @@ def add_subparsers(subparsers):
     # Add options
     parser.add_argument("-b", "--bootstrap", action="store_true", help="Add all elements to generate the abstract book")
     parser.add_argument("-c", "--classname", default="interspeech", type=str, help="The LaTeX class name")
+    parser.add_argument("-d", "--draft", action="store_true", help="Activate draft mode")
     parser.add_argument(
         "--compile-tool",
         default="none",
@@ -89,10 +90,10 @@ def main(args: argparse.Namespace):
         generate_theme_file(conf, colour_file, template_engine)
 
     processor = AbstractBookProcessor(conf)
-    processor.process(generated_elements_dir)
+    processor.process(generated_elements_dir, draft=args.draft)
 
     if args.bootstrap:
-        processor.generate_entry_point(abstract_book_root_dir / "main.tex")
+        processor.generate_entry_point(abstract_book_root_dir / "main.tex", draft=args.draft)
 
     if args.compile_tool != "none":
         compile(abstract_book_root_dir / "main.tex", args.compile_tool)

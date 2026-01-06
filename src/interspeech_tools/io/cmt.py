@@ -28,6 +28,7 @@ from isca.model.program import (
     TimeslotType,
 )
 from isca.io.utils.helpers import load_excel
+from isca.io.utils.pdf import PDFLoader, PDFMetadataException
 
 from ..model import (
     Interspeech,
@@ -43,7 +44,6 @@ from ..model import (
     SpecialSession,
     ShowAndTellSession,
 )
-from .utils.pdf import load_pdf_information, WordException, PDFMetadataException
 
 ###############################################################################
 # Constants
@@ -108,6 +108,7 @@ class CMTSerialiser(ISCAObject):
         self.metadata_from_pdf = metadata_from_pdf
         self.ignore_sessions = ignore_sessions
         self._annuary = Annuary()
+        self._pdf_loader = PDFLoader(self._annuary)
         self._id_generator: dict[str, int] = dict()
 
     def _extract_df_information(self, paper_info: pd.Series) -> tuple[Paper, list[Person] | None]:
@@ -672,9 +673,10 @@ class CMTSerialiser(ISCAObject):
                 if self.metadata_from_pdf:
                     try:
                         if (pdf_path is not None) and pdf_path.exists():
-                            title, authors = load_pdf_information(pdf_path)
-                            cur_paper.title = title
-                            cur_paper.replace_authors(authors)  # TODO: for now it is not linked to any email
+
+                            pdf = self._pdf_loader.load_pdf(pdf_path, True)
+                            cur_paper.title = pdf.title
+                            cur_paper.replace_authors(pdf.authors)  # TODO: for now it is not linked to any email
 
                             self.logger.debug(
                                 f"[{paper_id}] Metadata extracted from the PDF {pdf_path}",
@@ -699,7 +701,7 @@ class CMTSerialiser(ISCAObject):
                             },
                         )
                         word_papers += 1
-                    except (PDFMetadataException, KeyError, IndexError) as ex:
+                    except (PDFMetadataException, KeyError, IndexError) as ex:  # pyright: ignore[reportUndefinedVariable]
                         self.logger.error(
                             f"[{paper_id}] Extraction of the metadata from the PDF failed, falling back on the excel spreadsheet",
                             extra={

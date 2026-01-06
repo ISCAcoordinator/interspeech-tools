@@ -53,7 +53,7 @@ import pathlib
 import re
 import pandas as pd
 from interspeech_tools.io.cmt import CMTSerialiser
-from isca.model.program import Presentation
+from isca.model.program import Presentation, ScientificSession
 
 # Helper used in the publication tool to extract a condensed version of the presentation ID
 def short_presentation_id(input: Presentation) -> str:
@@ -76,7 +76,11 @@ for session in conf.sessions:
     if isinstance(session, ScientificSession):
         for presentation in session.presentations:
             if presentation.presented_paper is not None:
-                paperid2presentationid.append({"paper ID": int(presentation.presented_paper.id), "presentation ID": short_presentation_id(presentation)})
+                paperid2presentationid.append({
+                    "paper ID": int(presentation.presented_paper.id),
+                    "presentation ID": short_presentation_id(presentation),
+                    "Presenter": ', '.join([str(s) for s in presentation.presenters])
+                })
 
 
 # Convert to a dataframe, sort by paper ID and save to an excel spreadsheet

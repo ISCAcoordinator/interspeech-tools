@@ -5,13 +5,11 @@ import re
 import pathlib
 
 # Data loading
-from ruamel.yaml import YAML
 from openpyxl import load_workbook
 import pandas as pd
 
 # Model helpers
 from isca.model.event import Conference
-from isca.model.core import ISCAObject
 from isca.model.person import Person, Speaker, Affiliation, Role, Annuary
 from isca.model.item import Paper, Session
 from isca.model.program import (
@@ -30,6 +28,7 @@ from isca.model.program import (
 from isca.io.utils.helpers import load_excel
 from isca.io.utils.pdf import PDFLoader, PDFMetadataException
 
+from ..conf import Config
 from ..model import (
     Interspeech,
     InterspeechEvent,
@@ -45,345 +44,93 @@ from ..model import (
     ShowAndTellSession,
 )
 
-###############################################################################
-# Constants
-###############################################################################
-CMT_AUTHOR_NAME_AFF_SEP = "); "
-CMT_AUTHOR_SEP = "; "
-CMT_FIRST_LAST_STEP = ", "
-CMT_CORRESPONDING_MARKER = "*"
-
-CMT_SESSION_TIMESLOTS_SHEET_NAME = "Timeslots"
-CMT_SESSION_SESSIONS_SHEET_NAME = "Sessions"
-CMT_SESSION_ROOMS_SHEET_NAME = "Rooms"
-CMT_SESSION_KEYNOTES_SHEET_NAME = "Keynotes"
-CMT_SESSION_EVENTS_SHEET_NAME = "Events"
-CMT_SESSION_TUTORIALS_SHEET_NAME = "Tutorials"
-CMT_SESSION_BLUESKY_SHEET_NAME = "BlueSky Papers"
-CMT_SESSION_SURVEY_TALKS_SHEET_NAME = "Survey Talks"
-CMT_SESSION_STUDENT_AWARD_NOMINEES_SHEET_NAME = "StudentAwardNominees"
-CMT_SESSION_THEME_AWARD_NOMINEES_SHEET_NAME = "ThemeAwardNominees"
-CMT_SESSION_PAPER_SEPARATOR = ","
-
-CMT_CHAIR_CONF_SEPARATOR = ","
-
-CMT_ROLE_SEP = ";"
-CMT_AFFILIATION_SEPARATOR = ";"
-
-CMT_FREE_SLOT_TOKEN = "<FREE>"
-
-CMT_AUTHOR_FULL_INFO_REGEXP = re.compile(r"^([^(]*)\s*\((.*)\)\s*")
-CMT_AUTHOR_ELTS_REGEXP = re.compile(
-    r"""
-    ^\s*
-    (?:([^{}]+)\s*)?
-    (?:\[([^{}]+)\]\s*)?
-    \{(.+)\}
-    \s*$
-""",
-    re.VERBOSE,
-)
-
-
-CMT_NEW_PRESENTER_FULL_INFO_REGEXP = re.compile(r"^([^(]*)\s*(?:\((.*)\)\s*)?[<]([^>]+)[>]\s*$")
-CMT_AFFILIATION_REGEXP = re.compile(
-    r"""
-    ^\s*
-    (?:\{([^}]+)\},\s*)?
-    ([^{]+)\s*
-    (?:,\s*\{([^}]+)\})?
-    \s*$
-""",
-    re.VERBOSE,
-)
-MAX_ID_NAME_LENGTH = 8
-
+from .base import Serialiser
 
 ###############################################################################
 # Core of the module
 ###############################################################################
-class CMTSerialiser(ISCAObject):
-    def __init__(self, metadata_from_pdf: bool = False, ignore_sessions: bool = False):
+class CMTSerialiser(Serialiser):
+    def __init__(self, config: Config):
         super().__init__()
-        self.metadata_from_pdf = metadata_from_pdf
-        self.ignore_sessions = ignore_sessions
         self._annuary = Annuary()
         self._pdf_loader = PDFLoader(self._annuary)
         self._id_generator: dict[str, int] = dict()
 
-    def _extract_df_information(self, paper_info: pd.Series) -> tuple[Paper, list[Person] | None]:
+        # Load the configuration
+        self.set_config(config)
 
-        paper_id = paper_info["Paper ID"]
-        author_names = str(paper_info["Author Names"]).replace(CMT_CORRESPONDING_MARKER, "").split(CMT_AUTHOR_NAME_AFF_SEP)
-        author_emails = [email.lower().strip() for email in str(paper_info["Author Emails"]).split(CMT_AUTHOR_SEP)]
-
-        # The number of elements should be the same
-        if len(author_emails) != len(author_names):
-            names = "\n".join(author_names)
-            self.logger.error(f"[{paper_id}] author names = {names}")
-            self.logger.error(f"[{paper_id}] author emails = {author_emails}")
-            raise Exception(
-                f"[{paper_id}] The number of authors ({len(author_names)}) does not match the number of emails ({len(author_emails)})"
-            )
-
-        paper_authors = list()
-        for i_author, cur_author in enumerate(author_names):
-            cur_author = cur_author.replace(CMT_CORRESPONDING_MARKER, "").strip()
-            if cur_author[-1] != ")":
-                cur_author = cur_author + ")"
-
-            match_author_affiliations = CMT_AUTHOR_FULL_INFO_REGEXP.match(cur_author)
-            if not match_author_affiliations:
-                raise Exception(f"[{paper_id}] Impossible to parse the author, please fix the spreadsheet: {cur_author}")
-
-            # Extract author information
-            middle_initial = None
-            email = author_emails[i_author]
-            cur_author = match_author_affiliations.group(1)
-            if "{" in cur_author:
-                match_author = CMT_AUTHOR_ELTS_REGEXP.match(cur_author)
-                if match_author:
-                    first_name = match_author.group(1)
-                    middle_initial = match_author.group(2)
-                    last_name = match_author.group(3)
-                else:
-                    raise Exception(f"[{paper_id}] Impossible to parse the author, please fix the spreadsheet: {cur_author}")
-            else:
-                author_elts = cur_author.split(" ")
-                author_elts = list(filter(None, author_elts))  # NOTE: helpers to ignore empty elements due to multiple space
-                last_name = author_elts[-1]
-                first_name = " ".join(author_elts[:-1])
-
-            first_name = first_name.strip() if first_name is not None else None
-            last_name = last_name.strip()
-
-            # Extract the affiliation part
-            list_affiliations = list()
-            affiliations = [s.strip() for s in match_author_affiliations.group(2).split(CMT_AFFILIATION_SEPARATOR)]
-            for f in affiliations:
-                match_affiliation = CMT_AFFILIATION_REGEXP.match(f)
-                if not match_affiliation:
-                    raise Exception(f"[{paper_id}] The following affiliation for author {cur_author} is not valid: {f}")
-
-                country = None
-                if len(match_affiliation.groups()) > 2:
-                    country = match_affiliation.group(3)
-
-                short = match_affiliation.group(2)
-                long = f"{match_affiliation.group(1)}, {short}"
-                affiliation = Affiliation(short=short, long=long, country=country)
-                list_affiliations.append(affiliation)
-            assert len(list_affiliations) > 0
-
-            cur_person = self._annuary.find_person_by_email(email)
-
-            # # TODO: this is too naive for now, no possibility
-            # if cur_person is None:
-            #     candidates = self._annuary.find_person_by_name(first_name, last_name, middle_initial)
-            #     if len(candidates) > 0:
-            #         if len(candidates) > 1:
-            #             raise Exception(f"[{paper_id}] Too many candidates for {first_name} {'[' + middle_initial + ']' if middle_initial is not None else ''} {last_name}")
-            #         cur_person = list(candidates)[0]
-
-            if cur_person is None:
-                id = self._generate_id(last_name)
-                cur_person = Person(
-                    id,
-                    first_name,
-                    last_name,
-                    email=email,
-                    default_affiliation=list_affiliations[0],
-                    roles=set([Role.AUTHOR]),
-                )
-                self._annuary.add(cur_person)
-            else:
-                cur_person.add_role(Role.AUTHOR)
-                if cur_person.firstname != first_name:
-                    self.logger.debug(
-                        f"[{paper_id}] Change the name of {email} from {cur_person.name} to {first_name} {{{last_name}}}"
-                    )
-
-                # NOTE: The information from the PDF are likely more reliable
-                cur_person.firstname = first_name
-                cur_person.lastname = last_name
-
-            # Send a warning if the person name is suspicious
-            if (
-                ((cur_person.firstname is not None) and (cur_person.firstname.isupper() or cur_person.firstname.islower()))
-                or cur_person.lastname.isupper()
-                or cur_person.lastname.islower()
-            ):
-                self.logger.warning(f"[{paper_id}] The current person as an invalid name: {cur_person}")
-
-            for affiliation in list_affiliations:
-                cur_person.add_paper_affiliation(str(paper_info["Paper ID"]), affiliation)
-            paper_authors.append(cur_person)
-
-        # Extract presenters (TODO: This is a bit too specific, will have to check with Antoine about this)
-        presenters = None
-        if ("Q7 (New presenter)" in paper_info) and (not pd.isna(paper_info["Q7 (New presenter)"])):
-            m_full = CMT_NEW_PRESENTER_FULL_INFO_REGEXP.match(paper_info["Q7 (New presenter)"])
-            if m_full:
-                self.logger.info(f"Adding alternative presenter \"{paper_info['Q7 (New presenter)']}\" to paper {paper_id}")
-
-                pres_email = m_full.group(3).lower().strip()
-
-                cur_presenter = self._annuary.find_person_by_email(pres_email)
-                if cur_presenter is None:
-
-                    m_identity = CMT_AUTHOR_ELTS_REGEXP.match(m_full.group(1))
-                    assert m_identity is not None, f"The format of the author is not valid for: {m_full.group(1)}"
-                    pres_firstname = m_identity.group(1)
-                    middle_initial = m_identity.group(2)
-                    pres_lastname = m_identity.group(3)
-
-                    if m_full.group(2) is None:
-                        raise Exception(f"The presenter \"{paper_info['Q7 (New presenter)']}\" does nor respect the format")
-
-                    affiliations = []
-                    for aff_str in m_full.group(2).split(CMT_AFFILIATION_SEPARATOR):
-                        aff_str = aff_str.strip()
-                        m_affiliation = CMT_AFFILIATION_REGEXP.match(aff_str)
-                        assert m_affiliation is not None, f"The format of the affiliation is not valid for: {aff_str}"
-                        short = m_affiliation.group(3)
-                        if short is None:
-                            long = None
-                            short = m_affiliation.group(2)
-                        else:
-                            long = f"{m_affiliation.group(2)}, {short}"
-                        affiliation = Affiliation(short=short, long=long, country=m_affiliation.group(1))
-                        affiliations.append(affiliation)
-
-                    id = self._generate_id(pres_lastname)
-                    cur_presenter = Person(
-                        id,
-                        pres_firstname,
-                        pres_lastname,
-                        affiliations[0],
-                        pres_email,
-                        middle_initial=middle_initial,
-                        paper_affiliations={str(paper_id): affiliations},
-                    )  # FIXME: force unknwon affiliation
-                    self._annuary.add(cur_presenter)
-
-                cur_presenter.add_role(Role.PRESENTER)
-                presenters = [cur_presenter]
-            else:
-                raise Exception(f"The presenter \"{paper_info['Q7 (New presenter)']}\" does nor respect the format")
-
-        elif "Q7 (Presenter - Value)" in paper_info:
-            presenter_idx = int(paper_info["Q7 (Presenter - Value)"]) - 1
-
-            if presenter_idx >= len(paper_authors):
-                raise IndexError(
-                    f"[{paper_id}] Author {presenter_idx} can't be a presenter as there are only {len(paper_authors)} authors"
-                )
-            cur_presenter = paper_authors[presenter_idx]
-            cur_presenter.add_role(Role.PRESENTER)
-            presenters = [cur_presenter]
-        else:
-            self.logger.warning(
-                f"[{paper_id}] doesn't have a presenter",
-                extra={"paper_id": str(paper_info["Paper ID"]), "paper_serie": paper_info},
-            )
-
-        abstract = None
-        if "Abstract" in paper_info:
-            abstract = str(paper_info["Abstract"])
-        elif "Paper Abstract" in paper_info:
-            abstract = str(paper_info["Paper Abstract"])
-        abstract = re.sub(r"(?<!\n)\n(?=\S)", " ", abstract)  # NOTE: merge consecutive lines
-
-        # Fix title
-        title = str(paper_info["Paper Title"])
-        if ("\n" in title) or ("\r" in title):
-            title = title.replace("\r", "")
-            title = " ".join([t.strip() for t in title.split("\n")])
-
-        resource = None
-        if "Q3 (Link to resource (optional))" in paper_info:
-            resource = str(paper_info["Q3 (Link to resource (optional))"])
-            if not resource.startswith("https://doi.org/"):
-                if resource.startswith("10."):  # FIXME: hardcoded number prefix
-                    resource = "https://doi.org/" + resource
-                else:
-                    resource = None
-
-        return (
-            Paper(str(paper_info["Paper ID"]), title, paper_authors, abstract=abstract, resource=resource),
-            presenters,
-        )
-
-    def load(self, conf_metadata_file: pathlib.Path) -> Conference:
-        yaml = YAML(typ="rt", pure=True)
-        with open(conf_metadata_file) as f_in:
-            conf_info = yaml.load(f_in.read())
-
-        if "alternative_emails" in conf_info:
-            for reference_email, alternative_emails in conf_info["alternative_emails"].items():
+    def set_config(self, config: Config):
+        self._config = config
+        if "alternative_emails" in self._config:
+            for reference_email, alternative_emails in self._config["alternative_emails"].items():
                 for alternative_email in alternative_emails:
                     self._annuary.add_alternative_email(reference_email, alternative_email)
 
+        self._metadata_from_pdf = self._config["input_data"]["metadata_from_pdf"]
+        self._ignore_sessions = self._config["input_data"]["ignore_sessions"]
+        self._affiliation_regexp = re.compile(self._config["cmt"]["affiliation_regexp"])
+        self._new_presenter_full_info_regexp = re.compile(self._config["cmt"]["new_presenter_full_info_regexp"])
+        self._author_elts_regexp = re.compile(self._config["cmt"]["author_elts_regexp"])
+        self._author_full_info_regexp = re.compile(self._config["cmt"]["author_full_info_regexp"])
+
+    def load(self) -> Conference:
+
         # Load data
-        if conf_info["input_data"]["root_dir"].startswith("/"):
-            input_root_dir = conf_info["input_data"]["root_dir"]
-        else:
-            input_root_dir = conf_metadata_file.parent / conf_info["input_data"]["root_dir"]
+        input_root_dir = self._config["input_data"]["root_dir"]
 
-        if conf_info["input_data"]["pdfs_dir"].startswith("/"):
-            pdfs_path = pathlib.Path(conf_info["input_data"]["pdfs_dir"])
+        if self._config["input_data"]["pdfs_dir"].startswith("/"):
+            pdfs_path = pathlib.Path(self._config["input_data"]["pdfs_dir"])
         else:
-            pdfs_path = input_root_dir / conf_info["input_data"]["pdfs_dir"]
+            pdfs_path = input_root_dir / self._config["input_data"]["pdfs_dir"]
 
-        if conf_info["input_data"]["updated_pdfs_dir"].startswith("/"):
-            updated_pdfs_path = pathlib.Path(conf_info["input_data"]["updated_pdfs_dir"])
+        if self._config["input_data"]["updated_pdfs_dir"].startswith("/"):
+            updated_pdfs_path = pathlib.Path(self._config["input_data"]["updated_pdfs_dir"])
         else:
-            updated_pdfs_path = input_root_dir / conf_info["input_data"]["updated_pdfs_dir"]
+            updated_pdfs_path = input_root_dir / self._config["input_data"]["updated_pdfs_dir"]
 
-        if conf_info["input_data"]["metadata_spreadsheet"].startswith("/"):
-            metadata_file = pathlib.Path(conf_info["input_data"]["metadata_spreadsheet"])
+        if self._config["input_data"]["metadata_spreadsheet"].startswith("/"):
+            metadata_file = pathlib.Path(self._config["input_data"]["metadata_spreadsheet"])
         else:
-            metadata_file = input_root_dir / conf_info["input_data"]["metadata_spreadsheet"]
+            metadata_file = input_root_dir / self._config["input_data"]["metadata_spreadsheet"]
 
-        if conf_info["input_data"]["users_spreadsheet"].startswith("/"):
-            users_file = pathlib.Path(conf_info["input_data"]["users_spreadsheet"])
+        if self._config["input_data"]["users_spreadsheet"].startswith("/"):
+            users_file = pathlib.Path(self._config["input_data"]["users_spreadsheet"])
         else:
-            users_file = input_root_dir / conf_info["input_data"]["users_spreadsheet"]
+            users_file = input_root_dir / self._config["input_data"]["users_spreadsheet"]
 
-        if conf_info["input_data"]["speakers_spreadsheet"].startswith("/"):
-            speakers_file = pathlib.Path(conf_info["input_data"]["speakers_spreadsheet"])
+        if self._config["input_data"]["speakers_spreadsheet"].startswith("/"):
+            speakers_file = pathlib.Path(self._config["input_data"]["speakers_spreadsheet"])
         else:
-            speakers_file = input_root_dir / conf_info["input_data"]["speakers_spreadsheet"]
+            speakers_file = input_root_dir / self._config["input_data"]["speakers_spreadsheet"]
 
-        if conf_info["input_data"]["reviewers_spreadsheet"].startswith("/"):
-            reviewers_file = pathlib.Path(conf_info["input_data"]["reviewers_spreadsheet"])
+        if self._config["input_data"]["reviewers_spreadsheet"].startswith("/"):
+            reviewers_file = pathlib.Path(self._config["input_data"]["reviewers_spreadsheet"])
         else:
-            reviewers_file = input_root_dir / conf_info["input_data"]["reviewers_spreadsheet"]
+            reviewers_file = input_root_dir / self._config["input_data"]["reviewers_spreadsheet"]
 
-        if "sessions_spreadsheet" not in conf_info["input_data"]:
-            self.ignore_sessions = True
+        if "sessions_spreadsheet" not in self._config["input_data"]:
+            self._ignore_sessions = True
             self.logger.warning("There is no session spreadsheet indicated, we just ignore any session information")
-        elif conf_info["input_data"]["sessions_spreadsheet"].startswith("/"):
-            session_file = pathlib.Path(conf_info["input_data"]["sessions_spreadsheet"])
+        elif self._config["input_data"]["sessions_spreadsheet"].startswith("/"):
+            session_file = pathlib.Path(self._config["input_data"]["sessions_spreadsheet"])
         else:
-            session_file = input_root_dir / conf_info["input_data"]["sessions_spreadsheet"]
+            session_file = input_root_dir / self._config["input_data"]["sessions_spreadsheet"]
 
-        if conf_info["input_data"]["satellites_spreadsheet"].startswith("/"):
-            satellites_file = pathlib.Path(conf_info["input_data"]["satellites_spreadsheet"])
+        if self._config["input_data"]["satellites_spreadsheet"].startswith("/"):
+            satellites_file = pathlib.Path(self._config["input_data"]["satellites_spreadsheet"])
         else:
-            satellites_file = input_root_dir / conf_info["input_data"]["satellites_spreadsheet"]
+            satellites_file = input_root_dir / self._config["input_data"]["satellites_spreadsheet"]
 
         self.load_users(users_file)
         self.load_reviewers(reviewers_file)
         self.load_speakers(speakers_file)
         papers, _, presenters = self.load_papers(metadata_file, pdfs_path, updated_pdfs_path)
 
-        if self.ignore_sessions:
-            conf = self.load_conference(conf_metadata_file, papers=papers, sessions=None)
+        if self._ignore_sessions:
+            conference = self.load_conference(papers=papers, sessions=None)
         else:
             _, program, student_award_nominees, theme_award_nominees = self.load_sessions(session_file, papers, presenters)
-            conf = self.load_conference(
-                conf_metadata_file,
+            conference = self.load_conference(
                 program=program,
                 papers=papers,
                 student_award_nominees=student_award_nominees,
@@ -391,11 +138,10 @@ class CMTSerialiser(ISCAObject):
             )
 
         satellites = self.load_satellite_events(satellites_file)
-        conf.update_satellite_events(satellites)
-        return conf
+        conference.update_satellite_events(satellites)
+        return conference
 
     def load_users(self, user_spreadsheet_file: pathlib.Path, ignore_role: bool = True) -> Annuary:
-
         users = Annuary(alternative_emails=self._annuary.alternative_emails)
         wb = load_workbook(filename=user_spreadsheet_file)
         for worksheet in wb.sheetnames:
@@ -439,7 +185,7 @@ class CMTSerialiser(ISCAObject):
 
                 roles = set()
                 if not ignore_role:
-                    for r in str(user_row["Roles"]).split(CMT_ROLE_SEP):
+                    for r in str(user_row["Roles"]).split(self._config["cmt"]["role_separator"]):
                         if r == "Reviewer":
                             roles.add(Role.REVIEWER)
                         elif r == "Author":
@@ -589,7 +335,7 @@ class CMTSerialiser(ISCAObject):
 
                 roles = set()
                 if not ignore_role:
-                    for r in str(user_row["Roles"]).split(CMT_ROLE_SEP):
+                    for r in str(user_row["Roles"]).split(self._config["cmt"]["role_separator"]):
                         if r == "Reviewer":
                             roles.add(Role.REVIEWER)
                         elif r == "Author":
@@ -676,7 +422,7 @@ class CMTSerialiser(ISCAObject):
                         )
                         pdf_path = updated_paper_root_dir / f"{paper_id}.pdf"
 
-                if self.metadata_from_pdf:
+                if self._metadata_from_pdf:
                     try:
                         if (pdf_path is not None) and pdf_path.exists():
 
@@ -742,7 +488,7 @@ class CMTSerialiser(ISCAObject):
     def _list_bluesky_paper_ids(self, session_summary_file: pathlib.Path) -> set[str]:
         df = load_excel(
             session_summary_file,
-            sheet_name=CMT_SESSION_BLUESKY_SHEET_NAME,
+            sheet_name=self._config["cmt"]["bluesky_sheet_name"],
         )
 
         bs_paper_ids = set()
@@ -753,7 +499,7 @@ class CMTSerialiser(ISCAObject):
     def _load_keynotes(self, session_summary_file: pathlib.Path) -> tuple[dict[str, Keynote], dict[str, list[Person]]]:
         df = load_excel(
             session_summary_file,
-            sheet_name=CMT_SESSION_KEYNOTES_SHEET_NAME,
+            sheet_name=self._config["cmt"]["keynotes_sheet_name"],
         )
 
         keynote_chairs = dict()
@@ -770,7 +516,7 @@ class CMTSerialiser(ISCAObject):
 
             if ("Session Chairs" in row) and (not pd.isna(row["Session Chairs"])):
                 chairs = []
-                for chair_email in row["Session Chairs"].split(CMT_AUTHOR_SEP):
+                for chair_email in row["Session Chairs"].split(self._config["cmt"]["author_separator"]):
                     chair_email = chair_email.strip().lower()
                     chair = self._annuary.find_person_by_email(chair_email)
 
@@ -788,7 +534,7 @@ class CMTSerialiser(ISCAObject):
     def _load_survey_talks(self, session_summary_file: pathlib.Path) -> dict[str, SurveyTalk]:
         df = load_excel(
             session_summary_file,
-            sheet_name=CMT_SESSION_SURVEY_TALKS_SHEET_NAME,
+            sheet_name=self._config["cmt"]["survey_talks_sheet_name"],
         )
 
         survey_talks = dict()
@@ -815,7 +561,7 @@ class CMTSerialiser(ISCAObject):
     ) -> list[tuple[Timeslot, Room, TutorialSession]]:
         df = load_excel(
             session_summary_file,
-            sheet_name=CMT_SESSION_TUTORIALS_SHEET_NAME,
+            sheet_name=self._config["cmt"]["tutorials_sheet_name"],
         )
 
         tutorials = []
@@ -846,7 +592,7 @@ class CMTSerialiser(ISCAObject):
     ) -> list[tuple[Timeslot, Room, list[str] | None, InterspeechEvent]]:
         df = load_excel(
             session_summary_file,
-            sheet_name=CMT_SESSION_EVENTS_SHEET_NAME,
+            sheet_name=self._config["cmt"]["events_sheet_name"],
         )
 
         events = []
@@ -886,7 +632,7 @@ class CMTSerialiser(ISCAObject):
     def _load_theme_award_nominees(self, session_summary_file: pathlib.Path) -> set[str]:
         df = load_excel(
             session_summary_file,
-            sheet_name=CMT_SESSION_THEME_AWARD_NOMINEES_SHEET_NAME,
+            sheet_name=self._config["cmt"]["theme_award_nominees_sheet_name"],
         )
 
         list_nominees = set()
@@ -897,7 +643,7 @@ class CMTSerialiser(ISCAObject):
     def _load_student_award_nominees(self, session_summary_file: pathlib.Path) -> set[str]:
         df = load_excel(
             session_summary_file,
-            sheet_name=CMT_SESSION_STUDENT_AWARD_NOMINEES_SHEET_NAME,
+            sheet_name=self._config["cmt"]["student_award_nominees_sheet_name"],
         )
 
         list_nominees = set()
@@ -916,7 +662,7 @@ class CMTSerialiser(ISCAObject):
 
         # Load rooms
         dict_rooms = dict()
-        df = load_excel(session_summary_file, sheet_name=CMT_SESSION_ROOMS_SHEET_NAME)
+        df = load_excel(session_summary_file, sheet_name=self._config["cmt"]["rooms_sheet_name"])
         plenary_room = None
         for _, room_info in df.iterrows():
             capacity = str(room_info["Capacity"]).strip()
@@ -962,7 +708,7 @@ class CMTSerialiser(ISCAObject):
 
         # Now load timeslots
         dict_timeslots = dict()
-        df = load_excel(session_summary_file, sheet_name=CMT_SESSION_TIMESLOTS_SHEET_NAME)
+        df = load_excel(session_summary_file, sheet_name=self._config["cmt"]["timeslots_sheet_name"])
         df["Date"] = df["Date"].astype(str)
         for _, timeslot_info in df.iterrows():
             start_time = f"{timeslot_info['Date']} {timeslot_info['Start']}"
@@ -1023,7 +769,7 @@ class CMTSerialiser(ISCAObject):
         bs_paper_ids = self._list_bluesky_paper_ids(session_summary_file)
 
         # Add the scientific sessions
-        df = load_excel(session_summary_file, sheet_name=CMT_SESSION_SESSIONS_SHEET_NAME)
+        df = load_excel(session_summary_file, sheet_name=self._config["cmt"]["sessions_sheet_name"])
         for _, session_info in df.iterrows():
             if pd.isna(session_info["Session name"]):
                 continue
@@ -1036,7 +782,7 @@ class CMTSerialiser(ISCAObject):
             # Get chairs
             chairs = []
             if ("Session Chairs" in session_info) and (not pd.isna(session_info["Session Chairs"])):
-                for chair_email in session_info["Session Chairs"].split(CMT_AUTHOR_SEP):
+                for chair_email in session_info["Session Chairs"].split(self._config["cmt"]["author_separator"]):
                     chair_email = chair_email.strip().lower()
                     chair = self._annuary.find_person_by_email(chair_email)
 
@@ -1079,11 +825,13 @@ class CMTSerialiser(ISCAObject):
                 continue
 
             # Now deal add the papers
-            session_paper_ids = [str(id).strip() for id in str(session_info["Papers"]).split(CMT_SESSION_PAPER_SEPARATOR)]
+            session_paper_ids = [
+                str(id).strip() for id in str(session_info["Papers"]).split(self._config["cmt"]["paper_separator"])
+            ]
             for paper_idx, paper_id in enumerate(session_paper_ids, 1):
                 paper_id = paper_id.strip()
 
-                if paper_id == CMT_FREE_SLOT_TOKEN:
+                if paper_id == self._config["cmt"]["free_slot_token"]:
                     self.logger.debug(
                         f"Slot {paper_idx} in the session {session_id} is free",
                         extra={"session_id": session_id, "session_name": session_name},
@@ -1227,7 +975,6 @@ class CMTSerialiser(ISCAObject):
 
     def load_conference(
         self,
-        conference_info_file: pathlib.Path,
         papers: dict[str, Paper],
         program: Program | None = None,
         sessions: list[Session] | None = None,
@@ -1240,20 +987,10 @@ class CMTSerialiser(ISCAObject):
                 "Either the sessions OR the papers should be given. The papers will be loaded from the sessions. In case no sessions, the provide the papers."
             )
 
-        conf_info = dict()
-        yaml = YAML(typ="rt", pure=True)
-        with open(conference_info_file) as f_in:
-            conf_info = yaml.load(f_in.read())
-
-        # NOTE: apparently autamtically converted into a date when loading the YAML configuration
-        # # Convert the dates to datetime
-        # conf_info["startDate"] = datetime.strptime(conf_info["startDate"], "%Y-%m-%d")
-        # conf_info["endDate"] = datetime.strptime(conf_info["endDate"], "%Y-%m-%d")
-
         chairs = None
-        if "chairs" in conf_info:
+        if "chairs" in self._config:
             chairs = []
-            for chair in conf_info["chairs"].split(CMT_CHAIR_CONF_SEPARATOR):
+            for chair in self._config["chairs"].split(self._config["cmt"]["chair_separator"]):
                 if "{" in chair:
                     raise NotImplementedError("Last name with spaces is not yet supported, but should be")
                 else:
@@ -1269,18 +1006,18 @@ class CMTSerialiser(ISCAObject):
                     chairs.append(cur_chair)
 
         conf = Interspeech(
-            conf_info["id"],
-            conf_info["name"],
-            conf_info["startDate"],
-            conf_info["endDate"],
+            self._config["id"],
+            self._config["name"],
+            self._config["startDate"],
+            self._config["endDate"],
             papers,
             program if (program is not None) else None,
             sessions if (program is None) and (sessions is not None) else None,
-            conf_info["location"] if "location" in conf_info else None,
-            conf_info["URL"] if "URL" in conf_info else None,
+            self._config["location"] if "location" in self._config else None,
+            self._config["URL"] if "URL" in self._config else None,
             chairs,
-            conf_info["generateDOIs"] if "generateDOIs" in conf_info else False,
-            conf_info["theme"] if "theme" in conf_info else None,
+            self._config["generateDOIs"] if "generateDOIs" in self._config else False,
+            self._config["theme"] if "theme" in self._config else None,
             annuary=self._annuary,
         )
 
@@ -1292,9 +1029,9 @@ class CMTSerialiser(ISCAObject):
             for paper_id in theme_award_nominees:
                 conf.add_theme_award_nominees(paper_id)
 
-        if "ignore_rooms" in conf_info:
+        if "ignore_rooms" in self._config:
             ignored_rooms = set()
-            ignored_room_names = set(conf_info["ignore_rooms"])
+            ignored_room_names = set(self._config["ignore_rooms"])
             if conf.program is not None:
                 for room in conf.program.rooms:
                     if room.name in ignored_room_names:
@@ -1302,9 +1039,9 @@ class CMTSerialiser(ISCAObject):
 
                 conf.update_ignored_rooms(ignored_rooms)
 
-        if "ignore_timeslots" in conf_info:
+        if "ignore_timeslots" in self._config:
             ignored_timeslots = set()
-            ignored_timeslot_ids = set(conf_info["ignore_timeslots"])
+            ignored_timeslot_ids = set(self._config["ignore_timeslots"])
             if conf.program is not None:
                 for timeslot in conf.program.timeslots:
                     if timeslot.id in ignored_timeslot_ids:
@@ -1329,7 +1066,7 @@ class CMTSerialiser(ISCAObject):
                 list_aff = [str(author.default_affiliation)]
                 for aff in author.paper_affiliations[paper_id]:
                     list_aff.append(str(aff))
-                author_str += f"({CMT_AFFILIATION_SEPARATOR.join(list_aff)})"
+                author_str += f"({self._config['cmt']['affiliation_separator'].join(list_aff)})"
 
                 author_names.append(author_str)
 
@@ -1337,8 +1074,8 @@ class CMTSerialiser(ISCAObject):
                 "Paper ID": int(paper_id),
                 "Paper Title": cur_paper.title,
                 "Paper Abstract": cur_paper.abstract,
-                # "Author Emails": CMT_AUTHOR_SEP.join(author_emails),
-                "Author Names": CMT_AUTHOR_SEP.join(author_names),
+                # "Author Emails": self._config["cmt"]["author_separator"].join(author_emails),
+                "Author Names": self._config["cmt"]["author_separator"].join(author_names),
             }
             list_papers.append(paper_info)
         df = pd.DataFrame(list_papers)
@@ -1349,7 +1086,7 @@ class CMTSerialiser(ISCAObject):
 
     def _generate_id(self, last_name: str) -> str:
 
-        id = last_name.strip().lower().replace(" ", "")[:MAX_ID_NAME_LENGTH]
+        id = last_name.strip().lower().replace(" ", "")[: self._config["cmt"]["max_id_name_length"]]
         id = "".join(char for char in id if char.isalpha())
         if id in self._id_generator:
             self._id_generator[id] += 1
@@ -1358,3 +1095,214 @@ class CMTSerialiser(ISCAObject):
             self._id_generator[id] = 0
 
         return id
+
+    def _extract_df_information(self, paper_info: pd.Series) -> tuple[Paper, list[Person] | None]:
+
+        paper_id = paper_info["Paper ID"]
+        author_names = (
+            str(paper_info["Author Names"])
+            .replace(self._config["cmt"]["corresponding_author_marker"], "")
+            .split(self._config["cmt"]["author_name_affiliation_separator"])
+        )
+        author_emails = [
+            email.lower().strip() for email in str(paper_info["Author Emails"]).split(self._config["cmt"]["author_separator"])
+        ]
+
+        # The number of elements should be the same
+        if len(author_emails) != len(author_names):
+            names = "\n".join(author_names)
+            self.logger.error(f"[{paper_id}] author names = {names}")
+            self.logger.error(f"[{paper_id}] author emails = {author_emails}")
+            raise Exception(
+                f"[{paper_id}] The number of authors ({len(author_names)}) does not match the number of emails ({len(author_emails)})"
+            )
+
+        paper_authors = list()
+        for i_author, cur_author in enumerate(author_names):
+            cur_author = cur_author.replace(self._config["cmt"]["corresponding_author_marker"], "").strip()
+            if cur_author[-1] != ")":
+                cur_author = cur_author + ")"
+
+            match_author_affiliations = self._author_full_info_regexp.match(cur_author)
+            if not match_author_affiliations:
+                raise Exception(f"[{paper_id}] Impossible to parse the author, please fix the spreadsheet: {cur_author}")
+
+            # Extract author information
+            middle_initial = None
+            email = author_emails[i_author]
+            cur_author = match_author_affiliations.group(1)
+            if "{" in cur_author:
+                match_author = self._author_elts_regexp.match(cur_author)
+                if match_author:
+                    first_name = match_author.group(1)
+                    middle_initial = match_author.group(2)
+                    last_name = match_author.group(3)
+                else:
+                    raise Exception(f"[{paper_id}] Impossible to parse the author, please fix the spreadsheet: {cur_author}")
+            else:
+                author_elts = cur_author.split(" ")
+                author_elts = list(filter(None, author_elts))  # NOTE: helpers to ignore empty elements due to multiple space
+                last_name = author_elts[-1]
+                first_name = " ".join(author_elts[:-1])
+
+            first_name = first_name.strip() if first_name is not None else None
+            last_name = last_name.strip()
+
+            # Extract the affiliation part
+            list_affiliations = list()
+            affiliations = [
+                s.strip() for s in match_author_affiliations.group(2).split(self._config["cmt"]["affiliation_separator"])
+            ]
+            for f in affiliations:
+                match_affiliation = self._affiliation_regexp.match(f)
+                if not match_affiliation:
+                    raise Exception(f"[{paper_id}] The following affiliation for author {cur_author} is not valid: {f}")
+
+                country = None
+                if len(match_affiliation.groups()) > 2:
+                    country = match_affiliation.group(3)
+
+                short = match_affiliation.group(2)
+                long = f"{match_affiliation.group(1)}, {short}"
+                affiliation = Affiliation(short=short, long=long, country=country)
+                list_affiliations.append(affiliation)
+            assert len(list_affiliations) > 0
+
+            cur_person = self._annuary.find_person_by_email(email)
+
+            # # TODO: this is too naive for now, no possibility
+            # if cur_person is None:
+            #     candidates = self._annuary.find_person_by_name(first_name, last_name, middle_initial)
+            #     if len(candidates) > 0:
+            #         if len(candidates) > 1:
+            #             raise Exception(f"[{paper_id}] Too many candidates for {first_name} {'[' + middle_initial + ']' if middle_initial is not None else ''} {last_name}")
+            #         cur_person = list(candidates)[0]
+
+            if cur_person is None:
+                id = self._generate_id(last_name)
+                cur_person = Person(
+                    id,
+                    first_name,
+                    last_name,
+                    email=email,
+                    default_affiliation=list_affiliations[0],
+                    roles=set([Role.AUTHOR]),
+                )
+                self._annuary.add(cur_person)
+            else:
+                cur_person.add_role(Role.AUTHOR)
+                if cur_person.firstname != first_name:
+                    self.logger.debug(
+                        f"[{paper_id}] Change the name of {email} from {cur_person.name} to {first_name} {{{last_name}}}"
+                    )
+
+                # NOTE: The information from the PDF are likely more reliable
+                cur_person.firstname = first_name
+                cur_person.lastname = last_name
+
+            # Send a warning if the person name is suspicious
+            if (
+                ((cur_person.firstname is not None) and (cur_person.firstname.isupper() or cur_person.firstname.islower()))
+                or cur_person.lastname.isupper()
+                or cur_person.lastname.islower()
+            ):
+                self.logger.warning(f"[{paper_id}] The current person as an invalid name: {cur_person}")
+
+            for affiliation in list_affiliations:
+                cur_person.add_paper_affiliation(str(paper_info["Paper ID"]), affiliation)
+            paper_authors.append(cur_person)
+
+        # Extract presenters (TODO: This is a bit too specific, will have to check with Antoine about this)
+        presenters = None
+        if ("Q7 (New presenter)" in paper_info) and (not pd.isna(paper_info["Q7 (New presenter)"])):
+            m_full = self._new_presenter_full_info_regexp.match(paper_info["Q7 (New presenter)"])
+            if m_full:
+                self.logger.info(f"Adding alternative presenter \"{paper_info['Q7 (New presenter)']}\" to paper {paper_id}")
+
+                pres_email = m_full.group(3).lower().strip()
+
+                cur_presenter = self._annuary.find_person_by_email(pres_email)
+                if cur_presenter is None:
+
+                    m_identity = self._author_elts_regexp.match(m_full.group(1))
+                    assert m_identity is not None, f"The format of the author is not valid for: {m_full.group(1)}"
+                    pres_firstname = m_identity.group(1)
+                    middle_initial = m_identity.group(2)
+                    pres_lastname = m_identity.group(3)
+
+                    if m_full.group(2) is None:
+                        raise Exception(f"The presenter \"{paper_info['Q7 (New presenter)']}\" does nor respect the format")
+
+                    affiliations = []
+                    for aff_str in m_full.group(2).split(self._config["cmt"]["affiliation_separator"]):
+                        aff_str = aff_str.strip()
+                        m_affiliation = self._affiliation_regexp.match(aff_str)
+                        assert m_affiliation is not None, f"The format of the affiliation is not valid for: {aff_str}"
+                        short = m_affiliation.group(3)
+                        if short is None:
+                            long = None
+                            short = m_affiliation.group(2)
+                        else:
+                            long = f"{m_affiliation.group(2)}, {short}"
+                        affiliation = Affiliation(short=short, long=long, country=m_affiliation.group(1))
+                        affiliations.append(affiliation)
+
+                    id = self._generate_id(pres_lastname)
+                    cur_presenter = Person(
+                        id,
+                        pres_firstname,
+                        pres_lastname,
+                        affiliations[0],
+                        pres_email,
+                        middle_initial=middle_initial,
+                        paper_affiliations={str(paper_id): affiliations},
+                    )  # FIXME: force unknwon affiliation
+                    self._annuary.add(cur_presenter)
+
+                cur_presenter.add_role(Role.PRESENTER)
+                presenters = [cur_presenter]
+            else:
+                raise Exception(f"The presenter \"{paper_info['Q7 (New presenter)']}\" does nor respect the format")
+
+        elif "Q7 (Presenter - Value)" in paper_info:
+            presenter_idx = int(paper_info["Q7 (Presenter - Value)"]) - 1
+
+            if presenter_idx >= len(paper_authors):
+                raise IndexError(
+                    f"[{paper_id}] Author {presenter_idx} can't be a presenter as there are only {len(paper_authors)} authors"
+                )
+            cur_presenter = paper_authors[presenter_idx]
+            cur_presenter.add_role(Role.PRESENTER)
+            presenters = [cur_presenter]
+        else:
+            self.logger.warning(
+                f"[{paper_id}] doesn't have a presenter",
+                extra={"paper_id": str(paper_info["Paper ID"]), "paper_serie": paper_info},
+            )
+
+        abstract = None
+        if "Abstract" in paper_info:
+            abstract = str(paper_info["Abstract"])
+        elif "Paper Abstract" in paper_info:
+            abstract = str(paper_info["Paper Abstract"])
+        abstract = re.sub(r"(?<!\n)\n(?=\S)", " ", abstract)  # NOTE: merge consecutive lines
+
+        # Fix title
+        title = str(paper_info["Paper Title"])
+        if ("\n" in title) or ("\r" in title):
+            title = title.replace("\r", "")
+            title = " ".join([t.strip() for t in title.split("\n")])
+
+        resource = None
+        if "Q3 (Link to resource (optional))" in paper_info:
+            resource = str(paper_info["Q3 (Link to resource (optional))"])
+            if not resource.startswith("https://doi.org/"):
+                if resource.startswith("10."):  # FIXME: hardcoded number prefix
+                    resource = "https://doi.org/" + resource
+                else:
+                    resource = None
+
+        return (
+            Paper(str(paper_info["Paper ID"]), title, paper_authors, abstract=abstract, resource=resource),
+            presenters,
+        )

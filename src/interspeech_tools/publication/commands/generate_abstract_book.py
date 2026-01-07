@@ -9,7 +9,8 @@ import importlib.resources
 import jinja2
 
 # Helpers
-from ...io.cmt import CMTSerialiser
+from ...conf import Config
+from ...io import instanciate_serialiser
 from ..books.utils import compile
 from ..books.abstract import AbstractBookProcessor
 from ..books.jinja_helpers import configure_latex_jinja
@@ -42,7 +43,7 @@ def add_subparsers(subparsers):
     parser.add_argument("-f", "--format", type=str, default="cmt", help="The format of the input formation")
 
     # Add arguments
-    parser.add_argument("conf_input", help="The input metadata file")
+    parser.add_argument("conf_input", help="The input configuraton file required for the conference")
     parser.add_argument("abstract_book_root_dir", help="The abstract book latex file")
 
     parser.set_defaults(func=main)
@@ -50,7 +51,7 @@ def add_subparsers(subparsers):
 
 def main(args: argparse.Namespace):
     logger = logging.getLogger(__name__)
-    conf_path = pathlib.Path(args.conf_input)
+    config = Config(pathlib.Path(args.conf_input))
     abstract_book_root_dir = pathlib.Path(args.abstract_book_root_dir)
     generated_elements_dir = abstract_book_root_dir / "auto"
     generated_elements_dir.mkdir(exist_ok=True, parents=True)
@@ -73,23 +74,17 @@ def main(args: argparse.Namespace):
         colour_file.parent.mkdir(exist_ok=True, parents=True)
 
     # Load conference
-    conf = None
-    serialiser = None
-    if args.format == "cmt":
-        serialiser = CMTSerialiser(args.pdf_metadata, False)
-    else:
-        raise NotImplementedError(f"The format {args.format} is not supported")
-    conf = serialiser.load(conf_path)
-    conf.resolve_author_paper_association()
+    serialiser = instanciate_serialiser(config)
+    conference = serialiser.load()
+    conference.resolve_author_paper_association()
 
     # Generate the them
     if colour_file is not None:
-
         template_loader = jinja2.PackageLoader("interspeech_tools.publication", "resources/abstract_book")
         template_engine = configure_latex_jinja(template_loader)
-        generate_theme_file(conf, colour_file, template_engine)
+        generate_theme_file(conference, colour_file, template_engine)
 
-    processor = AbstractBookProcessor(conf)
+    processor = AbstractBookProcessor(conference)
     processor.process(generated_elements_dir, draft=args.draft)
 
     if args.bootstrap:

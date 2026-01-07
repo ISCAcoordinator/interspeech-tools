@@ -14,7 +14,8 @@ from isca.model.person import Person
 from isca.model.program import PresentationSession, Presentation
 
 # Helpers
-from ...io.cmt import CMTSerialiser
+from ...conf import Config
+from ...io import instanciate_serialiser
 from ..books.utils import compile
 from ..books.jinja_helpers import configure_latex_jinja
 from ..books.theme import generate_theme_file
@@ -70,7 +71,7 @@ def add_subparsers(subparsers):
 
 def main(args: argparse.Namespace):
     logger = logging.getLogger(__name__)
-    conf_path = pathlib.Path(args.conf_input)
+    config = Config(pathlib.Path(args.conf_input))
     val_book_directory = pathlib.Path(args.val_book_directory)
     val_book_directory.mkdir(exist_ok=True, parents=True)
 
@@ -125,23 +126,19 @@ def main(args: argparse.Namespace):
         if colour_file.exists():
             raise Exception(f"The colour file {colour_file} already exists, delete it if you want to bootstrap/reset")
         colour_file.parent.mkdir(exist_ok=True, parents=True)
-    # Load conference
-    conf = None
-    serialiser = None
-    if args.format == "cmt":
-        serialiser = CMTSerialiser(args.pdf_metadata)
-    else:
-        raise NotImplementedError(f"The format {args.format} is not supported")
-    conf = serialiser.load(conf_path)
-    conf.resolve_author_paper_association()
+
+    # Load conferenceerence
+    serialiser = instanciate_serialiser(config)
+    conference = serialiser.load()
+    conference.resolve_author_paper_association()
 
     # Generate the them
     if colour_file is not None:
-        generate_theme_file(conf, colour_file, abstract_template_engine)
+        generate_theme_file(conference, colour_file, abstract_template_engine)
 
     # Prepare content template
     def list_papers(author: Person) -> list[Paper]:
-        return conf.list_papers(author)
+        return conference.list_papers(author)
 
     validation_template_engine.filters["list_papers"] = list_papers
 
@@ -149,13 +146,13 @@ def main(args: argparse.Namespace):
     validation_author_index_template = validation_template_engine.get_template("author_index.tex.jinja2")
     val_book_entry_file = val_book_directory / "author_index.tex"
     with open(val_book_entry_file, "w") as f:
-        f.write(validation_author_index_template.render(authors=conf.authors))
+        f.write(validation_author_index_template.render(authors=conference.authors))
 
     # Render paper index
     validation_paper_index_template = validation_template_engine.get_template("paper_index.tex.jinja2")
     val_book_entry_file = val_book_directory / "paper_index.tex"
     with open(val_book_entry_file, "w") as f:
-        f.write(validation_paper_index_template.render(papers=list_elts(conf, args.no_sessions)))
+        f.write(validation_paper_index_template.render(papers=list_elts(conference, args.no_sessions)))
 
     # Render entry file
     validation_main_template = validation_template_engine.get_template("main.tex.jinja2")

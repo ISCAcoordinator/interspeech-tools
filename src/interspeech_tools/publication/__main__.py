@@ -105,7 +105,7 @@ def define_argument_parser() -> argparse.ArgumentParser:
     --------
     The argument parser: argparse.ArgumentParser
     """
-    parser = argparse.ArgumentParser(description="ISCA CMT Publication Helpers")
+    parser = argparse.ArgumentParser(description="ISCA Interspeech Publication Helpers")
 
     # Add logging options
     parser.add_argument("-l", "--log_file", default=None, help="Logger file")

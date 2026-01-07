@@ -88,14 +88,19 @@ def compile(main_file: pathlib.Path, tool: str = "latexmk"):
     # Now execute
     workdir = main_file.parent
     if tool == "latexmk":
-        p = subprocess.Popen(["latexmk", "-pdflatex=lualatex", "-pdf", main_file.name], cwd=workdir)
+        cmd = ["latexmk", "-f", "-pdflatex=lualatex", "-pdf", main_file.name]
+        p = subprocess.Popen(cmd, cwd=workdir)
         p.wait()
     elif tool == "lualatex":
+        cmd = ["lualatex", "-interaction=nonstopmode", main_file.name]
         for _ in range(2):
-            p = subprocess.Popen(["lualatex", main_file.name], cwd=workdir)
+            p = subprocess.Popen(cmd, cwd=workdir)
             p.wait()
     else:
         raise Exception(
             "There is no compatible latex tools (lualatex needs to be available at a minimum; "
             + "pdflatex and xelatex are not supported)"
         )
+
+    if False:
+        raise Exception(f"the compilation failed - try to run the following command: {' '}.join(cmd)")

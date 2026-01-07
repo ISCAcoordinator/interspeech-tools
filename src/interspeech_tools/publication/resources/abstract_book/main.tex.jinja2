@@ -177,20 +177,23 @@
 {}
 \end{multicols*}
 
-
+\BLOCK{ if conf["output"]["parts"]["best_student_papers"]}
 \IfFileExists{auto/best_student.tex}
 {%
 \section*{Best student paper award nominees}
 \raggedbottom
 \input{auto/best_student.tex}
 }{}
+\BLOCK{endif}
 
+\BLOCK{ if conf["output"]["parts"]["best_theme_papers"]}
 \IfFileExists{auto/best_theme.tex}
 {%
 \section*{Best theme paper award nominees}
 \raggedbottom
 \input{auto/best_theme.tex}
 }{}
+\BLOCK{endif}
 
 \section*{Travel grants}
 \IfFileExists{manual/travel_grants.tex}
@@ -234,6 +237,8 @@
 %%% Main components
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
+
+\BLOCK{if conf["output"]["parts"]["keynotes"]}
 \IfFileExists{auto/keynotes.tex}
 {%
 \phantomsection
@@ -242,7 +247,9 @@
 \raggedbottom
 \input{auto/keynotes.tex}
 }{}
+\BLOCK{endif}
 
+\BLOCK{if conf["output"]["parts"]["tutorials"]}
 \IfFileExists{auto/tutorials.tex}
 {%
 \phantomsection
@@ -251,7 +258,9 @@
 \raggedbottom
 \input{auto/tutorials.tex}
 }{}
+\BLOCK{endif}
 
+\BLOCK{if conf["output"]["parts"]["surveys"]}
 \IfFileExists{auto/surveys.tex}
 {%
 \phantomsection
@@ -260,7 +269,9 @@
 \raggedbottom
 \input{auto/surveys.tex}
 }{}
+\BLOCK{endif}
 
+\BLOCK{if conf["output"]["parts"]["special_sessions"]}
 \IfFileExists{auto/special_sessions.tex}
 {%
 \phantomsection
@@ -269,7 +280,9 @@
 \raggedbottom
 \input{auto/special_sessions.tex}
 }{}
+\BLOCK{endif}
 
+\BLOCK{if conf["output"]["parts"]["satellites"]}
 \IfFileExists{auto/satellite_events.tex}
 {%
 \phantomsection
@@ -278,7 +291,7 @@
 \raggedbottom
 \input{auto/satellite_events.tex}
 }{}
-
+\BLOCK{endif}
 
 \IfFileExists{manual/public_events.tex}
 {%
@@ -290,11 +303,12 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%% Scientific Review Committee
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
+\BLOCK{if conf["output"]["parts"]["reviewers"]}
 \phantomsection
 \addcontentsline{toc}{chapter}{Scientific Review Committee}
 \chapter*{Scientific Review Committee}%
 \input{auto/reviewers_index.tex}
+\BLOCK{endif}
 
 % %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % %%% Actual program

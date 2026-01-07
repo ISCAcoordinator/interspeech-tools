@@ -10,7 +10,7 @@ import jinja2
 from isca.model.program import KeynoteSession, OralSession, PosterSession, Room, Timeslot, Presentation
 from isca.model.person import Person, Speaker
 
-
+from ...conf import Config
 from ...model import Interspeech, InterspeechEvent, ShowAndTellSession, SpecialSession, TutorialSession
 
 from .theme import (
@@ -30,11 +30,9 @@ def is_content_session(input_session: Session) -> bool:
 
 
 class AbstractBookProcessor(ISCAObject):
-    MAX_SESSION_NAME_SIZE_MULTICOL = 20
-
-    def __init__(self, conf: Interspeech):
+    def __init__(self, config: Config, conference: Interspeech):
         super().__init__()
-        self._conf = conf
+        self._conf = conference
         if self._conf.program is None:
             raise Exception("The program of the conference should be defined")
 
@@ -50,6 +48,8 @@ class AbstractBookProcessor(ISCAObject):
             return self._author2presentations[author]
 
         self._template_engine.filters["list_presentations"] = list_presentations
+
+        self._config = config
 
     def process(self, root_output_dir: pathlib.Path, draft: bool = False) -> None:
 
@@ -113,55 +113,65 @@ class AbstractBookProcessor(ISCAObject):
                     shutil.copy(person.photo, root_output_dir / person.photo.name)
 
         # Best student papers
-        best_students = self._template_engine.get_template("best_papers.tex.jinja2")
-        outfilename = root_output_dir / "best_student.tex"
-        with open(outfilename, "w") as outfile:
-            outfile.write(best_students.render(presentations=self._conf.list_student_award_nominees_presentations(), draft=draft))
+        if self._config["output"]["parts"]["best_student_papers"]:
+            best_students = self._template_engine.get_template("best_papers.tex.jinja2")
+            outfilename = root_output_dir / "best_student.tex"
+            with open(outfilename, "w") as outfile:
+                outfile.write(
+                    best_students.render(presentations=self._conf.list_student_award_nominees_presentations(), draft=draft)
+                )
 
         # Best theme papers
-        best_themes = self._template_engine.get_template("best_papers.tex.jinja2")
-        outfilename = root_output_dir / "best_theme.tex"
-        with open(outfilename, "w") as outfile:
-            outfile.write(best_themes.render(presentations=self._conf.list_theme_award_nominees_presentations(), draft=draft))
+        if self._config["output"]["parts"]["best_theme_papers"]:
+            best_themes = self._template_engine.get_template("best_papers.tex.jinja2")
+            outfilename = root_output_dir / "best_theme.tex"
+            with open(outfilename, "w") as outfile:
+                outfile.write(best_themes.render(presentations=self._conf.list_theme_award_nominees_presentations(), draft=draft))
 
         # Tutorials
-        tutorial_template = self._template_engine.get_template("tutorials.tex.jinja2")
-        outfilename = root_output_dir / "tutorials.tex"
-        tutorials = self._conf.program.select_sessions(lambda s, t, r, z: isinstance(s, TutorialSession))
-        with open(outfilename, "w") as outfile:
-            outfile.write(tutorial_template.render(tutorial_sessions=tutorials, draft=draft))
+        if self._config["output"]["parts"]["tutorials"]:
+            tutorial_template = self._template_engine.get_template("tutorials.tex.jinja2")
+            outfilename = root_output_dir / "tutorials.tex"
+            tutorials = self._conf.program.select_sessions(lambda s, t, r, z: isinstance(s, TutorialSession))
+            with open(outfilename, "w") as outfile:
+                outfile.write(tutorial_template.render(tutorial_sessions=tutorials, draft=draft))
 
         # Keynotes
-        keynote_template = self._template_engine.get_template("keynotes.tex.jinja2")
-        keynote_sessions = self._conf.program.select_sessions(lambda s, t, r, z: isinstance(s, KeynoteSession))
-        outfilename = root_output_dir / "keynotes.tex"
-        with open(outfilename, "w") as outfile:
-            outfile.write(keynote_template.render(sessions=keynote_sessions, draft=draft))
+        if self._config["output"]["parts"]["keynotes"]:
+            keynote_template = self._template_engine.get_template("keynotes.tex.jinja2")
+            keynote_sessions = self._conf.program.select_sessions(lambda s, t, r, z: isinstance(s, KeynoteSession))
+            outfilename = root_output_dir / "keynotes.tex"
+            with open(outfilename, "w") as outfile:
+                outfile.write(keynote_template.render(sessions=keynote_sessions, draft=draft))
 
         # Surveys
-        surveys_template = self._template_engine.get_template("surveys.tex.jinja2")
-        outfilename = root_output_dir / "surveys.tex"
-        with open(outfilename, "w") as outfile:
-            outfile.write(surveys_template.render(sessions=self._conf.program.sessions, draft=draft))
+        if self._config["output"]["parts"]["surveys"]:
+            surveys_template = self._template_engine.get_template("surveys.tex.jinja2")
+            outfilename = root_output_dir / "surveys.tex"
+            with open(outfilename, "w") as outfile:
+                outfile.write(surveys_template.render(sessions=self._conf.program.sessions, draft=draft))
 
         # Special Sessions
-        special_sessions_template = self._template_engine.get_template("special_sessions.tex.jinja2")
-        outfilename = root_output_dir / "special_sessions.tex"
-        special_sessions = self._conf.program.select_sessions(lambda s, t, r, z: isinstance(s, SpecialSession))
-        with open(outfilename, "w") as outfile:
-            outfile.write(special_sessions_template.render(sessions=special_sessions, draft=draft))
+        if self._config["output"]["parts"]["special_sessions"]:
+            special_sessions_template = self._template_engine.get_template("special_sessions.tex.jinja2")
+            outfilename = root_output_dir / "special_sessions.tex"
+            special_sessions = self._conf.program.select_sessions(lambda s, t, r, z: isinstance(s, SpecialSession))
+            with open(outfilename, "w") as outfile:
+                outfile.write(special_sessions_template.render(sessions=special_sessions, draft=draft))
 
         # Satellites
-        satellites_template = self._template_engine.get_template("satellite_events.tex.jinja2")
-        outfilename = root_output_dir / "satellite_events.tex"
-        with open(outfilename, "w") as outfile:
-            outfile.write(satellites_template.render(events=self._conf.satellite_events, draft=draft))
+        if self._config["output"]["parts"]["satellites"]:
+            satellites_template = self._template_engine.get_template("satellite_events.tex.jinja2")
+            outfilename = root_output_dir / "satellite_events.tex"
+            with open(outfilename, "w") as outfile:
+                outfile.write(satellites_template.render(events=self._conf.satellite_events, draft=draft))
 
         # Reviewer index
-        reviewer_template = self._template_engine.get_template("reviewers_index.tex.jinja2")
-        outfilename = root_output_dir / "reviewers_index.tex"
-        with open(outfilename, "w") as outfile:
-            outfile.write(reviewer_template.render(reviewers=self._conf.reviewers, draft=draft))
+        if self._config["output"]["parts"]["reviewers"]:
+            reviewer_template = self._template_engine.get_template("reviewers_index.tex.jinja2")
+            outfilename = root_output_dir / "reviewers_index.tex"
+            with open(outfilename, "w") as outfile:
+                outfile.write(reviewer_template.render(reviewers=self._conf.reviewers, draft=draft))
 
         # Author index
         author_template = self._template_engine.get_template("authors_index.tex.jinja2")
@@ -216,7 +226,7 @@ class AbstractBookProcessor(ISCAObject):
         tables = "\n\n".join(parts)
 
         # TODO: this is just a place holder for now
-        excluded = "\\vspace{2mm}\\\\ \n"
+        excluded = ""
         excluded_sessions = []
         for session, timeslot, room, zone_idx in ignored_sessions:
             session_type = get_session_type(session)
@@ -225,7 +235,11 @@ class AbstractBookProcessor(ISCAObject):
                 f"\\noindent + {format_timeslot(timeslot)} \\hyperlink{{{session_id}}}{{{session.name}}} [{room.name}]"
             )
             excluded_sessions.append(excluded_session)
-        excluded += "\\\\ \n \\vspace{1mm} \\\\ \n".join(excluded_sessions)
+
+        if excluded_sessions:
+            excluded = "\\vspace{2mm}\\\\ \n"
+            excluded += "\\\\ \n \\vspace{1mm} \\\\ \n".join(excluded_sessions)
+
         content = tables + excluded
         return content
 
@@ -359,8 +373,11 @@ class AbstractBookProcessor(ISCAObject):
                     # If there was a buffered session, add it to the table
                     if buffer_session is not None:
                         session_name = buffer_session["session_name"]
-                        if len(session_name) > AbstractBookProcessor.MAX_SESSION_NAME_SIZE_MULTICOL:
-                            session_name = session_name[: AbstractBookProcessor.MAX_SESSION_NAME_SIZE_MULTICOL - 3] + "..."
+                        if len(session_name) > self._config["output"]["abstract_book"]["max_session_name_size_multicol"]:
+                            session_name = (
+                                session_name[: self._config["output"]["abstract_book"]["max_session_name_size_multicol"] - 3]
+                                + "..."
+                            )
 
                         row["elts"].append(
                             {
@@ -401,8 +418,10 @@ class AbstractBookProcessor(ISCAObject):
 
                 if buffer_session is not None:
                     session_name = buffer_session["session_name"]
-                    if len(session_name) > AbstractBookProcessor.MAX_SESSION_NAME_SIZE_MULTICOL:
-                        session_name = session_name[: AbstractBookProcessor.MAX_SESSION_NAME_SIZE_MULTICOL - 3] + "..."
+                    if len(session_name) > self._config["output"]["abstract_book"]["max_session_name_size_multicol"]:
+                        session_name = (
+                            session_name[: self._config["output"]["abstract_book"]["max_session_name_size_multicol"] - 3] + "..."
+                        )
 
                     row["elts"].append(
                         {
@@ -423,7 +442,7 @@ class AbstractBookProcessor(ISCAObject):
         return template.render(nb_zones=nb_zones, rooms=rooms, rows=rows)
 
     def generate_entry_point(self, output_file: pathlib.Path, draft: bool = False):
-        validation_main_template = self._template_engine.get_template("main.tex.jinja2")
+        main_template = self._template_engine.get_template("main.tex.jinja2")
         dates = []
 
         delta = self._conf.end_date - self._conf.start_date  # returns timedelta
@@ -445,5 +464,7 @@ class AbstractBookProcessor(ISCAObject):
 
         with open(output_file, "w") as f:
             f.write(
-                validation_main_template.render(classname="interspeech", dates=dates, content_dates=content_dates, draft=draft)
+                main_template.render(
+                    classname="interspeech", dates=dates, content_dates=content_dates, draft=draft, conf=self._config
+                )
             )

@@ -122,8 +122,16 @@ class CMTSerialiser(Serialiser):
             satellites_file = input_root_dir / self._config["input_data"]["satellites_spreadsheet"]
 
         self.load_users(users_file)
-        self.load_reviewers(reviewers_file)
-        self.load_speakers(speakers_file)
+        try:
+            self.load_reviewers(reviewers_file)
+        except Exception as ex:
+            self._logger.error(f"Cannot load the reviewers: {ex}")
+            self._config["output"]["parts"]["reviewers"] = False
+        try:
+            self.load_speakers(speakers_file)
+        except Exception as ex:
+            self._logger.error(f"Cannot load the speakers: {ex}")
+            self._config["output"]["parts"]["speakers"] = False
         papers, _, presenters = self.load_papers(metadata_file, pdfs_path, updated_pdfs_path)
 
         if self._ignore_sessions:
@@ -137,8 +145,12 @@ class CMTSerialiser(Serialiser):
                 theme_award_nominees=theme_award_nominees,
             )
 
-        satellites = self.load_satellite_events(satellites_file)
-        conference.update_satellite_events(satellites)
+        try:
+            satellites = self.load_satellite_events(satellites_file)
+            conference.update_satellite_events(satellites)
+        except Exception as ex:
+            self._logger.error(f"Cannot load the satellites: {ex}")
+            self._config["output"]["parts"]["satellites"] = False
         return conference
 
     def load_users(self, user_spreadsheet_file: pathlib.Path, ignore_role: bool = True) -> Annuary:
@@ -749,24 +761,40 @@ class CMTSerialiser(Serialiser):
         program = Program(list(dict_timeslots.values()), list(dict_rooms.values()))
 
         # Load the keynotes
-        keynotes, keynote_chairs = self._load_keynotes(session_summary_file)
-        for keynote_id, keynote in keynotes.items():
-            if keynote.presenters is None:
-                raise Exception(f"[{keynote.id}] The keynote doesn't have speaker")
-            title = ", ".join([p.name for p in keynote.presenters]) + ": " + keynote.title
-            timeslot = dict_timeslots[keynote.id]
-            if timeslot is None:
-                raise Exception("The timeslot should be defined and have the same id than the keynote")
+        try:
 
-            session = KeynoteSession(
-                keynote.id, title, timeslot.start, timeslot.end, presentations=[keynote], chairs=keynote_chairs[keynote_id]
-            )
-            list_sessions.append(session)
-            program.add_session(timeslot, plenary_room, session)
+            keynotes, keynote_chairs = self._load_keynotes(session_summary_file)
+            for keynote_id, keynote in keynotes.items():
+                if keynote.presenters is None:
+                    raise Exception(f"[{keynote.id}] The keynote doesn't have speaker")
+                title = ", ".join([p.name for p in keynote.presenters]) + ": " + keynote.title
+                timeslot = dict_timeslots[keynote.id]
+                if timeslot is None:
+                    raise Exception("The timeslot should be defined and have the same id than the keynote")
+
+                session = KeynoteSession(
+                    keynote.id, title, timeslot.start, timeslot.end, presentations=[keynote], chairs=keynote_chairs[keynote_id]
+                )
+                list_sessions.append(session)
+                program.add_session(timeslot, plenary_room, session)
+        except Exception as ex:
+            self._logger.error(f"Cannot load the keynotes: {ex}")
+            self._config["output"]["parts"]["keynotes"] = False
 
         # Load additional elements
-        survey_talks = self._load_survey_talks(session_summary_file)
-        bs_paper_ids = self._list_bluesky_paper_ids(session_summary_file)
+        try:
+            survey_talks = self._load_survey_talks(session_summary_file)
+        except Exception as ex:
+            self._logger.error(f"Cannot load the surveys: {ex}")
+            self._config["output"]["parts"]["surveys"] = False
+            survey_talks = dict()
+
+        try:
+            bs_paper_ids = self._list_bluesky_paper_ids(session_summary_file)
+        except Exception as ex:
+            self._logger.error(f"Cannot load the blue_sky: {ex}")
+            self._config["output"]["parts"]["blue_sky"] = False
+            bs_paper_ids = set()
 
         # Add the scientific sessions
         df = load_excel(session_summary_file, sheet_name=self._config["cmt"]["sessions_sheet_name"])
@@ -934,23 +962,44 @@ class CMTSerialiser(Serialiser):
             list_sessions.append(cur_session)
 
         # Load the events
-        event_informations = self._load_events(session_summary_file, dict_timeslots, dict_rooms)
-        for evt_elts in event_informations:
-            list_sessions.append(evt_elts[3])
-            if evt_elts[2] is not None:
-                for zone in evt_elts[2]:
-                    program.add_session(timeslot=evt_elts[0], room=evt_elts[1], session=evt_elts[3], zone=zone)
-            else:
-                program.add_session(timeslot=evt_elts[0], room=evt_elts[1], session=evt_elts[3])
+        try:
+            event_informations = self._load_events(session_summary_file, dict_timeslots, dict_rooms)
+            for evt_elts in event_informations:
+                list_sessions.append(evt_elts[3])
+                if evt_elts[2] is not None:
+                    for zone in evt_elts[2]:
+                        program.add_session(timeslot=evt_elts[0], room=evt_elts[1], session=evt_elts[3], zone=zone)
+                else:
+                    program.add_session(timeslot=evt_elts[0], room=evt_elts[1], session=evt_elts[3])
+
+        except Exception as ex:
+            self._logger.error(f"Cannot load the events: {ex}")
+            self._config["output"]["parts"]["events"] = False
 
         # Load the tutorials
-        tutorial_informations = self._load_tutorials(session_summary_file, dict_timeslots, dict_rooms)
-        for tuto_elts in tutorial_informations:
-            list_sessions.append(tuto_elts[2])
-            program.add_session(timeslot=tuto_elts[0], room=tuto_elts[1], session=tuto_elts[2])
+        try:
+            tutorial_informations = self._load_tutorials(session_summary_file, dict_timeslots, dict_rooms)
+            for tuto_elts in tutorial_informations:
+                list_sessions.append(tuto_elts[2])
+                program.add_session(timeslot=tuto_elts[0], room=tuto_elts[1], session=tuto_elts[2])
+        except Exception as ex:
+            self._logger.error(f"Cannot load the tutorials: {ex}")
+            self._config["output"]["parts"]["tutorials"] = False
 
-        student_nominees_id = self._load_student_award_nominees(session_summary_file)
-        theme_nominees_id = self._load_theme_award_nominees(session_summary_file)
+        try:
+            student_nominees_id = self._load_student_award_nominees(session_summary_file)
+        except Exception as ex:
+            self._logger.error(f"Cannot load the best student papers: {ex}")
+            self._config["output"]["parts"]["best_student_papers"] = False
+            student_nominees_id = set()
+
+        try:
+            theme_nominees_id = self._load_theme_award_nominees(session_summary_file)
+        except Exception as ex:
+            self._logger.error(f"Cannot load the best theme papers: {ex}")
+            self._config["output"]["parts"]["best_theme_papers"] = False
+            theme_nominees_id = set()
+
         return list_sessions, program, student_nominees_id, theme_nominees_id
 
     def load_satellite_events(self, satellite_summary_file: pathlib.Path) -> list[Satellite]:

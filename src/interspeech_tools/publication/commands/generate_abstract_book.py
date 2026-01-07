@@ -84,7 +84,7 @@ def main(args: argparse.Namespace):
         template_engine = configure_latex_jinja(template_loader)
         generate_theme_file(conference, colour_file, template_engine)
 
-    processor = AbstractBookProcessor(conference)
+    processor = AbstractBookProcessor(config, conference)
     processor.process(generated_elements_dir, draft=args.draft)
 
     if args.bootstrap:

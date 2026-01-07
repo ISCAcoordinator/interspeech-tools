@@ -157,7 +157,7 @@ class CMTSerialiser(ISCAObject):
             first_name = first_name.strip() if first_name is not None else None
             last_name = last_name.strip()
 
-            # FIXME: As for now, we dunno how to extract the affiliation component, just consider an institute
+            # Extract the affiliation part
             list_affiliations = list()
             affiliations = [s.strip() for s in match_author_affiliations.group(2).split(CMT_AFFILIATION_SEPARATOR)]
             for f in affiliations:
@@ -169,9 +169,9 @@ class CMTSerialiser(ISCAObject):
                 if len(match_affiliation.groups()) > 2:
                     country = match_affiliation.group(3)
 
-                affiliation = Affiliation(
-                    department=match_affiliation.group(1), institute=match_affiliation.group(2), country=country
-                )
+                short = match_affiliation.group(2)
+                long = f"{match_affiliation.group(1)}, {short}"
+                affiliation = Affiliation(short=short, long=long, country=country)
                 list_affiliations.append(affiliation)
             assert len(list_affiliations) > 0
 
@@ -245,7 +245,13 @@ class CMTSerialiser(ISCAObject):
                         aff_str = aff_str.strip()
                         m_affiliation = CMT_AFFILIATION_REGEXP.match(aff_str)
                         assert m_affiliation is not None, f"The format of the affiliation is not valid for: {aff_str}"
-                        affiliation = Affiliation(m_affiliation.group(2), m_affiliation.group(3), m_affiliation.group(1))
+                        short = m_affiliation.group(3)
+                        if short is None:
+                            long = None
+                            short = m_affiliation.group(2)
+                        else:
+                            long = f"{m_affiliation.group(2)}, {short}"
+                        affiliation = Affiliation(short=short, long=long, country=m_affiliation.group(1))
                         affiliations.append(affiliation)
 
                     id = self._generate_id(pres_lastname)
@@ -427,7 +433,7 @@ class CMTSerialiser(ISCAObject):
                     country = str(user_row["Country"]).strip()
 
                 affiliation = Affiliation(
-                    institute=str(user_row["Organization"]).strip(),
+                    short=str(user_row["Organization"]).strip(),
                     country=country,
                 )
 
@@ -496,7 +502,7 @@ class CMTSerialiser(ISCAObject):
                         country = str(speaker_row["Country"]).strip()
 
                     affiliation = Affiliation(
-                        institute=str(speaker_row["Organization"]).strip(),
+                        short=str(speaker_row["Organization"]).strip(),
                         country=country,
                     )
                     speaker.default_affiliation = affiliation
@@ -522,7 +528,7 @@ class CMTSerialiser(ISCAObject):
                         country = str(speaker_row["Country"]).strip()
 
                     affiliation = Affiliation(
-                        institute=str(speaker_row["Organization"]).strip(),
+                        short=str(speaker_row["Organization"]).strip(),
                         country=country,
                     )
 
@@ -578,7 +584,7 @@ class CMTSerialiser(ISCAObject):
                     last_name = str(user_row["Last Name"])
 
                 affiliation = Affiliation(
-                    institute=str(user_row["Organization"]).strip(),
+                    short=str(user_row["Organization"]).strip(),
                 )
 
                 roles = set()

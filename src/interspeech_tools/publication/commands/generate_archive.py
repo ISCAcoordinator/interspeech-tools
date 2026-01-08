@@ -37,6 +37,7 @@ def main(args: argparse.Namespace):
     booklet_path = None
     if args.booklet is not None:
         booklet_path = pathlib.Path(args.booklet)
+        assert booklet_path.is_file(), f"The booklet ({booklet_path}) neither exists nor is a file"
 
     archive_generator = ArchiveInputSerialiser()
     archive_generator.dump(conference, output_root_dir, booklet_path=booklet_path)

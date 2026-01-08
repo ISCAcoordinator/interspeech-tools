@@ -4,7 +4,8 @@
 
 ## How to install
 
-This repository relies on the isca lib (which is also in development stage). Therefore it is recommended to create an environment and:
+This repository relies on the isca lib (which is also in development stage).
+Therefore it is recommended to create an environment and:
   1. install the isca-lib using the instructions from there: https://github.com/ISCAcoordinator/isca-lib/blob/main/README.md
   2. clone the current repository, go to the directory and then use pip to install
 

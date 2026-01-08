@@ -46,6 +46,7 @@ from ..model import (
 
 from .base import Serialiser
 
+
 ###############################################################################
 # Core of the module
 ###############################################################################
@@ -1263,10 +1264,14 @@ class CMTSerialiser(Serialiser):
 
         # Extract presenters (TODO: This is a bit too specific, will have to check with Antoine about this)
         presenters = None
-        if ("Q7 (New presenter)" in paper_info) and (not pd.isna(paper_info["Q7 (New presenter)"])):
-            m_full = self._new_presenter_full_info_regexp.match(paper_info["Q7 (New presenter)"])
+        if (self._config["cmt"]["new_presenter_column_name"] in paper_info) and (
+            not pd.isna(paper_info[self._config["cmt"]["new_presenter_column_name"]])
+        ):
+            m_full = self._new_presenter_full_info_regexp.match(paper_info[self._config["cmt"]["new_presenter_column_name"]])
             if m_full:
-                self.logger.info(f"Adding alternative presenter \"{paper_info['Q7 (New presenter)']}\" to paper {paper_id}")
+                self.logger.info(
+                    f"Adding alternative presenter \"{paper_info[self._config['cmt']['new_presenter_column_name']]}\" to paper {paper_id}"
+                )
 
                 pres_email = m_full.group(3).lower().strip()
 
@@ -1280,7 +1285,9 @@ class CMTSerialiser(Serialiser):
                     pres_lastname = m_identity.group(3)
 
                     if m_full.group(2) is None:
-                        raise Exception(f"The presenter \"{paper_info['Q7 (New presenter)']}\" does nor respect the format")
+                        raise Exception(
+                            f"The presenter \"{paper_info[self._config['cmt']['new_presenter_column_name']]}\" does nor respect the format"
+                        )
 
                     affiliations = []
                     for aff_str in m_full.group(2).split(self._config["cmt"]["affiliation_separator"]):
@@ -1311,10 +1318,12 @@ class CMTSerialiser(Serialiser):
                 cur_presenter.add_role(Role.PRESENTER)
                 presenters = [cur_presenter]
             else:
-                raise Exception(f"The presenter \"{paper_info['Q7 (New presenter)']}\" does nor respect the format")
+                raise Exception(
+                    f"The presenter \"{paper_info[self._config['cmt']['new_presenter_column_name']]}\" does nor respect the format"
+                )
 
-        elif "Q7 (Presenter - Value)" in paper_info:
-            presenter_idx = int(paper_info["Q7 (Presenter - Value)"]) - 1
+        elif self._config["cmt"]["new_presenter_index_column_name"] in paper_info:
+            presenter_idx = int(paper_info[self._config["cmt"]["new_presenter_index_column_name"]]) - 1
 
             if presenter_idx >= len(paper_authors):
                 raise IndexError(
@@ -1343,8 +1352,8 @@ class CMTSerialiser(Serialiser):
             title = " ".join([t.strip() for t in title.split("\n")])
 
         resource = None
-        if "Q3 (Link to resource (optional))" in paper_info:
-            resource = str(paper_info["Q3 (Link to resource (optional))"])
+        if self._config["cmt"]["resource_link_column_name"] in paper_info:
+            resource = str(paper_info[self._config["cmt"]["resource_link_column_name"]])
             if not resource.startswith("https://doi.org/"):
                 if resource.startswith("10."):  # FIXME: hardcoded number prefix
                     resource = "https://doi.org/" + resource

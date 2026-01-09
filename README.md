@@ -49,7 +49,7 @@ is_pub -vv generate_archive ../data/ForPublicationCommittee/config.yaml output/a
 
 ### List all the individuals in the database with their emails
 
-An exapanded of this snippet is available in [the anonymization helper](./helpers/anonymize.py):
+An exapanded of this snippet is available in [the anonymization helper](./helpers/anonymize_mail.py):
 
 ```python
 import pathlib

@@ -53,6 +53,7 @@ is_pub -vv generate_archive ../data/ForPublicationCommittee/config.yaml output/a
 import pathlib
 import re
 import pandas as pd
+from interspeech_tools.conf import Config
 from interspeech_tools.io.cmt import CMTSerialiser
 from isca.model.program import Presentation, ScientificSession
 
@@ -67,9 +68,10 @@ def short_presentation_id(input: Presentation) -> str:
     return presentation_id
 
 # Load the conference
-ser = CMTSerialiser(False, False)
 input_file = pathlib.Path("../data/ForPublicationCommittee/config.yaml")
-conf = ser.load(input_file)
+conf = Config(input_file)
+ser = CMTSerialiser(conf)
+conf = ser.load()
 
 # Extract the association information
 paperid2presentationid = []

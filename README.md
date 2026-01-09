@@ -47,6 +47,32 @@ is_pub -vv generate_archive ../data/ForPublicationCommittee/config.yaml output/a
 
 ## How to use as a library
 
+### List all the individuals in the database with their emails
+
+An exapanded of this snippet is available in [the anonymization helper](./helpers/anonymize.py):
+
+```python
+import pathlib
+from interspeech_tools.conf import Config
+from interspeech_tools.io.cmt import CMTSerialiser
+
+# Load the conference
+input_file = pathlib.Path("../data/ForPublicationCommittee_complete/config.yaml")
+conf = Config(input_file)
+ser = CMTSerialiser(conf)
+conf = ser.load()
+
+# FIXME: for now the annuary is private, but need to think about a better integration
+annuary = conf._annuary
+
+with open("anonymize_email.tsv", "w") as f_out:
+    f_out.write("original_emal\tobfuscated_email\n")
+    for person_idx, person in enumerate(annuary):
+        f_out.write(f"{person.email}\tid{person_idx}@is.invalid\n")
+```
+
+
+
 ### Extract the paper ID/presentation ID association
 
 ```python

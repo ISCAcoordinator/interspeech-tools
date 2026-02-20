@@ -3,12 +3,12 @@ import pathlib
 import pandas as pd
 from trieregex import TrieRegEx as TRE
 from interspeech_tools.conf import Config
-from interspeech_tools.io.cmt import CMTSerialiser
+from interspeech_tools.io.cmt import InterspeechCMTSerialiser
 
 # Load the conference
 input_file = pathlib.Path("../data/ForPublicationCommittee/config.yaml")
 config = Config(input_file)
-ser = CMTSerialiser(config)
+ser = InterspeechCMTSerialiser(config)
 conference = ser.load()
 
 sure = input("This scripts overwrite the data, are you sure (yes|no) you want to run it?")

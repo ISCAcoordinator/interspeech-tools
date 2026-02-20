@@ -1,8 +1,8 @@
 from ..conf import Config
 from .base import Serialiser
-from .cmt import CMTSerialiser
+from .cmt import InterspeechCMTSerialiser
 
-SERIALISERS = {"cmt": CMTSerialiser}
+SERIALISERS = {"cmt": InterspeechCMTSerialiser}
 
 
 def instanciate_serialiser(configuration: Config) -> Serialiser:
@@ -31,4 +31,4 @@ def instanciate_serialiser(configuration: Config) -> Serialiser:
     return SERIALISERS[serialiser_name](configuration)
 
 
-__all__ = ["CMTSerialiser"]
+__all__ = ["InterspeechCMTSerialiser"]

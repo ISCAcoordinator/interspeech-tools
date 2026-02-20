@@ -50,7 +50,7 @@ from .base import Serialiser
 ###############################################################################
 # Core of the module
 ###############################################################################
-class CMTSerialiser(Serialiser):
+class InterspeechCMTSerialiser(Serialiser):
     def __init__(self, config: Config):
         super().__init__()
         self._annuary = Annuary()

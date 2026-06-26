@@ -1,5 +1,5 @@
 from ..conf import Config
-from .base import Serialiser
+from isca.io.base import Serialiser
 from .cmt import InterspeechCMTSerialiser
 
 SERIALISERS = {"cmt": InterspeechCMTSerialiser}

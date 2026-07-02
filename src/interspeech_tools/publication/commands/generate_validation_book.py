@@ -22,7 +22,7 @@ from ..books.theme import generate_theme_file
 
 
 def list_elts(conf: Conference, ignore_sessions: bool) -> dict[str, Paper] | dict[str, Presentation]:
-    if ignore_sessions:
+    if ignore_sessions or (not conf.sessions):
         return conf.papers
     else:
         presentations = dict()

@@ -1,6 +1,5 @@
 # Python
 from datetime import datetime
-import traceback
 import re
 import pathlib
 
@@ -133,7 +132,9 @@ class InterspeechCMTSerialiser(CMTSerialiser):
         except Exception as ex:
             self._logger.error(f"Cannot load the speakers: {ex}")
             self._config["output"]["parts"]["speakers"] = False
-        papers, _, presenters = self.load_papers(metadata_file, pdfs_path, updated_pdfs_path)
+        papers, _ = self.load_papers(metadata_file, pdfs_path, updated_pdfs_path)
+        presenters = dict()
+        # presenters = self.load_presenters(metadata_file)
 
         if self._ignore_sessions:
             conference = self.load_conference(papers=papers, sessions=None)
@@ -1037,7 +1038,7 @@ class InterspeechCMTSerialiser(CMTSerialiser):
 
         return id
 
-    def _extract_df_information(self, paper_info: pd.Series) -> tuple[Paper, list[Person] | None]:
+    def _extract_df_information(self, paper_info: pd.Series) -> Paper:
 
         paper_id = paper_info["Paper ID"]
         author_names = (
@@ -1251,7 +1252,5 @@ class InterspeechCMTSerialiser(CMTSerialiser):
                 else:
                     resource = None
 
-        return (
-            Paper(str(paper_info["Paper ID"]), title, paper_authors, abstract=abstract, resource=resource),
-            presenters,
-        )
+
+        return Paper(str(paper_info["Paper ID"]), title, paper_authors, abstract=abstract, resource=resource)

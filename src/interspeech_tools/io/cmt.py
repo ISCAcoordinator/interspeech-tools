@@ -45,6 +45,7 @@ from ..model import (
 
 from isca.io.cmt import CMTSerialiser
 
+NO_AFFILIATION = "Unaffiliated"
 
 ###############################################################################
 # Core of the module
@@ -68,6 +69,7 @@ class InterspeechCMTSerialiser(CMTSerialiser):
 
         self._metadata_from_pdf = self._config["input_data"]["metadata_from_pdf"]
         self._ignore_sessions = self._config["input_data"]["ignore_sessions"]
+        self._ignore_satellites = self._config["input_data"]["ignore_satellites"]
         self._affiliation_regexp = re.compile(self._config["cmt"]["affiliation_regexp"])
         self._new_presenter_full_info_regexp = re.compile(self._config["cmt"]["new_presenter_full_info_regexp"])
         self._author_elts_regexp = re.compile(self._config["cmt"]["author_elts_regexp"])
@@ -147,12 +149,13 @@ class InterspeechCMTSerialiser(CMTSerialiser):
                 theme_award_nominees=theme_award_nominees,
             )
 
-        try:
-            satellites = self.load_satellite_events(satellites_file)
-            conference.update_satellite_events(satellites)
-        except Exception as ex:
-            self._logger.error(f"Cannot load the satellites: {ex}")
-            self._config["output"]["parts"]["satellites"] = False
+        if not self._ignore_satellites:
+            try:
+                satellites = self.load_satellite_events(satellites_file)
+                conference.update_satellite_events(satellites)
+            except Exception as ex:
+                self._logger.error(f"Cannot load the satellites: {ex}")
+                self._config["output"]["parts"]["satellites"] = False
         return conference
 
     def load_users(self, user_spreadsheet_file: pathlib.Path, ignore_role: bool = True) -> Annuary:
@@ -1096,6 +1099,11 @@ class InterspeechCMTSerialiser(CMTSerialiser):
                 s.strip() for s in match_author_affiliations.group(2).split(self._config["cmt"]["affiliation_separator"])
             ]
             for f in affiliations:
+                if not f:
+                    affiliation=Affiliation(short=NO_AFFILIATION, long=NO_AFFILIATION)
+                    list_affiliations.append(affiliation)
+                    continue
+
                 match_affiliation = self._affiliation_regexp.match(f)
                 if not match_affiliation:
                     raise Exception(f"[{paper_id}] The following affiliation for author {cur_author} is not valid: {f}")

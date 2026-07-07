@@ -32,6 +32,7 @@ from ..model import (
     Interspeech,
     InterspeechEvent,
     InterspeechEventType,
+    LongPaper,
     Satellite,
     Tutorial,
     TutorialSession,
@@ -1287,4 +1288,7 @@ class InterspeechCMTSerialiser(CMTSerialiser):
                 else:
                     resource = None
 
-        return Paper(str(paper_info["Paper ID"]), title, paper_authors, abstract=abstract, resource=resource)
+        if ("Paper Type" in paper_info) and (str(paper_info["Paper Type"]).lower().strip() == "long"):
+            return LongPaper(str(paper_info["Paper ID"]), title, paper_authors, abstract=abstract, resource=resource)
+        else:
+            return Paper(str(paper_info["Paper ID"]), title, paper_authors, abstract=abstract, resource=resource)

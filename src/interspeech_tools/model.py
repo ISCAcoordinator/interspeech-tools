@@ -1,3 +1,4 @@
+import pathlib
 import datetime
 
 from isca.model.item import Paper, Session
@@ -14,6 +15,22 @@ from isca.model.program import (
 )
 from isca.model.event import Conference, Event
 from enum import Enum
+
+
+class LongPaper(Paper):
+    def __init__(
+        self,
+        id: str,
+        title: str,
+        authors: list[Person],
+        abstract: str | None = None,
+        pdf_file: pathlib.Path | str | None = None,
+        reviewers: list[Person] | None = None,
+        track: str | None = None,
+        metadata_from_pdf: bool = False,
+        resource: str | None = None,
+    ):
+        super().__init__(id, title, authors, abstract, pdf_file, reviewers, track, metadata_from_pdf, resource)
 
 
 class Satellite(Event):

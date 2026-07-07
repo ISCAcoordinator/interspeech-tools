@@ -53,9 +53,6 @@ NO_AFFILIATION = "Unaffiliated"
 class InterspeechCMTSerialiser(CMTSerialiser):
     def __init__(self, config: Config):
         super().__init__()
-        self._annuary = Annuary()
-        self._pdf_loader = PDFLoader(self._annuary)
-        self._id_generator: dict[str, int] = dict()
 
         # Load the configuration
         self.set_config(config)
@@ -74,6 +71,7 @@ class InterspeechCMTSerialiser(CMTSerialiser):
         self._new_presenter_full_info_regexp = re.compile(self._config["cmt"]["new_presenter_full_info_regexp"])
         self._author_elts_regexp = re.compile(self._config["cmt"]["author_elts_regexp"])
         self._author_full_info_regexp = re.compile(self._config["cmt"]["author_full_info_regexp"])
+        self._pdf_name_format = self._config["cmt"]["pdf_name_format"]
 
     def load(self) -> Conference:
 
@@ -134,7 +132,7 @@ class InterspeechCMTSerialiser(CMTSerialiser):
         except Exception as ex:
             self._logger.error(f"Cannot load the speakers: {ex}")
             self._config["output"]["parts"]["speakers"] = False
-        papers, _ = self.load_papers(metadata_file, pdfs_path, updated_pdfs_path)
+        papers, _ = self.load_papers(metadata_file, pdfs_path, updated_pdfs_path, self._pdf_name_format)
         presenters = self.load_presenters(metadata_file, papers)
 
         if self._ignore_sessions:
@@ -1131,7 +1129,6 @@ class InterspeechCMTSerialiser(CMTSerialiser):
         elif self._config["cmt"]["new_presenter_index_column_name"] in paper_info:
             presenter_idx = int(paper_info[self._config["cmt"]["new_presenter_index_column_name"]]) - 1
 
-
             if presenter_idx >= len(paper_obj.authors):
                 raise IndexError(
                     f"[{paper_id}] Author {presenter_idx} can't be a presenter as there are only {len(paper_obj.authors)} authors"
@@ -1206,7 +1203,7 @@ class InterspeechCMTSerialiser(CMTSerialiser):
             ]
             for f in affiliations:
                 if not f:
-                    affiliation=Affiliation(short=NO_AFFILIATION, long=NO_AFFILIATION)
+                    affiliation = Affiliation(short=NO_AFFILIATION, long=NO_AFFILIATION)
                     list_affiliations.append(affiliation)
                     continue
 
@@ -1289,6 +1286,5 @@ class InterspeechCMTSerialiser(CMTSerialiser):
                     resource = "https://doi.org/" + resource
                 else:
                     resource = None
-
 
         return Paper(str(paper_info["Paper ID"]), title, paper_authors, abstract=abstract, resource=resource)

@@ -25,7 +25,6 @@ from isca.model.program import (
     TimeslotType,
 )
 from isca.io.utils.helpers import load_excel
-from isca.io.utils.pdf import PDFLoader, PDFMetadataException
 
 from ..conf import Config
 from ..model import (
@@ -1177,7 +1176,6 @@ class InterspeechCMTSerialiser(CMTSerialiser):
                 raise Exception(f"[{paper_id}] Impossible to parse the author, please fix the spreadsheet: {cur_author}")
 
             # Extract author information
-            middle_initial = None
             email = author_emails[i_author]
             cur_author = match_author_affiliations.group(1)
             if "{" in cur_author:

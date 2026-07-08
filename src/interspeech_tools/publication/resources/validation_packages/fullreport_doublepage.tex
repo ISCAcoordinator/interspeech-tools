@@ -1,0 +1,24 @@
+\documentclass[a4paper,11pt,dvipsnames]{article}
+
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage{pdfpages}
+\usepackage[a4paper, left=2cm, right=2cm, top=2cm, bottom=2.5cm]{geometry} %% for bigger margins
+\usepackage{hyperref}
+\usepackage{fancyhdr}
+\usepackage{enumitem}
+\usepackage{xcolor}
+
+\renewcommand{\headrulewidth}{0pt}
+
+\setlength\headheight{33pt}
+\setlength\footskip{16pt}
+
+\begin{document}
+
+# for p in pids
+	\clearpage
+	\includepdf[pages=1-2]{\VAR{p}}
+# endfor
+
+\end{document}

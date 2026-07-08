@@ -1,0 +1,77 @@
+\documentclass[a4paper, 11pt, dvipsnames]{article}
+
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage{pdfpages}
+\usepackage[a4paper, left=1cm, right=1cm, top=1cm, bottom=1cm]{
+    geometry
+} %% for bigger margins
+\usepackage{hyperref}
+\usepackage{fancyhdr}
+\usepackage{enumitem}
+\usepackage{xcolor}
+\usepackage[normalem]{ulem} % for \sout
+\usepackage{changebar}
+
+\usepackage{verbatim}
+\usepackage{listings}
+\lstset{ basicstyle=\small, columns=flexible, breaklines=true }
+
+\renewcommand{\headrulewidth}{0pt}
+
+\setlength{\headheight}{33pt}
+\setlength{\footskip}{16pt}
+
+
+%change default font to Times-Roman
+\renewcommand{\sfdefault}{phv}
+\renewcommand{\rmdefault}{ptm}
+\renewcommand{\ttdefault}{pcr}
+
+
+\begin{document}
+	\includepdf[pages=1, pagecommand={\thispagestyle{plain}}]{\VAR{pdf_file}}
+	\newpage
+	\clearpage
+
+
+	{\centering \section*{=== Paper \VAR{pid} ===}}
+        \textbf{\VAR{title}}
+
+        {\centering
+        \section*{Authors}
+        }
+        \begin{enumerate}[noitemsep]
+        # for author in authors
+        \item \VAR{author}
+        # endfor
+        \end{enumerate}
+
+        {\centering \section*{Abstract}}
+        \VAR{abstract}
+
+        \bigskip
+
+	{\centering \section*{Elements to check}}
+
+
+	# for k, v in detailed_report.items()
+          # if k == "abstract":
+
+          # elif k == "authors":
+            # if (v):
+              \subsection*{authors}
+\begin{lstlisting}
+  # for lin in v.split("\n"):
+\VAR{lin}
+# endfor
+\end{lstlisting}
+            # endif
+          # else:
+	    \subsection*{\VAR{k}}
+\begin{lstlisting}
+\VAR{v}\\
+\end{lstlisting}
+          # endif
+        # endfor
+\end{document}

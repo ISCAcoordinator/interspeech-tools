@@ -15,35 +15,48 @@ pip install -e .[dev]
 
 ## How to use the tools
 
-We assume that the data from the google drive is stored into `../data/ForPublicationCommittee`
+First in general, please refer to the command helper (`is_pub <command> -h`) for more information
+
+We assume that the data from the google drive is stored into the variable "$CONFIG_PATH"
 
 ### Generate the validation book
 
 ```sh
 mkdir -p output/validation_book/
-is_pub -vv generate_validation_book -b --compile-tool="latexmk" ../data/ForPublicationCommittee/config.yaml output/validation_book/
+is_pub -vv generate_validation_book -b --compile-tool="latexmk" "$CONFIG_PATH" output/validation_book/
 ```
 
 ### Generate the abstract book
 
 ```sh
 mkdir -p output/abstract_book/
-is_pub -vv generate_abstract_book -b --compile-tool="latexmk" ../data/ForPublicationCommittee/config.yaml output/abstract_book/
+is_pub -vv generate_abstract_book -b --compile-tool="latexmk" "$CONFIG_PATH" output/abstract_book/
 ```
 
 ### Generate the app data
 
 ```sh
 mkdir -p output/app_data
-is_pub -vv generate_app_data ../data/ForPublicationCommittee/config.yaml output/app_data
+is_pub -vv generate_app_data "$CONFIG_PATH" output/app_data
 ```
 
 ### Generate the archive
 
 ```sh
 mkdir -p output/archive
-is_pub -vv generate_archive ../data/ForPublicationCommittee/config.yaml output/archive
+is_pub -vv generate_archive "$CONFIG_PATH" output/archive
 ```
+
+### Generate the validation packages for the helpers
+
+To generate the validation packages (including the PDF report), use the following command:
+
+```sh
+is_pub -vv generate_validation_packages -n 5 -p "$CONFIG_PATH" output/packages
+```
+
+- `-n 5` generates the packages for 5 helpers
+- `-p` activates the generation of the PDF reports (will compile the PDF as well so it takes some times)
 
 ## How to use as a library
 

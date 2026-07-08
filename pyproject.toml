@@ -18,9 +18,9 @@ classifiers = [
     'Programming Language :: Python :: 3',
 ]
 dependencies = [
-    'isca-lib>=0.0.1',
+    'isca-lib>=0.1',
     'PyMuPDF>=1.25.5',
-    'jinja2==3.1.2',
+    'jinja2>=3.1.2',
     'unidecode>=1.3.8',
     'pyuca>=1.2',
     'pylatex'
@@ -41,6 +41,9 @@ git = "https://github.com/seblemaguer/interspeech_tools.git"
 
 [project.scripts]
 is_pub="interspeech_tools.publication.__main__:main"
+
+[tool.setuptools.package-data]
+interspeech_tools = ["**/resources/**/*.*"]  # FIXME: this is a bit hardcore here
 
 [tool.black]
 line-length = 130

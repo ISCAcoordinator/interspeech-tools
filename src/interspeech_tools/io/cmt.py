@@ -1165,7 +1165,16 @@ class InterspeechCMTSerialiser(CMTSerialiser):
                 f"[{paper_id}] The number of authors ({len(author_names)}) does not match the number of emails ({len(author_emails)})"
             )
 
-        paper_authors = list()
+        paper_authors = []
+        affiliation_fallback_cmt = False
+        author_affiliations = paper_info[self._config["cmt"]["affiliation_column_name"]].strip().split("\n")
+        if len(author_affiliations) != len(author_names):
+            affiliation_fallback_cmt = True
+            self.logger.error(
+                f"[{paper_id}] The number of affiliations ({len(author_affiliations)}) is not consistent with the number of authors in the metadata ({len(author_names)}), falling back to the CMT information",
+                extra={"paper_id": paper_id},
+            )
+
         for i_author, cur_author in enumerate(author_names):
             cur_author = cur_author.replace(self._config["cmt"]["corresponding_author_marker"], "").strip()
             if cur_author[-1] != ")":
@@ -1195,29 +1204,34 @@ class InterspeechCMTSerialiser(CMTSerialiser):
             first_name = first_name.strip() if first_name is not None else None
             last_name = last_name.strip()
 
-            # Extract the affiliation part
-            list_affiliations = list()
-            affiliations = [
-                s.strip() for s in match_author_affiliations.group(2).split(self._config["cmt"]["affiliation_separator"])
-            ]
-            for f in affiliations:
-                if not f:
-                    affiliation = Affiliation(short=NO_AFFILIATION, long=NO_AFFILIATION)
+            # Deal with affiliations
+            if not affiliation_fallback_cmt:
+                list_affiliations = [
+                    Affiliation(short=author_affiliations[i_author].strip(), long=author_affiliations[i_author].strip())
+                ]
+            else:
+                list_affiliations = list()
+                affiliations = [
+                    s.strip() for s in match_author_affiliations.group(2).split(self._config["cmt"]["affiliation_separator"])
+                ]
+                for f in affiliations:
+                    if not f:
+                        affiliation = Affiliation(short=NO_AFFILIATION, long=NO_AFFILIATION)
+                        list_affiliations.append(affiliation)
+                        continue
+
+                    match_affiliation = self._affiliation_regexp.match(f)
+                    if not match_affiliation:
+                        raise Exception(f"[{paper_id}] The following affiliation for author {cur_author} is not valid: {f}")
+
+                    country = None
+                    if len(match_affiliation.groups()) > 2:
+                        country = match_affiliation.group(3)
+
+                    short = match_affiliation.group(2)
+                    long = f"{match_affiliation.group(1)}, {short}"
+                    affiliation = Affiliation(short=short, long=long, country=country)
                     list_affiliations.append(affiliation)
-                    continue
-
-                match_affiliation = self._affiliation_regexp.match(f)
-                if not match_affiliation:
-                    raise Exception(f"[{paper_id}] The following affiliation for author {cur_author} is not valid: {f}")
-
-                country = None
-                if len(match_affiliation.groups()) > 2:
-                    country = match_affiliation.group(3)
-
-                short = match_affiliation.group(2)
-                long = f"{match_affiliation.group(1)}, {short}"
-                affiliation = Affiliation(short=short, long=long, country=country)
-                list_affiliations.append(affiliation)
             assert len(list_affiliations) > 0
 
             cur_person = self._annuary.find_person_by_email(email)

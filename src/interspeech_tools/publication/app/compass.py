@@ -27,6 +27,8 @@ from ...model import (
     BlueSkyPresentation,
     Tutorial,
     TutorialSession,
+    LongPresentation,
+    LongSession,
 )
 from ..books.jinja_helpers import short_presentation_id
 
@@ -77,6 +79,7 @@ class CompassDataGenerator:
     # FIXME: for now this is hardcoded, it could be good to be more flexible
     SUPPORTED_SESSION_TYPES = {
         OralSession: "oral",
+        LongSession: "long",
         PosterSession: "poster",
         ShowAndTellSession: "showandtell",
         SpecialSession: "special",
@@ -86,6 +89,7 @@ class CompassDataGenerator:
     }
     SUPPORTED_PRESENTATION_TYPES = {
         OralPresentation: "oral",
+        LongPresentation: "long",
         PosterPresentation: "poster",
         Keynote: "keynote",
         Tutorial: "tutorial",

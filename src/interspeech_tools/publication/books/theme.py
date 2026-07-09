@@ -16,6 +16,8 @@ from ...model import (
     BlueSkyPresentation,
     Interspeech,
     InterspeechEvent,
+    LongPresentation,
+    LongSession,
     SpecialSession,
     ShowAndTellSession,
     ShowAndTellPresentation,
@@ -24,24 +26,20 @@ from ...model import (
     TutorialSession,
 )
 
-
 SPECIFIC_SESSION_IDS = {
     KeynoteSession: "keynote",
     SpecialSession: "special",
     ShowAndTellSession: "showandtell",
     TutorialSession: "tutorial",
 }
-GENERIC_SESSION_IDS = {OralSession: "oral", PosterSession: "poster", SocialSession: "social"}
+GENERIC_SESSION_IDS = {OralSession: "oral", PosterSession: "poster", SocialSession: "social", LongSession: "long"}
 SPECIFIC_PRESENTATION_IDS = {
     ShowAndTellPresentation: "showandtell",
     SpecialPresentation: "special",
     SurveyTalk: "survey",
     BlueSkyPresentation: "bluesky",
 }
-GENERIC_PRESENTATION_IDS = {
-    OralPresentation: "oral",
-    PosterPresentation: "poster",
-}
+GENERIC_PRESENTATION_IDS = {OralPresentation: "oral", PosterPresentation: "poster", LongPresentation: "long"}
 
 
 def get_presentation_type(input_presentation: Presentation) -> str:

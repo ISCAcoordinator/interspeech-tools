@@ -11,7 +11,7 @@ from isca.model.program import KeynoteSession, OralSession, PosterSession, Room,
 from isca.model.person import Person, Speaker
 
 from ...conf import Config
-from ...model import Interspeech, InterspeechEvent, ShowAndTellSession, SpecialSession, TutorialSession
+from ...model import Interspeech, InterspeechEvent, LongSession, ShowAndTellSession, SpecialSession, TutorialSession
 
 from .theme import (
     get_session_type,
@@ -23,6 +23,7 @@ def is_content_session(input_session: Session) -> bool:
     return (
         isinstance(input_session, KeynoteSession)
         or isinstance(input_session, OralSession)
+        or isinstance(input_session, LongSession)
         or isinstance(input_session, PosterSession)
         or isinstance(input_session, SpecialSession)
         or isinstance(input_session, ShowAndTellSession)
@@ -64,6 +65,7 @@ class AbstractBookProcessor(ISCAObject):
 
             # Generate the program table
             day_timeslots = self._conf.get_timeslots(date)
+            print(day_timeslots)
             with open(outfilename, "w") as outfile:
                 outfile.write(self._generate_programme_table(day_timeslots))
                 outfile.write("\n")

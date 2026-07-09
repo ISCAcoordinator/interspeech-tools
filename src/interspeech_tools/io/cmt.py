@@ -32,6 +32,8 @@ from ..model import (
     InterspeechEvent,
     InterspeechEventType,
     LongPaper,
+    LongPresentation,
+    LongSession,
     Satellite,
     Tutorial,
     TutorialSession,
@@ -46,6 +48,7 @@ from ..model import (
 from isca.io.cmt import CMTSerialiser
 
 NO_AFFILIATION = "Unaffiliated"
+
 
 ###############################################################################
 # Core of the module
@@ -496,7 +499,7 @@ class InterspeechCMTSerialiser(CMTSerialiser):
         tutorials = []
         for _, row in df.iterrows():
             timeslot = timeslots[str(row["Timeslot name*"])]
-            room = rooms[str(row["Room name*"])]
+            room = rooms[str(row["Room ID*"])]
             presenters = []
             for cur_presenter in str(row["Organisers"]).split("; "):
                 email = cur_presenter.lower().strip()
@@ -527,7 +530,7 @@ class InterspeechCMTSerialiser(CMTSerialiser):
         events = []
         for _, row in df.iterrows():
             timeslot = timeslots[str(row["Timeslot name*"])]
-            room = rooms[str(row["Room name*"])]
+            room = rooms[str(row["Room ID*"])]
             zones = None
             if ("Zone" in row) and (not pd.isna(row["Zone"])):
                 if not ("," in str(row["Zone"])):
@@ -600,7 +603,7 @@ class InterspeechCMTSerialiser(CMTSerialiser):
             elif "-" in capacity:
                 capacity = [int(c.strip()) for c in capacity.split("-")]
             else:
-                capacity = int(capacity)
+                capacity = int(float(capacity))
 
             nb_zones = 1
             zones = None
@@ -640,6 +643,10 @@ class InterspeechCMTSerialiser(CMTSerialiser):
         df = load_excel(session_summary_file, sheet_name=self._config["cmt"]["timeslots_sheet_name"])
         df["Date"] = df["Date"].astype(str)
         for _, timeslot_info in df.iterrows():
+            if pd.isna(timeslot_info["Date"]) or pd.isna(timeslot_info["Start"]) or pd.isna(timeslot_info["End"]):
+                self.logger.error(f"Cannot load timeslot '{timeslot_info['Timeslot ID']}' as the times are not fully defined")
+                continue
+
             start_time = f"{timeslot_info['Date']} {timeslot_info['Start']}"
             start_time = datetime.strptime(start_time, "%Y-%m-%d %H:%M:%S")
             end_time = f"{timeslot_info['Date']} {timeslot_info['End']}"
@@ -666,14 +673,14 @@ class InterspeechCMTSerialiser(CMTSerialiser):
                 raise Exception(f'The timeslot type "{timeslot_type_str}" is unknown')
 
             cur_timeslot = Timeslot(
-                timeslot_info["Timeslot name"],
-                timeslot_info["Timeslot string"] if "Timeslot string" in timeslot_info else timeslot_info["Timeslot name"],
+                timeslot_info["Timeslot ID"],
+                timeslot_info["Timeslot string"] if "Timeslot string" in timeslot_info else timeslot_info["Timeslot ID"],
                 timeslot_type,
                 start_time,
                 end_time,
             )
 
-            dict_timeslots[timeslot_info["Timeslot name"]] = cur_timeslot
+            dict_timeslots[timeslot_info["Timeslot ID"]] = cur_timeslot
 
         program = Program(list(dict_timeslots.values()), list(dict_rooms.values()))
 
@@ -742,12 +749,16 @@ class InterspeechCMTSerialiser(CMTSerialiser):
 
             # Create the sessions
             cur_time_slot = dict_timeslots[session_info["Timeslot name*"]]
-            cur_room = dict_rooms[session_info["Room name*"]]  # FIXME: why this "*"?
+            cur_room = dict_rooms[session_info["Room ID*"]]  # FIXME: why this "*"?
 
             session_type = str(session_info["Session type"])
+            session_track = str(session_info["Track"])
             presentation_type = str(session_info["Presentation type"])
             if session_type.lower() == "oral":
-                cur_session = OralSession(session_id, session_name, cur_time_slot.start, cur_time_slot.end, chairs=chairs)
+                if session_track.lower() == "long":
+                    cur_session = LongSession(session_id, session_name, cur_time_slot.start, cur_time_slot.end, chairs=chairs)
+                else:
+                    cur_session = OralSession(session_id, session_name, cur_time_slot.start, cur_time_slot.end, chairs=chairs)
             elif session_type.lower() == "poster":
                 cur_session = PosterSession(session_id, session_name, cur_time_slot.start, cur_time_slot.end, chairs=chairs)
             elif session_type.lower() == "show and tell":
@@ -789,7 +800,16 @@ class InterspeechCMTSerialiser(CMTSerialiser):
                     if (dict_presenters is not None) and (paper_id in dict_presenters):
                         paper_presenters = dict_presenters[paper_id]
 
-                    if isinstance(cur_session, OralSession):
+                    if isinstance(cur_session, LongSession):
+                        cur_presentation = LongPresentation(
+                            f"{session_id}-{paper_idx:02d}",
+                            cur_paper.title,
+                            paper_presenters,
+                            cur_session.default_duration,
+                            cur_paper.abstract,
+                            cur_paper,
+                        )
+                    elif isinstance(cur_session, OralSession):
                         if paper_id in bs_paper_ids:
                             cur_presentation = BlueSkyPresentation(
                                 f"{session_id}-{paper_idx:02d}",

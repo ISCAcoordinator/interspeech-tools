@@ -146,6 +146,34 @@ class BlueSkyPresentation(OralPresentation):
         super().__init__(id, title, presenters, duration, abstract, presented_paper)
 
 
+class LongPresentation(OralPresentation):
+    def __init__(
+        self,
+        id: str,
+        title: str,
+        presenters: list[Person] | None,
+        duration: int,
+        abstract: str | None = None,
+        presented_paper: LongPaper | None = None,
+    ):
+        if presented_paper is not None:
+            assert isinstance(presented_paper, LongPaper)
+        super().__init__(id, title, presenters, duration, abstract, presented_paper)
+
+
+class LongSession(OralSession):
+    def __init__(
+        self,
+        id: str,
+        name: str,
+        start: datetime.datetime,
+        end: datetime.datetime,
+        presentations: list[LongPresentation | SurveyTalk] | None = None,
+        chairs: list[Person] | None = None,
+    ):
+        super().__init__(id, name, start, end, presentations, chairs, 20)
+
+
 class SpecialSession(PresentationSession):
     def __init__(
         self,

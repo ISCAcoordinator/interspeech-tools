@@ -32,10 +32,10 @@
   \BLOCK{- for elt in row.elts }
     \BLOCK{ if elt.type == "multicolumn" }
       \multicolumn{\VAR{elt.colspan}}{c|}{
-      \BLOCK{ if elt.content is string }\BLOCK{ else }\cellcontent{\VAR{elt.content.id}}{\VAR{elt.content.name}}{\VAR{elt.content.bg}}{\VAR{elt.content.fg}}\BLOCK{ endif }
+      \BLOCK{ if elt.content is string }\BLOCK{ else }\cellcontent{\VAR{elt.content.id}}{\VAR{elt.content.name | latexify}}{\VAR{elt.content.bg}}{\VAR{elt.content.fg}}\BLOCK{ endif }
       }
     \BLOCK{ elif elt.type == "cell" }
-      \cellcontent{\VAR{elt.content.id}}{\VAR{elt.content.name}}{\VAR{elt.content.bg}}{\VAR{elt.content.fg}}
+      \cellcontent{\VAR{elt.content.id}}{\VAR{elt.content.name|latexify}}{\VAR{elt.content.bg}}{\VAR{elt.content.fg}}
     \BLOCK{ else }
       % empty cell
     \BLOCK{ endif }

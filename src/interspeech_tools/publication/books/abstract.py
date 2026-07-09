@@ -467,6 +467,11 @@ class AbstractBookProcessor(ISCAObject):
         with open(output_file, "w") as f:
             f.write(
                 main_template.render(
-                    classname="interspeech", dates=dates, content_dates=content_dates, draft=draft, conf=self._config
+                    classname="interspeech",
+                    conf_name=self._conf.name,
+                    dates=dates,
+                    content_dates=content_dates,
+                    draft=draft,
+                    conf=self._config,
                 )
             )

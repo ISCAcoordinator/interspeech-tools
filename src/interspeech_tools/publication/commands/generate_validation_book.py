@@ -158,7 +158,7 @@ def main(args: argparse.Namespace):
     validation_main_template = validation_template_engine.get_template("main.tex.jinja2")
     val_book_entry_file = val_book_directory / "validation_book.tex"
     with open(val_book_entry_file, "w") as f:
-        f.write(validation_main_template.render(classname=args.classname))
+        f.write(validation_main_template.render(classname=args.classname, conf_name=conference.name))
 
     # Compile if wanted
     if args.compile_tool != "none":

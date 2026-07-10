@@ -201,7 +201,7 @@ class InterspeechCMTSerialiser(CMTSerialiser):
                     else:
                         email = reference_email
 
-                first_name = str(user_row["# First Name"]).strip()
+                first_name = str(user_row["First Name"]).strip()
                 first_name = first_name.title() if first_name.isupper() else first_name
 
                 middle_initial = ""

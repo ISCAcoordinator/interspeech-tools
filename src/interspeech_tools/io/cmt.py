@@ -251,7 +251,7 @@ class InterspeechCMTSerialiser(CMTSerialiser):
                         else:
                             raise Exception(f'The role ("{r}") is unknown')
 
-                id = self._generate_id(last_name)
+                id = self._generate_id(first_name, last_name)
                 cur_user = Person(
                     id,
                     first_name.strip() if first_name is not None else None,
@@ -320,7 +320,7 @@ class InterspeechCMTSerialiser(CMTSerialiser):
                     )
 
                     # Create speaker
-                    id = self._generate_id(last_name)
+                    id = self._generate_id(first_name, last_name)
                     speaker = Speaker(
                         id,
                         first_name.strip() if first_name is not None else None,
@@ -401,7 +401,7 @@ class InterspeechCMTSerialiser(CMTSerialiser):
                         else:
                             raise Exception(f'The role ("{r}") is unknown')
 
-                id = self._generate_id(last_name)
+                id = self._generate_id(first_name, last_name)
                 cur_user = Person(
                     id,
                     first_name.strip(),
@@ -984,7 +984,7 @@ class InterspeechCMTSerialiser(CMTSerialiser):
                     first_name = " ".join(elts[:-1])
                     last_name = elts[-1]
 
-                    id = self._generate_id(last_name)
+                    id = self._generate_id(first_name, last_name)
                     cur_chair = Person(
                         id, first_name, last_name, "noemail@nodomain.org"
                     )  # FIXME: for now the email is slightly forced
@@ -1070,18 +1070,6 @@ class InterspeechCMTSerialiser(CMTSerialiser):
         with pd.ExcelWriter(output_file, engine="openpyxl", mode="a", if_sheet_exists="replace") as writer:
             df.to_excel(writer, sheet_name="papers", index=False)
 
-    def _generate_id(self, last_name: str) -> str:
-
-        id = last_name.strip().lower().replace(" ", "")[: self._config["cmt"]["max_id_name_length"]]
-        id = "".join(char for char in id if char.isalpha())
-        if id in self._id_generator:
-            self._id_generator[id] += 1
-            id = id + str(self._id_generator[id])
-        else:
-            self._id_generator[id] = 0
-
-        return id
-
     def _extract_df_presenters(self, paper_info: pd.Series, paper_obj: Paper) -> list[Person] | None:
 
         paper_id = paper_info["Paper ID"]
@@ -1127,7 +1115,7 @@ class InterspeechCMTSerialiser(CMTSerialiser):
                         affiliation = Affiliation(short=short, long=long, country=m_affiliation.group(1))
                         affiliations.append(affiliation)
 
-                    id = self._generate_id(pres_lastname)
+                    id = self._generate_id(pres_firstname, pres_lastname)
                     cur_presenter = Person(
                         id,
                         pres_firstname,
@@ -1265,7 +1253,7 @@ class InterspeechCMTSerialiser(CMTSerialiser):
             #         cur_person = list(candidates)[0]
 
             if cur_person is None:
-                id = self._generate_id(last_name)
+                id = self._generate_id(first_name, last_name)
                 cur_person = Person(
                     id,
                     first_name,

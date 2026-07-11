@@ -43,6 +43,8 @@ from ..validation.pdf_report import generate_pdf_report, generate_full_pdf_repor
 # global constants
 ###############################################################################
 PDF_LOADER = PDFLoader()
+STANDARD_CHECKER = CameraReadyPDFChecker(6, 2, True)
+LONG_CHECKER = CameraReadyPDFChecker(10, 2, True)
 
 
 ###############################################################################
@@ -83,9 +85,6 @@ def main(args: argparse.Namespace):
     logger = logging.getLogger(__name__)
     config = Config(pathlib.Path(args.conf_input))
 
-    standard_checker = CameraReadyPDFChecker(6, 2, True, args.with_pdf_reports)
-    long_checker = CameraReadyPDFChecker(10, 2, True, args.with_pdf_reports)
-
     # Load conferenceerence
     serialiser = instanciate_serialiser(config)
     conference = serialiser.load()
@@ -111,22 +110,18 @@ def main(args: argparse.Namespace):
                 the_pdf = PDF_LOADER.load_pdf(paper.pdf_file, False)
                 logger.debug(f"[{paper_id}] The paper is a regular paper", extra={"paper_id": paper_id})
                 if isinstance(paper, LongPaper):
-                    _, summary, report = long_checker.validates(str(paper_id), the_pdf, paper)
+                    _, _, report = LONG_CHECKER.validates(str(paper_id), the_pdf, paper)
                 else:
-                    _, summary, report = standard_checker.validates(str(paper_id), the_pdf, paper)
+                    _, _, report = STANDARD_CHECKER.validates(str(paper_id), the_pdf, paper)
 
             except Exception as ex:
-                summary = {"fundamental": True}
                 report = {"fundamental": str(ex)}
 
+            # Add paper report
             paper_report["issues"] = report
-
-            if (report is not None) and ("abstract" in report):
-                paper_report["abstract"] = report["abstract"]
-                report["abstract"] = "Check abstract"
-
             papers[paper_id] = paper_report
             logger.debug(paper_report)
+
             logger.info(f"[{paper_id}] Validation done")
 
         ##
@@ -159,7 +154,13 @@ def main(args: argparse.Namespace):
             assert pdf_file is not None, f"{paper_id} doesn't have a PDF"
             shutil.copy(pdf_file, pdfs_dir / pdf_file.name)
             paper_info["pdf_file"] = str((pdfs_dir / pdf_file.name).relative_to(output_dir))
+
+            if (paper_info["issues"] is not None) and ("abstract" in paper_info["issues"]):
+                paper_info["abstract"] = paper_info["issues"]["abstract"]
+                paper_info["issues"]["abstract"] = "Check abstract"
+
             subset_papers[paper_id] = paper_info
+
             if args.with_pdf_reports:
                 (output_dir / "check_pdfs").mkdir(exist_ok=True, parents=True)
                 generate_pdf_report(

@@ -1,4 +1,6 @@
 # Core python
+import re
+import html
 from typing import Any
 from subprocess import call, DEVNULL
 import pathlib
@@ -10,7 +12,7 @@ import jinja2
 from isca.model.item import Paper
 
 # From the utils
-from .string_helpers import latexify, AUTHOR_SEP
+from .string_helpers import latexify
 
 __all__ = ["generate_pdf_report", "generate_full_pdf_report"]
 
@@ -29,17 +31,28 @@ JENV_LATEX = jinja2.Environment(
 )
 PAPER_TEMPLATE = JENV_LATEX.get_template("doublepage.tex")
 REPORT_TEMPLATE = JENV_LATEX.get_template("fullreport_doublepage.tex")
-
-
+DELETE_HTML_REGEXP = re.compile(r'<span class="delete" style="background-color:([^;]+);">([^<]+)</span>')
+INSERT_HTML_REGEXP = re.compile(r'<span class="insert" style="background-color:([^;]+);">([^<]+)</span>')
+DELETE_REGEXP = re.compile(r"£££([^£]*)£££")
+INSERT_REGEXP = re.compile(r"###([^#]*)###")
 ###############################################################################
 # helpers
 ###############################################################################
 
+
+def _diffhtml2pdf(diff_html: str) -> str:
+    diff_latex = DELETE_HTML_REGEXP.sub(r"£££\2£££", diff_html)
+    diff_latex = INSERT_HTML_REGEXP.sub(r"###\2###", diff_latex)
+    diff_latex = latexify(html.unescape(diff_latex))
+    diff_latex = DELETE_REGEXP.sub(r"\\colorbox{red!20}{\\sout{\1}}", diff_latex)
+    diff_latex = INSERT_REGEXP.sub(r"\\colorbox{blue!20}{\\underline{\1}}", diff_latex)
+    return diff_latex
+
+
 # TODO: function hacked to fit IS2026
 def generate_pdf_report(paper: Paper, pid: str, detailed_report: dict[str, Any], pdf_report_file: pathlib.Path):
-
     pdf_report_file.parent.mkdir(exist_ok=True, parents=True)
-    abstract = detailed_report["abstract"]
+    abstract = _diffhtml2pdf(detailed_report["abstract"])
 
     with open(pdf_report_file.parent / f"{pdf_report_file.stem}.tex", "w") as f:
         f.write(

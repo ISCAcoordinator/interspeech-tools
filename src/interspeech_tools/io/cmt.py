@@ -163,11 +163,15 @@ class InterspeechCMTSerialiser(CMTSerialiser):
 
         wb = load_workbook(filename=submission_summary_file)
         for worksheet in wb.sheetnames:
+            if worksheet in self._ignored_spreadsheet:
+                self.logger.info(f'Ignoring spreadsheet "{worksheet}"')
+                continue
+
             df = load_excel(submission_summary_file, sheet_name=worksheet)
 
             # Else go through not
             for _, paper_info in df.iterrows():
-                paper_id = paper_info["Paper ID"]
+                paper_id = int(paper_info["Paper ID"])
 
                 # Ignore withdrawn papers
                 withdrawn = paper_info.get("Withdrawn", False)

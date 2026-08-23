@@ -54,8 +54,8 @@ NO_AFFILIATION = "Unaffiliated"
 # Core of the module
 ###############################################################################
 class InterspeechCMTSerialiser(CMTSerialiser):
-    def __init__(self, config: Config):
-        super().__init__()
+    def __init__(self, config: Config, debug: bool = False):
+        super().__init__(debug=debug)
 
         # Load the configuration
         self.set_config(config)

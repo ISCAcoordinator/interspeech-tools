@@ -128,7 +128,7 @@ def main(args: argparse.Namespace):
         colour_file.parent.mkdir(exist_ok=True, parents=True)
 
     # Load conferenceerence
-    serialiser = instanciate_serialiser(config)
+    serialiser = instanciate_serialiser(config, args.debug)
     conference = serialiser.load()
     conference.resolve_author_paper_association()
 

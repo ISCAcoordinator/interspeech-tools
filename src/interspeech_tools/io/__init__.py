@@ -5,7 +5,7 @@ from .cmt import InterspeechCMTSerialiser
 SERIALISERS = {"cmt": InterspeechCMTSerialiser}
 
 
-def instanciate_serialiser(configuration: Config) -> Serialiser:
+def instanciate_serialiser(configuration: Config, debug: bool) -> Serialiser:
     """Get the serialiser based on its name
 
     Parameters
@@ -28,7 +28,7 @@ def instanciate_serialiser(configuration: Config) -> Serialiser:
     if not (serialiser_name in SERIALISERS):
         raise Exception(f"{serialiser_name} is not a valid serialiser")
 
-    return SERIALISERS[serialiser_name](configuration)
+    return SERIALISERS[serialiser_name](configuration, debug=debug)
 
 
 __all__ = ["InterspeechCMTSerialiser"]

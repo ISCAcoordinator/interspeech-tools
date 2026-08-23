@@ -31,7 +31,7 @@ def main(args: argparse.Namespace):
     output_root_dir = pathlib.Path(args.output_root_dir)
 
     # Load conference
-    serialiser = instanciate_serialiser(config)
+    serialiser = instanciate_serialiser(config, args.debug)
     conference = serialiser.load()
 
     booklet_path = None

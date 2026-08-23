@@ -114,6 +114,9 @@ def define_argument_parser() -> argparse.ArgumentParser:
     """
     parser = argparse.ArgumentParser(description="ISCA Interspeech Publication Helpers")
 
+    # Add debugging
+    parser.add_argument("-d", "--debug", action="store_true", help="Activate the debug mode (an exception will fail!)")
+
     # Add logging options
     parser.add_argument("-l", "--log_file", default=None, help="Logger file")
     parser.add_argument(

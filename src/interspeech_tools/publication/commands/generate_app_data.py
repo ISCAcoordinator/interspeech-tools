@@ -25,7 +25,7 @@ def main(args: argparse.Namespace):
     app_data_dir = pathlib.Path(args.app_data_dir)
 
     # Load conference
-    serialiser = instanciate_serialiser(config)
+    serialiser = instanciate_serialiser(config, args.debug)
     conference = serialiser.load()
 
     app_data_generator = CompassDataGenerator(conference)

@@ -86,7 +86,7 @@ def main(args: argparse.Namespace):
     config = Config(pathlib.Path(args.conf_input))
 
     # Load conferenceerence
-    serialiser = instanciate_serialiser(config)
+    serialiser = instanciate_serialiser(config, args.debug)
     conference = serialiser.load()
     conference.resolve_author_paper_association()
 

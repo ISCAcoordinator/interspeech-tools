@@ -472,16 +472,20 @@ class InterspeechCMTSerialiser(CMTSerialiser):
         survey_talks = dict()
         for _, row in df.iterrows():
             assert not pd.isna(row["Email"])
-            email = str(row["Email"]).lower().strip()
-            speaker = self._annuary.find_person_by_email(email)
 
-            if speaker is None:
-                raise Exception(f"The survey speaker is not part of the annuary: {email}")
+            emails = str(row["Email"]).lower().strip().split(self._config["cmt"]["author_separator"].strip())
+            speakers = []
+            for email in emails:
+                speaker = self._annuary.find_person_by_email(email.strip())
+
+                if speaker is None:
+                    raise Exception(f"The survey speaker is not part of the annuary: {email}")
+                speakers.append(speaker)
 
             survey = SurveyTalk(
                 row["Survey ID"],
                 title=row["Paper Title"],
-                presenters=[speaker],
+                presenters=speaker,
                 duration=40,
                 abstract=row["Abstract"],
             )
@@ -1079,71 +1083,86 @@ class InterspeechCMTSerialiser(CMTSerialiser):
         if (self._config["cmt"]["new_presenter_column_name"] in paper_info) and (
             not pd.isna(paper_info[self._config["cmt"]["new_presenter_column_name"]])
         ):
-            m_full = self._new_presenter_full_info_regexp.match(paper_info[self._config["cmt"]["new_presenter_column_name"]])
-            if m_full:
-                self.logger.info(
-                    f"Adding alternative presenter \"{paper_info[self._config['cmt']['new_presenter_column_name']]}\" to paper {paper_id}"
+            presenters_full = [
+                presenter.strip()
+                for presenter in str(paper_info[self._config["cmt"]["new_presenter_column_name"]]).split(
+                    self._config["cmt"]["author_separator"]
                 )
+            ]
+            presenters = []
 
-                pres_email = m_full.group(3).lower().strip()
+            for presenter_full_info in presenters_full:
+                m_full = self._new_presenter_full_info_regexp.match(presenter_full_info)
+                if m_full:
+                    self.logger.info(
+                        f"Adding alternative presenter \"{paper_info[self._config['cmt']['new_presenter_column_name']]}\" to paper {paper_id}"
+                    )
 
-                cur_presenter = self._annuary.find_person_by_email(pres_email)
-                if cur_presenter is None:
+                    pres_email = m_full.group(3).lower().strip()
 
-                    m_identity = self._author_elts_regexp.match(m_full.group(1))
-                    assert m_identity is not None, f"The format of the author is not valid for: {m_full.group(1)}"
-                    pres_firstname = m_identity.group(1)
-                    middle_initial = m_identity.group(2)
-                    pres_lastname = m_identity.group(3)
+                    cur_presenter = self._annuary.find_person_by_email(pres_email)
+                    if cur_presenter is None:
+                        m_identity = self._author_elts_regexp.match(m_full.group(1))
+                        assert m_identity is not None, f"The format of the author is not valid for: {m_full.group(1)}"
+                        pres_firstname = m_identity.group(1)
+                        middle_initial = m_identity.group(2)
+                        pres_lastname = m_identity.group(3)
 
-                    if m_full.group(2) is None:
-                        raise Exception(
-                            f"The presenter \"{paper_info[self._config['cmt']['new_presenter_column_name']]}\" does nor respect the format"
-                        )
+                        if m_full.group(2) is None:
+                            raise Exception(
+                                f"The presenter \"{paper_info[self._config['cmt']['new_presenter_column_name']]}\" does nor respect the format"
+                            )
 
-                    affiliations = []
-                    for aff_str in m_full.group(2).split(self._config["cmt"]["affiliation_separator"]):
-                        aff_str = aff_str.strip()
-                        m_affiliation = self._affiliation_regexp.match(aff_str)
-                        assert m_affiliation is not None, f"The format of the affiliation is not valid for: {aff_str}"
-                        short = m_affiliation.group(3)
-                        if short is None:
-                            long = None
-                            short = m_affiliation.group(2)
-                        else:
-                            long = f"{m_affiliation.group(2)}, {short}"
-                        affiliation = Affiliation(short=short, long=long, country=m_affiliation.group(1))
-                        affiliations.append(affiliation)
+                        affiliations = []
+                        for aff_str in m_full.group(2).split(self._config["cmt"]["affiliation_separator"]):
+                            aff_str = aff_str.strip()
+                            m_affiliation = self._affiliation_regexp.match(aff_str)
+                            assert m_affiliation is not None, f"The format of the affiliation is not valid for: {aff_str}"
+                            short = m_affiliation.group(3)
+                            if short is None:
+                                long = None
+                                short = m_affiliation.group(2)
+                            else:
+                                long = f"{m_affiliation.group(2)}, {short}"
+                            affiliation = Affiliation(short=short, long=long, country=m_affiliation.group(1))
+                            affiliations.append(affiliation)
 
-                    id = self._generate_id(pres_firstname, pres_lastname)
-                    cur_presenter = Person(
-                        id,
-                        pres_firstname,
-                        pres_lastname,
-                        affiliations[0],
-                        pres_email,
-                        middle_initial=middle_initial,
-                        paper_affiliations={str(paper_id): affiliations},
-                    )  # FIXME: force unknwon affiliation
-                    self._annuary.add(cur_presenter)
+                        id = self._generate_id(pres_firstname, pres_lastname)
+                        cur_presenter = Person(
+                            id,
+                            pres_firstname,
+                            pres_lastname,
+                            affiliations[0],
+                            pres_email,
+                            middle_initial=middle_initial,
+                            paper_affiliations={str(paper_id): affiliations},
+                        )  # FIXME: force unknwon affiliation
+                        self._annuary.add(cur_presenter)
 
-                cur_presenter.add_role(Role.PRESENTER)
-                presenters = [cur_presenter]
+                    cur_presenter.add_role(Role.PRESENTER)
+                    presenters.append(cur_presenter)
             else:
                 raise Exception(
                     f"The presenter \"{paper_info[self._config['cmt']['new_presenter_column_name']]}\" does nor respect the format"
                 )
 
         elif self._config["cmt"]["new_presenter_index_column_name"] in paper_info:
-            presenter_idx = int(paper_info[self._config["cmt"]["new_presenter_index_column_name"]]) - 1
-
-            if presenter_idx >= len(paper_obj.authors):
-                raise IndexError(
-                    f"[{paper_id}] Author {presenter_idx} can't be a presenter as there are only {len(paper_obj.authors)} authors"
+            presenter_indices = [
+                int(str(i).strip()) - 1
+                for i in str(paper_info[self._config["cmt"]["new_presenter_index_column_name"]]).split(
+                    self._config["cmt"]["author_separator"].strip()
                 )
-            cur_presenter = paper_obj.authors[presenter_idx]
-            cur_presenter.add_role(Role.PRESENTER)
-            presenters = [cur_presenter]
+            ]
+            presenters = []
+            for presenter_idx in presenter_indices:
+                if presenter_idx >= len(paper_obj.authors):
+                    raise IndexError(
+                        f"[{paper_id}] Author {presenter_idx} can't be a presenter as there are only {len(paper_obj.authors)} authors"
+                    )
+                cur_presenter = paper_obj.authors[presenter_idx]
+                cur_presenter.add_role(Role.PRESENTER)
+                presenters.append(cur_presenter)
+
         else:
             self.logger.warning(
                 f"[{paper_id}] doesn't have a presenter",

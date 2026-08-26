@@ -1,5 +1,6 @@
 \BLOCK{ for session, timeslot, place in sessions }
 \BLOCK{ if (session |type_session) == "keynote"}
+
 \keynotesessionslot{\VAR{session.id}}
             {\VAR{session.name |  latexify | compact_numbers}}
             {\VAR{session.start | extract_verbose_date}}
@@ -8,6 +9,7 @@
             {\VAR{session | type_session}}
             {\VAR{session | chairs}}
 \BLOCK{ else }
+
 \sessionslot{\VAR{session.id}}
             {\VAR{session.name | latexify | compact_numbers}}
             {\VAR{session.start | extract_verbose_date}}
@@ -20,6 +22,7 @@
 
   \BLOCK{ for presentation in session.presentations }
     \BLOCK{ if presentation | is_survey }
+
 \survey{\VAR{presentation | short_presentation_id}}
        {\VAR{presentation.title | latexify}}
        {\VAR{presentation | presenters}}

@@ -190,7 +190,12 @@ class AbstractBookProcessor(ISCAObject):
         cur_nb_zones = 0
         ignored_sessions = []
 
-        # Add the ignored timeslots sessions
+        # Add the ignored sessions (FIXME: there is a problem here!)
+        for ignored_session_info in self._conf.ignored_sessions:
+            if ignored_session_info[1] in timeslots:
+                ignored_sessions.append(ignored_session_info)
+
+        # Add the sessions related to the ignored timeslots
         timeslot_sessions = {timeslot: self._conf.program.get_timeslot_sessions(timeslot) for timeslot in timeslots}
         for timeslot, room_session in timeslot_sessions.items():
             if timeslot in self._conf.ignored_timeslots:
@@ -198,6 +203,7 @@ class AbstractBookProcessor(ISCAObject):
                     for zone_idx, session in sessions.items():
                         ignored_sessions.append([session, timeslot, room, zone_idx])
 
+        # Add the sessions related to the ignored rooms
         for room_idx, room in enumerate(rooms):
             if room in self._conf.ignored_rooms:
                 for timeslot, room_session in timeslot_sessions.items():
@@ -267,12 +273,23 @@ class AbstractBookProcessor(ISCAObject):
         if nb_zones == 0:
             return None
 
+        ignored_sessions = [session_info[0] for session_info in self._conf.ignored_sessions]
         rows = []
         for timeslot in timeslots:
             if timeslot in self._conf.ignored_timeslots:
                 continue
 
-            sessions = self._conf.program.get_timeslot_sessions(timeslot)
+            unfiltered_sessions = self._conf.program.get_timeslot_sessions(timeslot)
+            filtered_sessions = dict()
+            for room, room_info in unfiltered_sessions.items():
+                filtered_room_info = dict()
+                for zone, session in room_info.items():
+                    if session not in ignored_sessions:
+                        filtered_room_info[zone] = session
+                if filtered_room_info:
+                    filtered_sessions[room] = filtered_room_info
+            sessions = filtered_sessions
+
             row = {"timeslot_str": timeslot.timeslot_without_date().replace(" ", ""), "elts": []}
 
             #
@@ -317,6 +334,9 @@ class AbstractBookProcessor(ISCAObject):
                 session = sessions[list(sessions.keys())[0]]
                 session_type = get_session_type(session)
                 session_id = session.id if (not isinstance(session, InterspeechEvent)) and (session_type != "social") else ""
+                session_name = session.name
+                if len(session_name) > 100:
+                    session_name = f"{session_name[:100]}..."
 
                 row["elts"].append(
                     {
@@ -324,7 +344,7 @@ class AbstractBookProcessor(ISCAObject):
                         "colspan": nb_zones,
                         "content": {
                             "id": session_id,
-                            "name": f"{session.name} [{room.name}]",
+                            "name": f"{session_name} [{room.name}]",
                             "bg": f"{session_type.replace('_', ' ').title().replace(' ', '')}BackgroundColour",
                             "fg": f"{session_type.replace('_', ' ').title().replace(' ', '')}ForegroundColour",
                         },
@@ -354,7 +374,6 @@ class AbstractBookProcessor(ISCAObject):
                         if (next_session is not None) and (session.id == next_session.id):
                             if buffer_session is not None:
                                 buffer_session["colspan"] += 1
-                                raise Exception("ok?")
                             else:
                                 session_type = get_session_type(session)
                                 session_name = session.name.replace("Special Session - ", "")

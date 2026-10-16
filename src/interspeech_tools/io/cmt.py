@@ -23,6 +23,7 @@ from isca.model.program import (
     SocialSession,
     Timeslot,
     TimeslotType,
+    FreeSlot,
 )
 from isca.io.utils.helpers import load_excel
 
@@ -446,6 +447,9 @@ class InterspeechCMTSerialiser(CMTSerialiser):
             if speaker is None:
                 raise Exception(f"The keynote speaker is not part of the annuary: {email}")
 
+            if not isinstance(speaker, Speaker):
+                raise Exception(f"The keynote speaker is not a speaker: {email}")
+
             # FIXME: duration is hardcoded
             keynote = Keynote(row["Keynote ID"], row["Paper Title"], [speaker], 60, row["Abstract"])
             keynotes[keynote.id] = keynote
@@ -475,7 +479,9 @@ class InterspeechCMTSerialiser(CMTSerialiser):
 
         survey_talks = dict()
         for _, row in df.iterrows():
-            assert not pd.isna(row["Email"])
+            # FIXME: disgusting patch for IS26
+            if pd.isna(row["Email"]):
+                break
 
             emails = str(row["Email"]).lower().strip().split(self._config["cmt"]["author_separator"].strip())
             speakers = []
@@ -484,12 +490,14 @@ class InterspeechCMTSerialiser(CMTSerialiser):
 
                 if speaker is None:
                     raise Exception(f"The survey speaker is not part of the annuary: {email}")
+                if not isinstance(speaker, Speaker):
+                    raise Exception(f"The survey speaker is not a speaker: {email}")
                 speakers.append(speaker)
 
             survey = SurveyTalk(
                 row["Survey ID"],
                 title=row["Paper Title"],
-                presenters=speaker,
+                presenters=speakers,
                 duration=40,
                 abstract=row["Abstract"],
             )
@@ -505,11 +513,12 @@ class InterspeechCMTSerialiser(CMTSerialiser):
         )
 
         tutorials = []
-        for _, row in df.iterrows():
-            timeslot = timeslots[str(row["Timeslot name*"])]
+        for i_row, row in df.iterrows():
+            timeslot = timeslots[str(row["Timeslot ID*"])]
             room = rooms[str(row["Room ID*"])]
             presenters = []
-            for cur_presenter in str(row["Organisers"]).split("; "):
+
+            for i_presenter, cur_presenter in enumerate(str(row["Organisers"]).split("; ")):
                 email = cur_presenter.lower().strip()
                 speaker = self._annuary.find_person_by_email(email)
                 if speaker is None:
@@ -517,6 +526,7 @@ class InterspeechCMTSerialiser(CMTSerialiser):
 
                 if not isinstance(speaker, Speaker):
                     raise Exception(f"The speaker {speaker} is not a speaker, but a person (author, reviewer, ..)")
+
                 presenters.append(speaker)
 
             tutorial = Tutorial(
@@ -537,7 +547,7 @@ class InterspeechCMTSerialiser(CMTSerialiser):
 
         events = []
         for _, row in df.iterrows():
-            timeslot = timeslots[str(row["Timeslot name*"])]
+            timeslot = timeslots[str(row["Timeslot ID*"])]
             room = rooms[str(row["Room ID*"])]
             zones = None
             if ("Zone" in row) and (not pd.isna(row["Zone"])):
@@ -800,6 +810,7 @@ class InterspeechCMTSerialiser(CMTSerialiser):
                         f"Slot {paper_idx} in the session {session_id} is free",
                         extra={"session_id": session_id, "session_name": session_name},
                     )
+                    cur_session.add_free_slot(FreeSlot(cur_session.default_duration))
                     continue
 
                 if paper_id in dict_papers:
@@ -1023,12 +1034,21 @@ class InterspeechCMTSerialiser(CMTSerialiser):
             for paper_id in theme_award_nominees:
                 conf.add_theme_award_nominees(paper_id)
 
+        if "ignore_sessions" in self._config:
+            ignored_sessions = set()
+            ignored_session_ids = set(self._config["ignore_sessions"])
+            if conf.program is not None:
+                for session in conf.program.sessions:
+                    if session[0].id in ignored_session_ids:
+                        ignored_sessions.add(session)
+                conf.update_ignored_sessions(ignored_sessions)
+
         if "ignore_rooms" in self._config:
             ignored_rooms = set()
             ignored_room_names = set(self._config["ignore_rooms"])
             if conf.program is not None:
                 for room in conf.program.rooms:
-                    if room.name in ignored_room_names:
+                    if room.id in ignored_room_names:
                         ignored_rooms.add(room)
 
                 conf.update_ignored_rooms(ignored_rooms)

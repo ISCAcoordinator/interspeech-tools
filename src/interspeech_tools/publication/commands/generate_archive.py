@@ -2,7 +2,7 @@ import argparse
 import pathlib
 
 # ISCA Lib
-from isca.io.archive import ArchiveInputSerialiser
+from isca.io.archive import ArchiveSerialiser
 
 # Local helpers
 from ...conf import Config
@@ -39,5 +39,5 @@ def main(args: argparse.Namespace):
         booklet_path = pathlib.Path(args.booklet)
         assert booklet_path.is_file(), f"The booklet ({booklet_path}) neither exists nor is a file"
 
-    archive_generator = ArchiveInputSerialiser()
+    archive_generator = ArchiveSerialiser()
     archive_generator.dump(conference, output_root_dir, booklet_path=booklet_path)
